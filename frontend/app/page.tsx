@@ -1,156 +1,239 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CryptoJS from 'crypto-js';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // 수식 스타일
+import { Menu, Plus, Save, ChevronLeft, FileText, LogOut } from 'lucide-react'; // 아이콘
 
+// --- [타입 정의] ---
 interface Note {
-  user_id: string;
-  content: string;
+  id: number; // DB ID
+  title: string; // 암호문
+  content: string; // 암호문
+}
+
+interface DecryptedNote {
+  id: number;
+  title: string; // 평문
+  content: string; // 평문
 }
 
 export default function Home() {
-  const [view, setView] = useState<'login' | 'signup' | 'dashboard'>('login');
+  // --- [상태 관리] ---
+  const [view, setView] = useState<'login' | 'app'>('login');
+  const [sidebarOpen, setSidebarOpen] = useState(true); // 사이드바 토글
   
-  // 입력 상태
+  // 인증 및 키
   const [inputId, setInputId] = useState('');
   const [inputPw, setInputPw] = useState('');
-  const [noteInput, setNoteInput] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+  const [encKey, setEncKey] = useState('');
 
-  // ★ 보안 세션 상태 (토큰 & 키) ★
-  const [accessToken, setAccessToken] = useState(''); // 서버 통행증 (JWT)
-  const [encryptionKey, setEncryptionKey] = useState(''); // 데이터 해독키 (로컬 전용)
-  const [currentUser, setCurrentUser] = useState('');
+  // 데이터
+  const [notes, setNotes] = useState<DecryptedNote[]>([]); // 복호화된 리스트
+  const [activeNoteId, setActiveNoteId] = useState<number | null>(null); // 현재 선택된 노트
   
-  const [decryptedNotes, setDecryptedNotes] = useState<string[]>([]);
+  // 에디터 입력값 (제목/본문)
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
 
-  // 키 파생 함수
-  const deriveKeys = (password: string) => {
-    return {
-      authHash: CryptoJS.SHA256(password + "AUTH_SALT").toString(),
-      encKey: CryptoJS.SHA256(password + "DATA_SALT").toString()
-    };
-  };
+  // --- [보안 로직] ---
+  const deriveKeys = (password: string) => ({
+    authHash: CryptoJS.SHA256(password + "AUTH_SALT").toString(),
+    encKey: CryptoJS.SHA256(password + "DATA_SALT").toString()
+  });
 
-  // 1. 회원가입
-  const handleSignup = async () => {
-    if (!inputId || !inputPw) return;
-    const { authHash } = deriveKeys(inputPw);
-
-    const res = await fetch('http://54.180.32.224:8000/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: inputId, password_hash: authHash })
-    });
-
-    if (res.ok) { alert('가입 성공!'); setView('login'); }
-    else alert('가입 실패');
-  };
-
-  // 2. 로그인 (토큰 받아오기)
-  const handleLogin = async () => {
-    if (!inputId || !inputPw) return;
+  // --- [API 통신] ---
+  const handleAuth = async (type: 'login' | 'signup') => {
+    if (!inputId || !inputPw) return alert('ID/PW 입력 필요');
     const { authHash, encKey } = deriveKeys(inputPw);
-
-    const res = await fetch('http://54.180.32.224:8000/login', {
+    
+    const res = await fetch(`http://54.180.32.224:8000/${type}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: inputId, password_hash: authHash })
     });
 
     if (res.ok) {
-      const data = await res.json();
-      setAccessToken(data.access_token); // ★ 토큰 저장
-      setEncryptionKey(encKey);          // ★ 키 저장
-      setCurrentUser(inputId);
-      setView('dashboard');
-      fetchNotes(data.access_token, encKey); // 데이터 로딩
+      if (type === 'signup') {
+        alert('가입 성공! 로그인하세요.');
+      } else {
+        const data = await res.json();
+        setAccessToken(data.access_token);
+        setEncKey(encKey);
+        setView('app');
+        fetchNotes(data.access_token, encKey);
+      }
     } else {
-      alert('로그인 실패');
+      alert('실패');
     }
   };
 
-  // 3. 노트 불러오기 (헤더에 토큰 실어 보내기)
   const fetchNotes = async (token: string, key: string) => {
     const res = await fetch('http://54.180.32.224:8000/notes', {
-      headers: { 'Authorization': `Bearer ${token}` } // ★ 신분증 제시
+      headers: { 'Authorization': `Bearer ${token}` }
     });
+    const data = await res.json();
     
-    if (res.ok) {
-      const data = await res.json();
-      // 자동 복호화
-      const decrypted = data.map((n: any) => {
-        try {
-          const bytes = CryptoJS.AES.decrypt(n.content, key);
-          return bytes.toString(CryptoJS.enc.Utf8) || '(복호화 오류)';
-        } catch { return '(데이터 손상)'; }
-      });
-      setDecryptedNotes(decrypted);
-    }
+    // 리스트 전체 복호화 (제목 표시를 위해)
+    const decrypted = data.map((n: any) => {
+      try {
+        return {
+          id: n.id,
+          title: CryptoJS.AES.decrypt(n.title, key).toString(CryptoJS.enc.Utf8) || '(제목 없음)',
+          content: CryptoJS.AES.decrypt(n.content, key).toString(CryptoJS.enc.Utf8) || ''
+        };
+      } catch { return { id: n.id, title: '🔒 손상된 데이터', content: '' }; }
+    });
+    setNotes(decrypted);
   };
 
-  // 4. 저장 (헤더에 토큰 실어 보내기)
   const handleSave = async () => {
-    if (!noteInput) return;
-    const encrypted = CryptoJS.AES.encrypt(noteInput, encryptionKey).toString();
+    if (!editTitle) return alert('제목을 입력하세요');
+    
+    // 제목과 본문 모두 암호화
+    const encTitle = CryptoJS.AES.encrypt(editTitle, encKey).toString();
+    const encContent = CryptoJS.AES.encrypt(editContent, encKey).toString();
 
     await fetch('http://54.180.32.224:8000/notes', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}` // ★ 신분증 제시
+        'Authorization': `Bearer ${accessToken}`
       },
-      body: JSON.stringify({ content: encrypted })
+      body: JSON.stringify({ title: encTitle, content: encContent })
     });
 
-    setNoteInput('');
-    fetchNotes(accessToken, encryptionKey);
+    // 저장 후 목록 갱신 및 초기화
+    await fetchNotes(accessToken, encKey);
+    setEditTitle('');
+    setEditContent('');
+    setActiveNoteId(null); // 새 글 작성 모드로 복귀하려면 이걸 조정
   };
 
-  const handleLogout = () => {
-    setAccessToken(''); setEncryptionKey(''); setCurrentUser('');
-    setInputId(''); setInputPw(''); setDecryptedNotes([]);
-    setView('login');
+  const selectNote = (note: DecryptedNote) => {
+    setActiveNoteId(note.id);
+    setEditTitle(note.title);
+    setEditContent(note.content);
   };
 
-  // --- [간소화된 UI] ---
-  const containerStyle = { minHeight: '100vh', backgroundColor: '#121212', color: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif' };
-  const boxStyle = { width: '100%', maxWidth: '400px', padding: '30px', backgroundColor: '#1e1e1e', borderRadius: '12px', boxShadow: '0 8px 16px rgba(0,0,0,0.3)' };
-  const inputSt = { width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#2c2c2c', color: 'white' };
-  const btnSt = { width: '100%', padding: '12px', borderRadius: '6px', border: 'none', backgroundColor: '#1976d2', color: 'white', fontWeight: 'bold' as 'bold', cursor: 'pointer' };
+  const createNewNote = () => {
+    setActiveNoteId(null);
+    setEditTitle('');
+    setEditContent('');
+  };
 
-  if (view !== 'dashboard') {
-    return (
-      <div style={containerStyle}>
-        <div style={boxStyle}>
-          <h2 style={{textAlign:'center', marginBottom:'20px'}}>🔐 Cloud Vault (JWT)</h2>
-          <input placeholder="ID" value={inputId} onChange={e=>setInputId(e.target.value)} style={inputSt}/>
-          <input type="password" placeholder="PW" value={inputPw} onChange={e=>setInputPw(e.target.value)} style={inputSt}/>
-          {view==='login' ? 
-            <><button onClick={handleLogin} style={btnSt}>로그인</button><p onClick={()=>setView('signup')} style={{textAlign:'center', marginTop:'15px', color:'#64b5f6', cursor:'pointer'}}>회원가입</p></> : 
-            <><button onClick={handleSignup} style={{...btnSt, backgroundColor:'#388e3c'}}>회원가입 완료</button><p onClick={()=>setView('login')} style={{textAlign:'center', marginTop:'15px', color:'#64b5f6', cursor:'pointer'}}>돌아가기</p></>
-          }
+  // --- [로그인 화면] ---
+  if (view === 'login') return (
+    <div style={{height:'100vh', display:'flex', justifyContent:'center', alignItems:'center', background:'#191919', color:'white'}}>
+      <div style={{width:'300px', padding:'30px', background:'#2d2d2d', borderRadius:'10px'}}>
+        <h2 style={{textAlign:'center', marginBottom:'20px'}}>🔐 Vault Login</h2>
+        <input placeholder="ID" value={inputId} onChange={e=>setInputId(e.target.value)} style={inputSt}/>
+        <input type="password" placeholder="PW" value={inputPw} onChange={e=>setInputPw(e.target.value)} style={inputSt}/>
+        <button onClick={()=>handleAuth('login')} style={btnSt}>로그인</button>
+        <button onClick={()=>handleAuth('signup')} style={{...btnSt, background:'#444', marginTop:'10px'}}>회원가입</button>
+      </div>
+    </div>
+  );
+
+  // --- [메인 앱 (Notion Style)] ---
+  return (
+    <div style={{display:'flex', height:'100vh', background:'#191919', color:'#e0e0e0', fontFamily:'sans-serif'}}>
+      
+      {/* 1. 사이드바 (Left Panel) */}
+      <div style={{
+        width: sidebarOpen ? '260px' : '0px', 
+        background:'#202020', borderRight:'1px solid #333', 
+        transition:'width 0.3s', overflow:'hidden', display:'flex', flexDirection:'column'
+      }}>
+        <div style={{padding:'20px', borderBottom:'1px solid #333', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <span style={{fontWeight:'bold'}}>📂 내 금고</span>
+          <Plus size={20} style={{cursor:'pointer'}} onClick={createNewNote}/>
+        </div>
+        
+        <div style={{flex:1, overflowY:'auto', padding:'10px'}}>
+          {notes.map(note => (
+            <div key={note.id} onClick={()=>selectNote(note)} 
+              style={{
+                padding:'10px', borderRadius:'5px', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px',
+                background: activeNoteId === note.id ? '#333' : 'transparent', marginBottom:'5px'
+              }}>
+              <FileText size={16} color="#888"/>
+              <span style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{note.title}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{padding:'15px', borderTop:'1px solid #333'}}>
+          <div onClick={()=>setView('login')} style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', color:'#ff5555'}}>
+            <LogOut size={16}/> <span>로그아웃</span>
+          </div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div style={{...containerStyle, alignItems:'flex-start', paddingTop:'50px'}}>
-      <div style={{width:'100%', maxWidth:'600px'}}>
-        <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
-          <h3>👋 {currentUser}님 (보안접속 중)</h3>
-          <button onClick={handleLogout} style={{...btnSt, width:'auto', backgroundColor:'#d32f2f', padding:'5px 15px'}}>로그아웃</button>
+      {/* 2. 메인 컨텐츠 (Right Panel) */}
+      <div style={{flex:1, display:'flex', flexDirection:'column', height:'100vh'}}>
+        
+        {/* 상단 툴바 */}
+        <div style={{height:'50px', display:'flex', alignItems:'center', padding:'0 20px', borderBottom:'1px solid #333'}}>
+          <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{background:'none', border:'none', color:'#888', cursor:'pointer'}}>
+            {sidebarOpen ? <ChevronLeft/> : <Menu/>}
+          </button>
+          <div style={{flex:1}}/>
+          <button onClick={handleSave} style={{display:'flex', alignItems:'center', gap:'5px', background:'#2383e2', color:'white', border:'none', padding:'8px 15px', borderRadius:'5px', cursor:'pointer'}}>
+            <Save size={16}/> 저장
+          </button>
         </div>
-        <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-          <input placeholder="비밀 메모 입력..." value={noteInput} onChange={e=>setNoteInput(e.target.value)} style={{...inputSt, marginBottom:0}} onKeyDown={e=>e.key==='Enter'&&handleSave()}/>
-          <button onClick={handleSave} style={{...btnSt, width:'80px'}}>저장</button>
-        </div>
-        <div style={{display:'grid', gap:'10px'}}>
-          {decryptedNotes.map((n, i) => (
-            <div key={i} style={{padding:'15px', backgroundColor:'#1e1e1e', borderRadius:'8px', border:'1px solid #333'}}>{n}</div>
-          ))}
+
+        {/* 에디터 영역 (Split View: 입력 | 프리뷰) */}
+        <div style={{flex:1, display:'flex', overflow:'hidden'}}>
+          
+          {/* 입력창 (Markdown Source) */}
+          <div style={{flex:1, padding:'40px', borderRight:'1px solid #333', overflowY:'auto'}}>
+            <input 
+              placeholder="제목 없음" 
+              value={editTitle} onChange={e=>setEditTitle(e.target.value)}
+              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'bold', color:'white', marginBottom:'20px', outline:'none'}}
+            />
+            <textarea 
+              placeholder="여기에 마크다운을 입력하세요... (수식은 $...$ 사용)" 
+              value={editContent} onChange={e=>setEditContent(e.target.value)}
+              style={{width:'100%', height:'calc(100% - 80px)', background:'transparent', border:'none', color:'#ccc', fontSize:'16px', lineHeight:'1.6', resize:'none', outline:'none'}}
+            />
+          </div>
+
+          {/* 프리뷰 (Rendered View) */}
+          <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#1e1e1e'}}>
+            <div className="markdown-body" style={{color:'#ddd', lineHeight:'1.7'}}>
+              {/* 제목 프리뷰 */}
+              <h1 style={{borderBottom:'1px solid #444', paddingBottom:'10px', marginBottom:'20px'}}>{editTitle || '제목 없음'}</h1>
+              
+              {/* 본문 프리뷰 (Markdown + Math) */}
+              <ReactMarkdown 
+                remarkPlugins={[remarkMath]} 
+                rehypePlugins={[rehypeKatex]}
+                components={{
+                  // 스타일 커스텀
+                  h1: ({node, ...props}) => <h1 style={{fontSize:'2em', borderBottom:'1px solid #444', paddingBottom:'0.3em'}} {...props} />,
+                  h2: ({node, ...props}) => <h2 style={{fontSize:'1.5em', borderBottom:'1px solid #444', paddingBottom:'0.3em'}} {...props} />,
+                  code: ({node, ...props}) => <code style={{background:'#333', padding:'2px 5px', borderRadius:'3px'}} {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'4px solid #555', paddingLeft:'10px', color:'#999'}} {...props} />
+                }}
+              >
+                {editContent || '*미리보기가 여기에 표시됩니다.*'}
+              </ReactMarkdown>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
+
+// 간단 스타일
+const inputSt = {display:'block', width:'100%', padding:'10px', marginBottom:'10px', background:'#333', border:'none', color:'white', borderRadius:'5px'};
+const btnSt = {width:'100%', padding:'12px', background:'#2383e2', color:'white', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'};
