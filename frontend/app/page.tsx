@@ -310,7 +310,8 @@ export default function Home() {
                   blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'3px solid #fff', paddingLeft:'20px', color:'#888', margin:'20px 0'}} {...props} />
                 }}
               >
-                {editContent || '*내용이 없습니다.*'}
+                {/* 엔터(\n)를 '스페이스 두 개 + 엔터'로 치환하여 강제 줄바꿈 */}
+                {editContent.replace(/\n/g, '  \n') || '*내용이 없습니다.*'}
               </ReactMarkdown>
             </div>
           </div>
