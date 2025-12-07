@@ -12,30 +12,20 @@ from jose import JWTError, jwt
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
-# ==========================================
 # 1. 설정 및 DB 연결
-# ==========================================
 app = FastAPI()
 
-# 데이터베이스 주소 (환경변수 없으면 기본값 사용)
-# 도커 내부에서는 'db' 호스트명을 사용합니다.
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/cloudvault")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# JWT 보안 설정
 SECRET_KEY = "super_secret_project_key_cloud_computing_2025"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 유효시간 30분
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# CORS 설정 (프론트엔드 접속 허용)
-origins = [
-    "http://localhost:3000",
-    "http://54.180.32.224:3000",
-    "*"  # 개발 편의상 전체 허용
-]
+origins = ["http://localhost:3000", "http://54.180.32.224:3000", "*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,9 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==========================================
-# 2. DB 테이블 모델 (Schema)
-# ==========================================
+# 2. DB 테이블 모델
 class UserTable(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -58,25 +46,19 @@ class NoteTable(Base):
     __tablename__ = "notes"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)
-    
-    # ★ [NEW] 제목과 본문을 분리해서 저장 (둘 다 암호문 상태로 저장됨)
     title = Column(Text)
     content = Column(Text)
 
-# 테이블 생성 (서버 시작 시 테이블이 없으면 자동 생성)
 Base.metadata.create_all(bind=engine)
 
-
-# ==========================================
-# 3. 데이터 통신 모델 (Pydantic)
-# ==========================================
+# 3. 데이터 통신 모델
 class UserAuth(BaseModel):
     user_id: str
     password_hash: str
 
 class NoteInput(BaseModel):
-    title: str    # ★ [NEW] 제목 추가
-    content: str  # 본문
+    title: str
+    content: str
 
 class NoteResponse(BaseModel):
     id: int
@@ -90,96 +72,72 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-
-# ==========================================
-# 4. 인증 및 유틸리티 함수
-# ==========================================
-# DB 세션 생성기
+# 4. 유틸리티 함수
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# JWT 토큰 생성
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# JWT 토큰 검증 (로그인 확인)
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+        if user_id is None: raise HTTPException(status_code=401)
+    except JWTError: raise HTTPException(status_code=401)
     return user_id
 
-
-# ==========================================
 # 5. API 엔드포인트
-# ==========================================
-
 @app.get("/")
 def read_root():
-    return {"status": "Cloud Vault Backend v6.0 (Title Support)"}
+    return {"status": "Cloud Vault Backend v7.0 (Update Support)"}
 
-# [회원가입]
 @app.post("/signup")
 def signup(user: UserAuth, db: Session = Depends(get_db)):
-    existing_user = db.query(UserTable).filter(UserTable.user_id == user.user_id).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="이미 존재하는 ID입니다.")
-    
+    if db.query(UserTable).filter(UserTable.user_id == user.user_id).first():
+        raise HTTPException(status_code=400, detail="ID Exists")
     new_user = UserTable(user_id=user.user_id, password_hash=user.password_hash)
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)
-    return {"message": "회원가입 성공"}
+    return {"message": "Success"}
 
-# [로그인]
 @app.post("/login", response_model=Token)
 def login(user: UserAuth, db: Session = Depends(get_db)):
     db_user = db.query(UserTable).filter(UserTable.user_id == user.user_id).first()
     if not db_user or db_user.password_hash != user.password_hash:
-        raise HTTPException(status_code=401, detail="ID 또는 비밀번호 오류")
-    
-    access_token = create_access_token(data={"sub": user.user_id})
-    return {"access_token": access_token, "token_type": "bearer"}
+        raise HTTPException(status_code=401, detail="Invalid Auth")
+    return {"access_token": create_access_token(data={"sub": user.user_id}), "token_type": "bearer"}
 
-# [노트 저장] - 제목(title) 포함
-@app.post("/notes")
-def create_note(
-    note: NoteInput, 
-    user_id: str = Depends(get_current_user), 
-    db: Session = Depends(get_db)
-):
-    new_note = NoteTable(
-        user_id=user_id, 
-        title=note.title,     # ★ 제목 저장
-        content=note.content  # 본문 저장
-    )
+# [저장 - Create] ★ 중요: 저장 후 생성된 ID를 반환하도록 수정
+@app.post("/notes", response_model=NoteResponse)
+def create_note(note: NoteInput, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    new_note = NoteTable(user_id=user_id, title=note.title, content=note.content)
     db.add(new_note)
     db.commit()
-    return {"status": "success"}
+    db.refresh(new_note) # ID 발급 확인
+    return new_note
 
-# [내 노트 조회] - 리스트 반환
+# [수정 - Update] ★ 새로 추가된 기능 (덮어쓰기)
+@app.put("/notes/{note_id}", response_model=NoteResponse)
+def update_note(note_id: int, note: NoteInput, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 내 노트이면서 ID가 일치하는 것을 찾음
+    db_note = db.query(NoteTable).filter(NoteTable.id == note_id, NoteTable.user_id == user_id).first()
+    if not db_note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    db_note.title = note.title
+    db_note.content = note.content
+    db.commit()
+    db.refresh(db_note)
+    return db_note
+
 @app.get("/notes", response_model=List[NoteResponse])
-def get_notes(
-    user_id: str = Depends(get_current_user), 
-    db: Session = Depends(get_db)
-):
-    # 최신순 정렬 (ID 내림차순)
+def get_notes(user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(NoteTable).filter(NoteTable.user_id == user_id).order_by(NoteTable.id.desc()).all()
