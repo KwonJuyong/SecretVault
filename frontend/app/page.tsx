@@ -1,162 +1,156 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import CryptoJS from 'crypto-js';
 
-// 메모 데이터 타입 정의
 interface Note {
-  content: string; // 암호문
-  password_hash: string;
+  user_id: string;
+  content: string;
 }
 
 export default function Home() {
-  const [note, setNote] = useState('');
-  const [password, setPassword] = useState('');
-  const [notes, setNotes] = useState<Note[]>([]); // 불러온 메모 리스트
-  const [status, setStatus] = useState('');
+  const [view, setView] = useState<'login' | 'signup' | 'dashboard'>('login');
   
-  // 조회용 상태
-  const [decryptPass, setDecryptPass] = useState('');
-  const [decryptedContent, setDecryptedContent] = useState<{ [key: number]: string }>({});
+  // 입력 상태
+  const [inputId, setInputId] = useState('');
+  const [inputPw, setInputPw] = useState('');
+  const [noteInput, setNoteInput] = useState('');
 
-  // 1. 초기 로딩 (저장된 메모들 가져오기)
-  const fetchNotes = async () => {
-    try {
-      const res = await fetch('http://54.180.32.224:8000/notes');
-      const data = await res.json();
-      setNotes(data); // 최신순 정렬은 백엔드나 여기서 처리 가능
-    } catch (err) {
-      console.error('메모 로딩 실패:', err);
-    }
+  // ★ 보안 세션 상태 (토큰 & 키) ★
+  const [accessToken, setAccessToken] = useState(''); // 서버 통행증 (JWT)
+  const [encryptionKey, setEncryptionKey] = useState(''); // 데이터 해독키 (로컬 전용)
+  const [currentUser, setCurrentUser] = useState('');
+  
+  const [decryptedNotes, setDecryptedNotes] = useState<string[]>([]);
+
+  // 키 파생 함수
+  const deriveKeys = (password: string) => {
+    return {
+      authHash: CryptoJS.SHA256(password + "AUTH_SALT").toString(),
+      encKey: CryptoJS.SHA256(password + "DATA_SALT").toString()
+    };
   };
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
+  // 1. 회원가입
+  const handleSignup = async () => {
+    if (!inputId || !inputPw) return;
+    const { authHash } = deriveKeys(inputPw);
 
-  // 2. 암호화 및 저장
-  const handleSave = async () => {
-    if (!note || !password) return alert('내용과 비밀번호를 입력하세요.');
-
-    const encrypted = CryptoJS.AES.encrypt(note, password).toString();
-    const passwordHash = CryptoJS.SHA256(password).toString();
-
-    const response = await fetch('http://54.180.32.224:8000/notes', {
+    const res = await fetch('http://54.180.32.224:8000/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: encrypted, password_hash: passwordHash }),
+      body: JSON.stringify({ user_id: inputId, password_hash: authHash })
     });
 
-    if (response.ok) {
-      setStatus('✅ 안전하게 암호화되어 클라우드에 전송되었습니다.');
-      setNote('');
-      setPassword('');
-      fetchNotes(); // 리스트 갱신
+    if (res.ok) { alert('가입 성공!'); setView('login'); }
+    else alert('가입 실패');
+  };
+
+  // 2. 로그인 (토큰 받아오기)
+  const handleLogin = async () => {
+    if (!inputId || !inputPw) return;
+    const { authHash, encKey } = deriveKeys(inputPw);
+
+    const res = await fetch('http://54.180.32.224:8000/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: inputId, password_hash: authHash })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setAccessToken(data.access_token); // ★ 토큰 저장
+      setEncryptionKey(encKey);          // ★ 키 저장
+      setCurrentUser(inputId);
+      setView('dashboard');
+      fetchNotes(data.access_token, encKey); // 데이터 로딩
     } else {
-      setStatus('❌ 저장 실패');
+      alert('로그인 실패');
     }
   };
 
-  // 3. 복호화 (내용 확인)
-  const handleDecrypt = (index: number, encryptedContent: string, correctHash: string) => {
-    const inputPass = prompt('이 메모를 열려면 비밀번호를 입력하세요:');
-    if (!inputPass) return;
-
-    // 1차 검증: 비밀번호 해시가 서버와 일치하는지?
-    if (CryptoJS.SHA256(inputPass).toString() !== correctHash) {
-      alert('⛔ 비밀번호가 틀렸습니다! (복호화 불가)');
-      return;
-    }
-
-    try {
-      // 핵심: 복호화 시도
-      const bytes = CryptoJS.AES.decrypt(encryptedContent, inputPass);
-      const originalText = bytes.toString(CryptoJS.enc.Utf8);
-
-      if (originalText) {
-        // 성공 시 해당 인덱스의 내용만 보여줌
-        setDecryptedContent({ ...decryptedContent, [index]: originalText });
-      } else {
-        alert('복호화 실패: 데이터가 손상되었거나 키가 다릅니다.');
-      }
-    } catch (e) {
-      alert('복호화 오류 발생');
+  // 3. 노트 불러오기 (헤더에 토큰 실어 보내기)
+  const fetchNotes = async (token: string, key: string) => {
+    const res = await fetch('http://54.180.32.224:8000/notes', {
+      headers: { 'Authorization': `Bearer ${token}` } // ★ 신분증 제시
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      // 자동 복호화
+      const decrypted = data.map((n: any) => {
+        try {
+          const bytes = CryptoJS.AES.decrypt(n.content, key);
+          return bytes.toString(CryptoJS.enc.Utf8) || '(복호화 오류)';
+        } catch { return '(데이터 손상)'; }
+      });
+      setDecryptedNotes(decrypted);
     }
   };
+
+  // 4. 저장 (헤더에 토큰 실어 보내기)
+  const handleSave = async () => {
+    if (!noteInput) return;
+    const encrypted = CryptoJS.AES.encrypt(noteInput, encryptionKey).toString();
+
+    await fetch('http://54.180.32.224:8000/notes', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}` // ★ 신분증 제시
+      },
+      body: JSON.stringify({ content: encrypted })
+    });
+
+    setNoteInput('');
+    fetchNotes(accessToken, encryptionKey);
+  };
+
+  const handleLogout = () => {
+    setAccessToken(''); setEncryptionKey(''); setCurrentUser('');
+    setInputId(''); setInputPw(''); setDecryptedNotes([]);
+    setView('login');
+  };
+
+  // --- [간소화된 UI] ---
+  const containerStyle = { minHeight: '100vh', backgroundColor: '#121212', color: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif' };
+  const boxStyle = { width: '100%', maxWidth: '400px', padding: '30px', backgroundColor: '#1e1e1e', borderRadius: '12px', boxShadow: '0 8px 16px rgba(0,0,0,0.3)' };
+  const inputSt = { width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#2c2c2c', color: 'white' };
+  const btnSt = { width: '100%', padding: '12px', borderRadius: '6px', border: 'none', backgroundColor: '#1976d2', color: 'white', fontWeight: 'bold' as 'bold', cursor: 'pointer' };
+
+  if (view !== 'dashboard') {
+    return (
+      <div style={containerStyle}>
+        <div style={boxStyle}>
+          <h2 style={{textAlign:'center', marginBottom:'20px'}}>🔐 Cloud Vault (JWT)</h2>
+          <input placeholder="ID" value={inputId} onChange={e=>setInputId(e.target.value)} style={inputSt}/>
+          <input type="password" placeholder="PW" value={inputPw} onChange={e=>setInputPw(e.target.value)} style={inputSt}/>
+          {view==='login' ? 
+            <><button onClick={handleLogin} style={btnSt}>로그인</button><p onClick={()=>setView('signup')} style={{textAlign:'center', marginTop:'15px', color:'#64b5f6', cursor:'pointer'}}>회원가입</p></> : 
+            <><button onClick={handleSignup} style={{...btnSt, backgroundColor:'#388e3c'}}>회원가입 완료</button><p onClick={()=>setView('login')} style={{textAlign:'center', marginTop:'15px', color:'#64b5f6', cursor:'pointer'}}>돌아가기</p></>
+          }
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main style={{ backgroundColor: '#1a1a1a', minHeight: '100vh', color: 'white', fontFamily: 'sans-serif', padding: '40px' }}>
-      
-      {/* 헤더 섹션 */}
-      <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🔐 Cloud Vault</h1>
-        <p style={{ color: '#888' }}>AWS도 훔쳐볼 수 없는 Zero-Knowledge 저장소</p>
-      </div>
-
-      {/* 입력 섹션 (카드 UI) */}
-      <div style={{ maxWidth: '800px', margin: '0 auto', backgroundColor: '#2d2d2d', padding: '30px', borderRadius: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
-        <h3 style={{ marginBottom: '15px', color: '#4CAF50' }}>새 보안 메모 작성</h3>
-        <textarea
-          placeholder="여기에 비밀 내용을 입력하세요..."
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={3}
-          style={{ width: '100%', padding: '15px', borderRadius: '8px', border: 'none', backgroundColor: '#404040', color: 'white', fontSize: '16px', marginBottom: '15px' }}
-        />
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input
-            type="password"
-            placeholder="잠금 비밀번호"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ flex: 1, padding: '15px', borderRadius: '8px', border: 'none', backgroundColor: '#404040', color: 'white' }}
-          />
-          <button 
-            onClick={handleSave}
-            style={{ flex: 1, backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}
-          >
-            🔒 암호화 저장
-          </button>
+    <div style={{...containerStyle, alignItems:'flex-start', paddingTop:'50px'}}>
+      <div style={{width:'100%', maxWidth:'600px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+          <h3>👋 {currentUser}님 (보안접속 중)</h3>
+          <button onClick={handleLogout} style={{...btnSt, width:'auto', backgroundColor:'#d32f2f', padding:'5px 15px'}}>로그아웃</button>
         </div>
-        {status && <p style={{ marginTop: '15px', color: '#0070f3', fontSize: '14px' }}>{status}</p>}
-      </div>
-
-      {/* 리스트 섹션 (격자 레이아웃) */}
-      <div style={{ maxWidth: '800px', margin: '50px auto 0' }}>
-        <h3 style={{ borderBottom: '1px solid #444', paddingBottom: '10px', marginBottom: '20px' }}>📦 저장된 금고 목록 ({notes.length}개)</h3>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
-          {notes.map((item, idx) => (
-            <div key={idx} style={{ backgroundColor: '#2d2d2d', padding: '20px', borderRadius: '10px', border: '1px solid #444', position: 'relative' }}>
-              
-              {/* 복호화 성공 여부에 따라 다른 화면 표시 */}
-              {decryptedContent[idx] ? (
-                <div style={{ animation: 'fadeIn 0.5s' }}>
-                  <span style={{ fontSize: '24px' }}>🔓</span>
-                  <p style={{ marginTop: '10px', fontSize: '18px', color: '#fff', wordBreak: 'break-all' }}>
-                    {decryptedContent[idx]}
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#4CAF50', marginTop: '10px' }}>복호화 완료됨</p>
-                </div>
-              ) : (
-                <div>
-                  <span style={{ fontSize: '24px' }}>🔒</span>
-                  <p style={{ marginTop: '10px', fontFamily: 'monospace', color: '#888', fontSize: '12px', wordBreak: 'break-all', height: '60px', overflow: 'hidden' }}>
-                    {item.content.substring(0, 50)}...
-                  </p>
-                  <button
-                    onClick={() => handleDecrypt(idx, item.content, item.password_hash)}
-                    style={{ width: '100%', marginTop: '15px', padding: '10px', backgroundColor: '#444', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-                  >
-                    내용 확인하기
-                  </button>
-                </div>
-              )}
-
-            </div>
+        <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
+          <input placeholder="비밀 메모 입력..." value={noteInput} onChange={e=>setNoteInput(e.target.value)} style={{...inputSt, marginBottom:0}} onKeyDown={e=>e.key==='Enter'&&handleSave()}/>
+          <button onClick={handleSave} style={{...btnSt, width:'80px'}}>저장</button>
+        </div>
+        <div style={{display:'grid', gap:'10px'}}>
+          {decryptedNotes.map((n, i) => (
+            <div key={i} style={{padding:'15px', backgroundColor:'#1e1e1e', borderRadius:'8px', border:'1px solid #333'}}>{n}</div>
           ))}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
