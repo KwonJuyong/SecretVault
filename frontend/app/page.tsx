@@ -6,15 +6,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Menu, Plus, Save, ChevronLeft, FileText, LogOut } from 'lucide-react';
+import { Menu, Plus, Save, ChevronLeft, FileText, LogOut, ShieldCheck, Lock } from 'lucide-react';
 
 // --- [타입 정의] ---
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-}
-
 interface DecryptedNote {
   id: number;
   title: string;
@@ -48,47 +42,53 @@ export default function Home() {
 
   // --- [API 통신] ---
   const handleAuth = async (type: 'login' | 'signup') => {
-    if (!inputId || !inputPw) return alert('ID/PW 입력 필요');
+    if (!inputId || !inputPw) return alert('아이디와 비밀번호를 입력해주세요.');
     const { authHash, encKey } = deriveKeys(inputPw);
     
-    // Nginx를 통해 /api 경로로 호출
-    const res = await fetch(`/api/${type}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: inputId, password_hash: authHash })
-    });
+    try {
+      const res = await fetch(`/api/${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: inputId, password_hash: authHash })
+      });
 
-    if (res.ok) {
-      if (type === 'signup') {
-        alert('가입 성공! 로그인하세요.');
+      if (res.ok) {
+        if (type === 'signup') {
+          alert('가입이 완료되었습니다. 로그인해주세요.');
+          setView('login');
+        } else {
+          const data = await res.json();
+          setAccessToken(data.access_token);
+          setEncKey(encKey);
+          setView('app');
+          fetchNotes(data.access_token, encKey);
+        }
       } else {
-        const data = await res.json();
-        setAccessToken(data.access_token);
-        setEncKey(encKey);
-        setView('app');
-        fetchNotes(data.access_token, encKey);
+        alert('인증 실패: 아이디나 비밀번호를 확인하세요.');
       }
-    } else {
-      alert('실패 (ID/PW 확인)');
+    } catch (e) {
+      alert('서버 연결 오류');
     }
   };
 
   const fetchNotes = async (token: string, key: string) => {
-    const res = await fetch('/api/notes', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    
-    const decrypted = data.map((n: any) => {
-      try {
-        return {
-          id: n.id,
-          title: CryptoJS.AES.decrypt(n.title, key).toString(CryptoJS.enc.Utf8) || '(제목 없음)',
-          content: CryptoJS.AES.decrypt(n.content, key).toString(CryptoJS.enc.Utf8) || ''
-        };
-      } catch { return { id: n.id, title: '🔒 손상된 데이터', content: '' }; }
-    });
-    setNotes(decrypted);
+    try {
+      const res = await fetch('/api/notes', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      const decrypted = data.map((n: any) => {
+        try {
+          return {
+            id: n.id,
+            title: CryptoJS.AES.decrypt(n.title, key).toString(CryptoJS.enc.Utf8) || '(제목 없음)',
+            content: CryptoJS.AES.decrypt(n.content, key).toString(CryptoJS.enc.Utf8) || ''
+          };
+        } catch { return { id: n.id, title: '🔒 손상된 데이터', content: '' }; }
+      });
+      setNotes(decrypted);
+    } catch (e) { console.error(e); }
   };
 
   const handleSave = async () => {
@@ -107,7 +107,6 @@ export default function Home() {
     });
 
     await fetchNotes(accessToken, encKey);
-    // 저장 후 입력창 유지 (연속 작업 가능하도록)
   };
 
   const selectNote = (note: DecryptedNote) => {
@@ -122,67 +121,80 @@ export default function Home() {
     setEditContent('');
   };
 
-  // --- [로그인 화면 (디자인 리뉴얼)] ---
+  // --- [로그인 화면 (Ultimate Dark Design)] ---
   if (view === 'login') return (
     <div style={{
       height: '100vh', 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center', 
-      background: '#1e1e1e', // 배경: 고급스러운 다크 그레이
-      color: '#e0e0e0',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+      background: '#0a0a0a', // 더 깊은 블랙 배경
+      color: '#fff',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
     }}>
       <div style={{
-        width: '400px', 
-        padding: '50px 40px', 
-        background: '#252525', // 카드: 배경보다 살짝 밝은 그레이
-        borderRadius: '16px', 
-        boxShadow: '0 20px 50px rgba(0,0,0,0.5)', // 깊은 그림자 효과
+        width: '100%',
+        maxWidth: '400px',
+        padding: '60px 40px', 
+        background: '#111', // 카드 배경을 아주 어둡게
+        border: '1px solid #333', // 경계선을 명확하게 (회색)
+        borderRadius: '12px', 
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center'
+        alignItems: 'center',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.7)' // 그림자 강화
       }}>
-        {/* 로고 & 타이틀 */}
-        <div style={{ marginBottom: '30px', textAlign: 'center' }}>
-          <img src="/logo.png" alt="Logo" style={{ width: '80px', height: '80px', marginBottom: '15px' }} />
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#fff' }}>Secret Vault</h1>
-          <p style={{ margin: '10px 0 0', color: '#888', fontSize: '14px' }}>Zero-Knowledge Cloud Storage</p>
+        {/* 로고 영역 */}
+        <div style={{ position: 'relative', marginBottom: '40px' }}>
+          <div style={{ 
+            position: 'absolute', inset: 0, background: 'white', opacity: 0.1, filter: 'blur(20px)', borderRadius: '50%' 
+          }} /> {/* 로고 뒤 은은한 광원 효과 */}
+          <img src="/logo.png" alt="Vault" style={{ width: '80px', height: '80px', position: 'relative', zIndex: 1, dropShadow: '0 4px 6px black' }} />
         </div>
+
+        <h1 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 10px', letterSpacing: '-0.5px' }}>Secret Vault</h1>
+        <p style={{ margin: '0 0 40px', color: '#888', fontSize: '15px' }}>Zero-Knowledge. End-to-End Encrypted.</p>
 
         {/* 입력 폼 */}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <input 
-            placeholder="User ID" 
-            value={inputId} 
-            onChange={e => setInputId(e.target.value)} 
-            style={inputSt} 
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={inputPw} 
-            onChange={e => setInputPw(e.target.value)} 
-            style={inputSt} 
-            onKeyDown={(e) => e.key === 'Enter' && handleAuth('login')}
-          />
+          <div style={{position: 'relative'}}>
+            <span style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#666'}}>ID</span>
+            <input 
+              placeholder="Username" 
+              value={inputId} 
+              onChange={e => setInputId(e.target.value)} 
+              style={modernInputSt} 
+            />
+          </div>
+          
+          <div style={{position: 'relative'}}>
+            <span style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#666'}}>PW</span>
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={inputPw} 
+              onChange={e => setInputPw(e.target.value)} 
+              style={modernInputSt} 
+              onKeyDown={(e) => e.key === 'Enter' && handleAuth('login')}
+            />
+          </div>
           
           <button 
             onClick={() => handleAuth('login')} 
-            style={btnSt}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            style={modernBtnSt}
           >
             로그인
           </button>
         </div>
 
-        {/* 하단 링크 */}
-        <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
+        {/* 하단 구분선 및 가입 */}
+        <div style={{ width: '100%', height: '1px', background: '#333', margin: '30px 0' }}></div>
+
+        <div style={{ fontSize: '14px', color: '#666' }}>
           계정이 없으신가요? 
           <span 
             onClick={() => handleAuth('signup')} 
-            style={{ color: '#4dabf7', cursor: 'pointer', marginLeft: '8px', fontWeight: '500' }}
+            style={{ color: '#fff', cursor: 'pointer', marginLeft: '10px', textDecoration: 'underline', fontWeight: '600' }}
           >
             회원가입
           </span>
@@ -191,20 +203,20 @@ export default function Home() {
     </div>
   );
 
-  // --- [메인 앱 (Notion Style)] ---
+  // --- [메인 앱] ---
   return (
-    <div style={{display:'flex', height:'100vh', background:'#1e1e1e', color:'#e0e0e0', fontFamily:'sans-serif'}}>
+    <div style={{display:'flex', height:'100vh', background:'#0a0a0a', color:'#e0e0e0', fontFamily:'sans-serif'}}>
       
-      {/* 1. 사이드바 (Left Panel) */}
+      {/* 사이드바 */}
       <div style={{
         width: sidebarOpen ? '260px' : '0px', 
-        background:'#252525', // 사이드바 색상 변경
+        background:'#111', 
         borderRight:'1px solid #333', 
-        transition:'width 0.3s', overflow:'hidden', display:'flex', flexDirection:'column'
+        transition:'width 0.3s ease', overflow:'hidden', display:'flex', flexDirection:'column'
       }}>
         <div style={{padding:'20px', borderBottom:'1px solid #333', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-          <div style={{display:'flex', alignItems:'center', gap:'8px', fontWeight:'bold', color:'white'}}>
-            <img src="/logo.png" style={{width:'20px', height:'20px'}} />
+          <div style={{display:'flex', alignItems:'center', gap:'10px', fontWeight:'bold', color:'white'}}>
+            <img src="/logo.png" style={{width:'20px', opacity: 0.8}} />
             <span>내 금고</span>
           </div>
           <Plus size={20} style={{cursor:'pointer', color:'#888'}} onClick={createNewNote}/>
@@ -214,10 +226,10 @@ export default function Home() {
           {notes.map(note => (
             <div key={note.id} onClick={()=>selectNote(note)} 
               style={{
-                padding:'10px', borderRadius:'6px', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px',
-                background: activeNoteId === note.id ? '#3a3a3a' : 'transparent', 
-                color: activeNoteId === note.id ? 'white' : '#bbb',
-                marginBottom:'5px', transition: 'background 0.2s'
+                padding:'12px', borderRadius:'6px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px',
+                background: activeNoteId === note.id ? '#222' : 'transparent', 
+                color: activeNoteId === note.id ? 'white' : '#888',
+                marginBottom:'4px', transition: 'all 0.2s', border: activeNoteId === note.id ? '1px solid #333' : '1px solid transparent'
               }}>
               <FileText size={16} />
               <span style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', fontSize:'14px'}}>{note.title}</span>
@@ -226,98 +238,88 @@ export default function Home() {
         </div>
 
         <div style={{padding:'15px', borderTop:'1px solid #333'}}>
-          <div onClick={()=>setView('login')} style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', color:'#ff6b6b', fontSize:'14px'}}>
+          <div onClick={()=>setView('login')} style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', color:'#666', fontSize:'14px', paddingLeft: '5px'}}>
             <LogOut size={16}/> <span>로그아웃</span>
           </div>
         </div>
       </div>
 
-      {/* 2. 메인 컨텐츠 (Right Panel) */}
-      <div style={{flex:1, display:'flex', flexDirection:'column', height:'100vh', background:'#1e1e1e'}}>
+      {/* 메인 컨텐츠 */}
+      <div style={{flex:1, display:'flex', flexDirection:'column', height:'100vh', background:'#0a0a0a'}}>
         
-        {/* 상단 툴바 */}
+        {/* 툴바 */}
         <div style={{height:'50px', display:'flex', alignItems:'center', padding:'0 20px', borderBottom:'1px solid #333'}}>
-          <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{background:'none', border:'none', color:'#888', cursor:'pointer'}}>
+          <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{background:'none', border:'none', color:'#666', cursor:'pointer'}}>
             {sidebarOpen ? <ChevronLeft/> : <Menu/>}
           </button>
           <div style={{flex:1}}/>
-          <button onClick={handleSave} style={{display:'flex', alignItems:'center', gap:'6px', background:'#228be6', color:'white', border:'none', padding:'8px 16px', borderRadius:'6px', cursor:'pointer', fontSize:'14px', fontWeight:'600'}}>
+          <button onClick={handleSave} style={{display:'flex', alignItems:'center', gap:'6px', background:'#fff', color:'black', border:'none', padding:'8px 16px', borderRadius:'6px', cursor:'pointer', fontSize:'14px', fontWeight:'700'}}>
             <Save size={16}/> 저장
           </button>
         </div>
 
-        {/* 에디터 영역 (Split View: 입력 | 프리뷰) */}
+        {/* 에디터 */}
         <div style={{flex:1, display:'flex', overflow:'hidden'}}>
-          
-          {/* 입력창 (Markdown Source) */}
           <div style={{flex:1, padding:'40px', borderRight:'1px solid #333', overflowY:'auto'}}>
             <input 
               placeholder="제목 없음" 
               value={editTitle} onChange={e=>setEditTitle(e.target.value)}
-              style={{width:'100%', background:'transparent', border:'none', fontSize:'32px', fontWeight:'700', color:'white', marginBottom:'30px', outline:'none'}}
+              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none', letterSpacing: '-0.5px'}}
             />
             <textarea 
-              placeholder="여기에 내용을 입력하세요... (Markdown & LaTeX 지원)" 
+              placeholder="내용을 입력하세요..." 
               value={editContent} onChange={e=>setEditContent(e.target.value)}
               style={{width:'100%', height:'calc(100% - 100px)', background:'transparent', border:'none', color:'#ccc', fontSize:'16px', lineHeight:'1.7', resize:'none', outline:'none', fontFamily:'monospace'}}
             />
           </div>
 
-          {/* 프리뷰 (Rendered View) */}
-          <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#1e1e1e'}}>
+          <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#0a0a0a'}}>
             <div className="markdown-body" style={{color:'#ddd', lineHeight:'1.7'}}>
-              {/* 제목 프리뷰 */}
-              <h1 style={{fontSize:'32px', borderBottom:'1px solid #333', paddingBottom:'20px', marginBottom:'30px', fontWeight:'700'}}>{editTitle || '제목 없음'}</h1>
-              
-              {/* 본문 프리뷰 (Markdown + Math) */}
+              <h1 style={{fontSize:'36px', fontWeight:'800', borderBottom:'1px solid #333', paddingBottom:'20px', marginBottom:'30px'}}>{editTitle || '제목 없음'}</h1>
               <ReactMarkdown 
                 remarkPlugins={[remarkMath]} 
                 rehypePlugins={[rehypeKatex]}
                 components={{
-                  h1: ({node, ...props}) => <h1 style={{fontSize:'2em', borderBottom:'1px solid #444', paddingBottom:'0.3em', marginTop:'1em'}} {...props} />,
-                  h2: ({node, ...props}) => <h2 style={{fontSize:'1.5em', borderBottom:'1px solid #444', paddingBottom:'0.3em', marginTop:'1em'}} {...props} />,
-                  p: ({node, ...props}) => <p style={{marginBottom:'1em'}} {...props} />,
-                  code: ({node, ...props}) => <code style={{background:'#333', padding:'2px 5px', borderRadius:'4px', fontFamily:'monospace', color:'#ff8787'}} {...props} />,
-                  blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'4px solid #4dabf7', paddingLeft:'15px', color:'#aaa', margin:'1em 0'}} {...props} />,
-                  ul: ({node, ...props}) => <ul style={{paddingLeft:'20px', marginBottom:'1em'}} {...props} />,
-                  ol: ({node, ...props}) => <ol style={{paddingLeft:'20px', marginBottom:'1em'}} {...props} />,
+                  h1: ({node, ...props}) => <h1 style={{fontSize:'2em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
+                  h2: ({node, ...props}) => <h2 style={{fontSize:'1.5em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
+                  code: ({node, ...props}) => <code style={{background:'#222', padding:'2px 6px', borderRadius:'4px', color:'#fff', fontFamily:'monospace'}} {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'3px solid #fff', paddingLeft:'20px', color:'#888', margin:'20px 0'}} {...props} />,
                 }}
               >
-                {editContent || '*미리보기가 여기에 표시됩니다.*'}
+                {editContent || '*내용이 없습니다.*'}
               </ReactMarkdown>
             </div>
           </div>
-
         </div>
       </div>
     </div>
   );
 }
 
-// 스타일 객체
-const inputSt = {
+// --- [스타일 객체 (High-End Design)] ---
+const modernInputSt = {
   display: 'block', 
   width: '100%', 
-  padding: '14px', 
-  marginBottom: '12px', 
-  background: '#333', 
-  border: '1px solid #444', 
+  padding: '16px 16px 16px 50px', // 라벨 공간 확보
+  background: '#0a0a0a', 
+  border: '1px solid #333', 
   color: 'white', 
   borderRadius: '8px',
   fontSize: '16px',
   outline: 'none',
-  transition: 'border-color 0.2s'
+  transition: 'all 0.2s ease',
+  fontFamily: 'monospace'
 };
 
-const btnSt = {
+const modernBtnSt = {
   width: '100%', 
-  padding: '14px', 
-  background: '#228be6', 
-  color: 'white', 
+  padding: '16px', 
+  background: '#ffffff', // 화이트 버튼 (고대비)
+  color: '#000000', // 블랙 텍스트
   border: 'none', 
   borderRadius: '8px', 
   cursor: 'pointer', 
-  fontWeight: '600', 
+  fontWeight: '800', 
   fontSize: '16px',
   marginTop: '10px',
   transition: 'transform 0.1s'
