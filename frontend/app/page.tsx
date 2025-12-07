@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Menu, Plus, Save, ChevronLeft, FileText, LogOut, ShieldCheck, Lock } from 'lucide-react';
+import { Menu, Plus, Save, ChevronLeft, FileText, LogOut } from 'lucide-react';
 
 // --- [타입 정의] ---
 interface DecryptedNote {
@@ -20,17 +20,13 @@ export default function Home() {
   const [view, setView] = useState<'login' | 'app'>('login');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  // 인증 및 키
   const [inputId, setInputId] = useState('');
   const [inputPw, setInputPw] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [encKey, setEncKey] = useState('');
 
-  // 데이터
   const [notes, setNotes] = useState<DecryptedNote[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
-  
-  // 에디터 입력값
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
 
@@ -54,7 +50,7 @@ export default function Home() {
 
       if (res.ok) {
         if (type === 'signup') {
-          alert('가입이 완료되었습니다. 로그인해주세요.');
+          alert('가입 완료! 로그인해주세요.');
           setView('login');
         } else {
           const data = await res.json();
@@ -64,11 +60,9 @@ export default function Home() {
           fetchNotes(data.access_token, encKey);
         }
       } else {
-        alert('인증 실패: 아이디나 비밀번호를 확인하세요.');
+        alert('인증 실패');
       }
-    } catch (e) {
-      alert('서버 연결 오류');
-    }
+    } catch (e) { alert('서버 오류'); }
   };
 
   const fetchNotes = async (token: string, key: string) => {
@@ -93,19 +87,14 @@ export default function Home() {
 
   const handleSave = async () => {
     if (!editTitle) return alert('제목을 입력하세요');
-    
     const encTitle = CryptoJS.AES.encrypt(editTitle, encKey).toString();
     const encContent = CryptoJS.AES.encrypt(editContent, encKey).toString();
 
     await fetch('/api/notes', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
       body: JSON.stringify({ title: encTitle, content: encContent })
     });
-
     await fetchNotes(accessToken, encKey);
   };
 
@@ -121,44 +110,50 @@ export default function Home() {
     setEditContent('');
   };
 
-  // --- [로그인 화면 (Ultimate Dark Design)] ---
+  // --- [로그인 화면 (High Contrast Fix)] ---
   if (view === 'login') return (
     <div style={{
       height: '100vh', 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center', 
-      background: '#0a0a0a', // 더 깊은 블랙 배경
+      background: '#050505', // 아주 깊은 블랙 (배경)
       color: '#fff',
       fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '400px',
-        padding: '60px 40px', 
-        background: '#111', // 카드 배경을 아주 어둡게
-        border: '1px solid #333', // 경계선을 명확하게 (회색)
-        borderRadius: '12px', 
+        maxWidth: '420px',
+        padding: '50px 40px', 
+        background: '#161616', // 카드: 배경보다 명확히 밝은 톤
+        border: '1px solid #333', // 테두리를 확실하게 줘서 구분감 형성
+        borderRadius: '16px', 
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.7)' // 그림자 강화
+        boxShadow: '0 0 60px rgba(255, 255, 255, 0.05)' // 은은한 흰색 글로우 효과
       }}>
-        {/* 로고 영역 */}
-        <div style={{ position: 'relative', marginBottom: '40px' }}>
-          <div style={{ 
-            position: 'absolute', inset: 0, background: 'white', opacity: 0.1, filter: 'blur(20px)', borderRadius: '50%' 
-          }} /> {/* 로고 뒤 은은한 광원 효과 */}
-          <img src="/logo.png" alt="Vault" style={{ width: '80px', height: '80px', position: 'relative', zIndex: 1, dropShadow: '0 4px 6px black' }} />
+        {/* 로고 영역 (색상 반전 필터 적용) */}
+        <div style={{ marginBottom: '30px', position: 'relative' }}>
+          <img 
+            src="/logo.png" 
+            alt="Vault Logo" 
+            style={{ 
+              width: '90px', 
+              height: '90px', 
+              filter: 'invert(1) brightness(2)', // ★ 핵심: 검은 아이콘을 강제로 하얗게 만듦!
+              opacity: 0.9 
+            }} 
+          />
         </div>
 
-        <h1 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 10px', letterSpacing: '-0.5px' }}>Secret Vault</h1>
-        <p style={{ margin: '0 0 40px', color: '#888', fontSize: '15px' }}>Zero-Knowledge. End-to-End Encrypted.</p>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', margin: '0 0 10px', letterSpacing: '-1px' }}>Secret Vault</h1>
+        <p style={{ margin: '0 0 40px', color: '#888', fontSize: '15px' }}>Zero-Knowledge Security Storage</p>
 
         {/* 입력 폼 */}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div style={{position: 'relative'}}>
-            <span style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#666'}}>ID</span>
+            <span style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize:'14px', fontWeight:'600'}}>ID</span>
             <input 
               placeholder="Username" 
               value={inputId} 
@@ -168,7 +163,7 @@ export default function Home() {
           </div>
           
           <div style={{position: 'relative'}}>
-            <span style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#666'}}>PW</span>
+            <span style={{position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize:'14px', fontWeight:'600'}}>PW</span>
             <input 
               type="password" 
               placeholder="Password" 
@@ -183,20 +178,18 @@ export default function Home() {
             onClick={() => handleAuth('login')} 
             style={modernBtnSt}
           >
-            로그인
+            Enter Vault
           </button>
         </div>
 
-        {/* 하단 구분선 및 가입 */}
-        <div style={{ width: '100%', height: '1px', background: '#333', margin: '30px 0' }}></div>
-
-        <div style={{ fontSize: '14px', color: '#666' }}>
-          계정이 없으신가요? 
+        {/* 하단 구분선 */}
+        <div style={{ marginTop: '30px', fontSize: '14px', color: '#666' }}>
+          New here? 
           <span 
             onClick={() => handleAuth('signup')} 
-            style={{ color: '#fff', cursor: 'pointer', marginLeft: '10px', textDecoration: 'underline', fontWeight: '600' }}
+            style={{ color: '#fff', cursor: 'pointer', marginLeft: '8px', textDecoration: 'underline', fontWeight: 'bold' }}
           >
-            회원가입
+            Create Account
           </span>
         </div>
       </div>
@@ -216,7 +209,10 @@ export default function Home() {
       }}>
         <div style={{padding:'20px', borderBottom:'1px solid #333', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
           <div style={{display:'flex', alignItems:'center', gap:'10px', fontWeight:'bold', color:'white'}}>
-            <img src="/logo.png" style={{width:'20px', opacity: 0.8}} />
+            <img 
+              src="/logo.png" 
+              style={{ width:'24px', filter: 'invert(1)' }} // ★ 사이드바 아이콘도 하얗게!
+            />
             <span>내 금고</span>
           </div>
           <Plus size={20} style={{cursor:'pointer', color:'#888'}} onClick={createNewNote}/>
@@ -246,8 +242,6 @@ export default function Home() {
 
       {/* 메인 컨텐츠 */}
       <div style={{flex:1, display:'flex', flexDirection:'column', height:'100vh', background:'#0a0a0a'}}>
-        
-        {/* 툴바 */}
         <div style={{height:'50px', display:'flex', alignItems:'center', padding:'0 20px', borderBottom:'1px solid #333'}}>
           <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{background:'none', border:'none', color:'#666', cursor:'pointer'}}>
             {sidebarOpen ? <ChevronLeft/> : <Menu/>}
@@ -258,7 +252,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 에디터 */}
         <div style={{flex:1, display:'flex', overflow:'hidden'}}>
           <div style={{flex:1, padding:'40px', borderRight:'1px solid #333', overflowY:'auto'}}>
             <input 
@@ -296,31 +289,31 @@ export default function Home() {
   );
 }
 
-// --- [스타일 객체 (High-End Design)] ---
+// --- [스타일 객체 (Enhanced Contrast)] ---
 const modernInputSt = {
   display: 'block', 
   width: '100%', 
-  padding: '16px 16px 16px 50px', // 라벨 공간 확보
-  background: '#0a0a0a', 
-  border: '1px solid #333', 
+  padding: '16px 16px 16px 50px', 
+  background: '#0a0a0a', // 입력창은 배경보다 더 어둡게
+  border: '1px solid #444', // 경계선 밝기를 높여서 확실히 보이게
   color: 'white', 
   borderRadius: '8px',
   fontSize: '16px',
   outline: 'none',
-  transition: 'all 0.2s ease',
+  transition: 'border-color 0.2s ease',
   fontFamily: 'monospace'
 };
 
 const modernBtnSt = {
   width: '100%', 
   padding: '16px', 
-  background: '#ffffff', // 화이트 버튼 (고대비)
-  color: '#000000', // 블랙 텍스트
+  background: '#ffffff', 
+  color: '#000000', 
   border: 'none', 
   borderRadius: '8px', 
   cursor: 'pointer', 
   fontWeight: '800', 
   fontSize: '16px',
-  marginTop: '10px',
+  marginTop: '15px',
   transition: 'transform 0.1s'
 };
