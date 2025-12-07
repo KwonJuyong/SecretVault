@@ -29,12 +29,12 @@ export default function Home() {
       console.log('암호화됨:', encrypted);
 
       // 백엔드로 전송
-      const response = await fetch(`${apiUrl}/notes`, {
+      const response = await fetch('http://54.180.32.224:8000/notes', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: encrypted, // 암호문만 보냄
-          password_hash: CryptoJS.SHA256(password).toString() // 검증용 해시
+          content: encrypted,
+          password_hash: CryptoJS.SHA256(password).toString()
         }),
       });
 
