@@ -11,7 +11,7 @@ export default function Home() {
 
   // 환경변수에서 API 주소 가져오기
   useEffect(() => {
-    setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+    setApiUrl('http://54.180.32.224:8000'); 
   }, []);
 
   // 1. 암호화 및 저장 (Client-Side Encryption)
