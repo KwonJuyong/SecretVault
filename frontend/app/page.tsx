@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import CryptoJS from 'crypto-js';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
+import remarkBreaks from 'remark-breaks'; // ★ 줄바꿈 플러그인 추가
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Menu, Plus, ChevronLeft, FileText, LogOut, CheckCircle, Loader2, Trash2, User } from 'lucide-react';
@@ -18,14 +19,13 @@ export default function Home() {
   const [view, setView] = useState<'login' | 'app'>('login');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  // 프로필 드롭다운 상태
   const [profileOpen, setProfileOpen] = useState(false);
 
   const [inputId, setInputId] = useState('');
   const [inputPw, setInputPw] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [encKey, setEncKey] = useState('');
-  const [currentUserId, setCurrentUserId] = useState(''); // 현재 로그인한 ID 저장
+  const [currentUserId, setCurrentUserId] = useState('');
 
   const [notes, setNotes] = useState<DecryptedNote[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
@@ -58,7 +58,7 @@ export default function Home() {
           const data = await res.json();
           setAccessToken(data.access_token);
           setEncKey(encKey);
-          setCurrentUserId(inputId); // ID 저장
+          setCurrentUserId(inputId);
           setView('app');
           fetchNotes(data.access_token, encKey);
         }
@@ -115,9 +115,8 @@ export default function Home() {
     } catch (e) { setSaveStatus('error'); }
   };
 
-  // ★ 노트 삭제 기능
   const handleDeleteNote = async (e: React.MouseEvent, id: number) => {
-    e.stopPropagation(); // 클릭 시 노트 선택되는 것 방지
+    e.stopPropagation();
     if (!confirm('정말 이 금고를 영구 삭제하시겠습니까? (복구 불가)')) return;
 
     try {
@@ -127,9 +126,8 @@ export default function Home() {
       });
 
       if (res.ok) {
-        // 현재 보고 있던 글을 지웠으면 에디터 초기화
         if (activeNoteId === id) createNewNote();
-        fetchNotes(accessToken, encKey); // 목록 갱신
+        fetchNotes(accessToken, encKey);
       } else {
         alert('삭제 실패');
       }
@@ -194,7 +192,6 @@ export default function Home() {
         <div style={{flex:1, overflowY:'auto', padding:'10px'}}>
           {notes.map(note => (
             <div key={note.id} onClick={()=>selectNote(note)} 
-              className="note-item"
               style={{
                 padding:'12px', borderRadius:'6px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px',
                 background: activeNoteId === note.id ? '#222' : 'transparent', 
@@ -207,7 +204,6 @@ export default function Home() {
                 <span style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', fontSize:'14px'}}>{note.title}</span>
               </div>
               
-              {/* ★ 삭제 버튼 (휴지통) - 마우스 올리면 보임 */}
               <button 
                 onClick={(e) => handleDeleteNote(e, note.id)}
                 style={{background:'none', border:'none', color:'#555', cursor:'pointer', padding:'4px', display:'flex'}}
@@ -220,7 +216,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-        {/* 하단 여백 (로그아웃은 이제 상단으로 이동했으므로 삭제하거나 유지) */}
       </div>
 
       {/* 메인 컨텐츠 */}
@@ -232,14 +227,12 @@ export default function Home() {
           
           <div style={{flex:1}}/>
           
-          {/* 저장 상태 */}
           <div style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'13px', color:'#666', marginRight:'20px'}}>
             {saveStatus === 'saving' && <><Loader2 size={14} className="animate-spin" /> 저장 중...</>}
             {saveStatus === 'saved' && lastSavedTime && <><CheckCircle size={14} color="#4caf50" /> 저장됨</>}
             {saveStatus === 'error' && <span style={{color:'red'}}>저장 실패!</span>}
           </div>
 
-          {/* ★ 우측 상단 프로필 버튼 */}
           <div style={{position:'relative'}}>
             <button 
               onClick={() => setProfileOpen(!profileOpen)}
@@ -253,7 +246,6 @@ export default function Home() {
               <span>{currentUserId}</span>
             </button>
 
-            {/* 프로필 드롭다운 메뉴 */}
             {profileOpen && (
               <div style={{
                 position:'absolute', top:'45px', right:'0', width:'200px', 
@@ -282,28 +274,44 @@ export default function Home() {
         </div>
 
         <div style={{flex:1, display:'flex', overflow:'hidden'}}>
-          <div style={{flex:1, padding:'40px', borderRight:'1px solid #222', overflowY:'auto', height:'100%'}}>
+          {/* 입력창: height 100% 적용 */}
+          <div style={{flex:1, padding:'40px', borderRight:'1px solid #222', overflowY:'auto', height:'100%', display:'flex', flexDirection:'column'}}>
             <input 
               placeholder="제목 없음" 
               value={editTitle} 
               onChange={e=>setEditTitle(e.target.value)}
-              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none'}}
+              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none', flexShrink: 0}}
             />
+            {/* ★ 여기 높이 수정됨: flex 1 + height 100% */}
             <textarea 
               placeholder="내용을 입력하세요..." 
               value={editContent} onChange={e=>setEditContent(e.target.value)}
-              style={{width:'100%', minHeight:'500px', height:'auto', background:'transparent', border:'none', color:'#ccc', fontSize:'16px', lineHeight:'1.7', resize:'none', outline:'none', fontFamily:'monospace'}}
+              style={{
+                width:'100%', 
+                height:'100%', // 화면 끝까지 채움
+                flex: 1,       // 남은 공간 모두 차지
+                background:'transparent', border:'none', 
+                color:'#ccc', fontSize:'16px', lineHeight:'1.7', resize:'none', outline:'none', fontFamily:'monospace'
+              }}
             />
           </div>
+          
+          {/* 미리보기: remarkBreaks 적용 */}
           <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#0a0a0a', height:'100%'}}>
             <div className="markdown-body" style={{color:'#ddd', lineHeight:'1.7'}}>
               <h1 style={{fontSize:'36px', fontWeight:'800', borderBottom:'1px solid #333', paddingBottom:'20px', marginBottom:'30px'}}>{editTitle || '제목 없음'}</h1>
-              <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={{
+              <ReactMarkdown 
+                remarkPlugins={[remarkMath, remarkBreaks]} // ★ 여기서 줄바꿈 플러그인 사용
+                rehypePlugins={[rehypeKatex]} 
+                components={{
                   h1: ({node, ...props}) => <h1 style={{fontSize:'2em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
                   h2: ({node, ...props}) => <h2 style={{fontSize:'1.5em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
                   code: ({node, ...props}) => <code style={{background:'#222', padding:'2px 6px', borderRadius:'4px', color:'#ff8787', fontFamily:'monospace'}} {...props} />,
                   blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'3px solid #fff', paddingLeft:'20px', color:'#888', margin:'20px 0'}} {...props} />
-                }}>{editContent || '*내용이 없습니다.*'}</ReactMarkdown>
+                }}
+              >
+                {editContent || '*내용이 없습니다.*'}
+              </ReactMarkdown>
             </div>
           </div>
         </div>
