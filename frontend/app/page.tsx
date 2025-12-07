@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import CryptoJS from 'crypto-js';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
-import remarkBreaks from 'remark-breaks'; // ★ 줄바꿈 플러그인 추가
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Menu, Plus, ChevronLeft, FileText, LogOut, CheckCircle, Loader2, Trash2, User } from 'lucide-react';
@@ -274,34 +273,33 @@ export default function Home() {
         </div>
 
         <div style={{flex:1, display:'flex', overflow:'hidden'}}>
-          {/* 입력창: height 100% 적용 */}
+          {/* 입력창: 100% 높이 + flex 1 */}
           <div style={{flex:1, padding:'40px', borderRight:'1px solid #222', overflowY:'auto', height:'100%', display:'flex', flexDirection:'column'}}>
             <input 
               placeholder="제목 없음" 
               value={editTitle} 
               onChange={e=>setEditTitle(e.target.value)}
-              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none', flexShrink: 0}}
+              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none', flexShrink:0}}
             />
-            {/* ★ 여기 높이 수정됨: flex 1 + height 100% */}
             <textarea 
               placeholder="내용을 입력하세요..." 
               value={editContent} onChange={e=>setEditContent(e.target.value)}
               style={{
                 width:'100%', 
-                height:'100%', // 화면 끝까지 채움
-                flex: 1,       // 남은 공간 모두 차지
+                height:'100%', // 높이 꽉 채우기 (문제 1 해결)
+                flex: 1, 
                 background:'transparent', border:'none', 
                 color:'#ccc', fontSize:'16px', lineHeight:'1.7', resize:'none', outline:'none', fontFamily:'monospace'
               }}
             />
           </div>
           
-          {/* 미리보기: remarkBreaks 적용 */}
+          {/* 미리보기: 강제 줄바꿈 적용 */}
           <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#0a0a0a', height:'100%'}}>
             <div className="markdown-body" style={{color:'#ddd', lineHeight:'1.7'}}>
               <h1 style={{fontSize:'36px', fontWeight:'800', borderBottom:'1px solid #333', paddingBottom:'20px', marginBottom:'30px'}}>{editTitle || '제목 없음'}</h1>
               <ReactMarkdown 
-                remarkPlugins={[remarkMath, remarkBreaks]} // ★ 여기서 줄바꿈 플러그인 사용
+                remarkPlugins={[remarkMath]} 
                 rehypePlugins={[rehypeKatex]} 
                 components={{
                   h1: ({node, ...props}) => <h1 style={{fontSize:'2em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
@@ -310,7 +308,7 @@ export default function Home() {
                   blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'3px solid #fff', paddingLeft:'20px', color:'#888', margin:'20px 0'}} {...props} />
                 }}
               >
-                {/* 엔터(\n)를 '스페이스 두 개 + 엔터'로 치환하여 강제 줄바꿈 */}
+                {/* ★ 핵심: 엔터를 '스페이스 두 번 + 엔터'로 치환해서 강제 줄바꿈 (문제 2 해결) */}
                 {editContent.replace(/\n/g, '  \n') || '*내용이 없습니다.*'}
               </ReactMarkdown>
             </div>
