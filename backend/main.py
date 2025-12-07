@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from jose import JWTError, jwt
 
-# SQLAlchemy (DB 연결용)
+# SQLAlchemy
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
@@ -35,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. DB 테이블 모델
+# 2. DB 모델
 class UserTable(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -51,7 +51,7 @@ class NoteTable(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# 3. 데이터 통신 모델
+# 3. Pydantic 모델
 class UserAuth(BaseModel):
     user_id: str
     password_hash: str
@@ -64,7 +64,6 @@ class NoteResponse(BaseModel):
     id: int
     title: str
     content: str
-    
     class Config:
         from_attributes = True
 
@@ -72,7 +71,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-# 4. 유틸리티 함수
+# 4. 유틸리티
 def get_db():
     db = SessionLocal()
     try: yield db
@@ -97,7 +96,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 # 5. API 엔드포인트
 @app.get("/")
 def read_root():
-    return {"status": "Cloud Vault Backend v7.0 (Update Support)"}
+    return {"status": "Cloud Vault Backend v8.0 (Delete & Profile)"}
 
 @app.post("/signup")
 def signup(user: UserAuth, db: Session = Depends(get_db)):
@@ -115,28 +114,35 @@ def login(user: UserAuth, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid Auth")
     return {"access_token": create_access_token(data={"sub": user.user_id}), "token_type": "bearer"}
 
-# [저장 - Create] ★ 중요: 저장 후 생성된 ID를 반환하도록 수정
 @app.post("/notes", response_model=NoteResponse)
 def create_note(note: NoteInput, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
     new_note = NoteTable(user_id=user_id, title=note.title, content=note.content)
     db.add(new_note)
     db.commit()
-    db.refresh(new_note) # ID 발급 확인
+    db.refresh(new_note)
     return new_note
 
-# [수정 - Update] ★ 새로 추가된 기능 (덮어쓰기)
 @app.put("/notes/{note_id}", response_model=NoteResponse)
 def update_note(note_id: int, note: NoteInput, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    # 내 노트이면서 ID가 일치하는 것을 찾음
     db_note = db.query(NoteTable).filter(NoteTable.id == note_id, NoteTable.user_id == user_id).first()
-    if not db_note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    
+    if not db_note: raise HTTPException(status_code=404)
     db_note.title = note.title
     db_note.content = note.content
     db.commit()
     db.refresh(db_note)
     return db_note
+
+# ★ [삭제 기능 추가]
+@app.delete("/notes/{note_id}")
+def delete_note(note_id: int, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    # 내 ID로 쓴 글 중 해당 note_id를 찾아서 삭제
+    db_note = db.query(NoteTable).filter(NoteTable.id == note_id, NoteTable.user_id == user_id).first()
+    if not db_note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    db.delete(db_note)
+    db.commit()
+    return {"status": "deleted"}
 
 @app.get("/notes", response_model=List[NoteResponse])
 def get_notes(user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):

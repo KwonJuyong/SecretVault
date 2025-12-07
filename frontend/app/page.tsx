@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Menu, Plus, ChevronLeft, FileText, LogOut, CheckCircle, Loader2 } from 'lucide-react';
+import { Menu, Plus, ChevronLeft, FileText, LogOut, CheckCircle, Loader2, Trash2, User } from 'lucide-react';
 
 interface DecryptedNote {
   id: number;
@@ -18,19 +18,19 @@ export default function Home() {
   const [view, setView] = useState<'login' | 'app'>('login');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
+  // 프로필 드롭다운 상태
+  const [profileOpen, setProfileOpen] = useState(false);
+
   const [inputId, setInputId] = useState('');
   const [inputPw, setInputPw] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [encKey, setEncKey] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(''); // 현재 로그인한 ID 저장
 
   const [notes, setNotes] = useState<DecryptedNote[]>([]);
-  
-  // ★ 현재 작업 중인 노트의 ID (null이면 새 글, 숫자가 있으면 기존 글)
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
-  
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
-
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
 
@@ -58,6 +58,7 @@ export default function Home() {
           const data = await res.json();
           setAccessToken(data.access_token);
           setEncKey(encKey);
+          setCurrentUserId(inputId); // ID 저장
           setView('app');
           fetchNotes(data.access_token, encKey);
         }
@@ -71,7 +72,6 @@ export default function Home() {
     try {
       const res = await fetch('/api/notes', { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
-      
       const decrypted = data.map((n: any) => {
         try {
           return {
@@ -85,77 +85,87 @@ export default function Home() {
     } catch (e) { console.error(e); }
   };
 
-  // ★ 저장 로직 개선 (Create vs Update 분기 처리)
   const saveToCloud = async (id: number | null, title: string, content: string) => {
     if (!title.trim()) return;
     setSaveStatus('saving');
-
     try {
       const encTitle = CryptoJS.AES.encrypt(title, encKey).toString();
       const encContent = CryptoJS.AES.encrypt(content, encKey).toString();
-      
       let res;
       if (id === null) {
-        // 1. ID가 없으면 => 새로 만들기 (POST)
         res = await fetch('/api/notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
           body: JSON.stringify({ title: encTitle, content: encContent })
         });
       } else {
-        // 2. ID가 있으면 => 덮어쓰기 (PUT)
         res = await fetch(`/api/notes/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
           body: JSON.stringify({ title: encTitle, content: encContent })
         });
       }
-
       if (res.ok) {
-        const savedNote = await res.json(); // 서버가 저장된 노트 정보(ID포함)를 돌려줌
-        
-        // ★ 핵심: 새로 만들었다면, 발급받은 ID를 현재 상태에 반영해야 함!
-        // 그래야 다음 저장부터는 '덮어쓰기'가 됨
-        if (id === null) {
-            setActiveNoteId(savedNote.id); 
-        }
-
+        const savedNote = await res.json();
+        if (id === null) setActiveNoteId(savedNote.id); 
         setSaveStatus('saved');
         setLastSavedTime(new Date().toLocaleTimeString());
-        fetchNotes(accessToken, encKey); // 목록 갱신
-      } else {
-        setSaveStatus('error');
-      }
+        fetchNotes(accessToken, encKey); 
+      } else { setSaveStatus('error'); }
     } catch (e) { setSaveStatus('error'); }
   };
 
-  // 자동 저장 (디바운싱)
+  // ★ 노트 삭제 기능
+  const handleDeleteNote = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation(); // 클릭 시 노트 선택되는 것 방지
+    if (!confirm('정말 이 금고를 영구 삭제하시겠습니까? (복구 불가)')) return;
+
+    try {
+      const res = await fetch(`/api/notes/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      if (res.ok) {
+        // 현재 보고 있던 글을 지웠으면 에디터 초기화
+        if (activeNoteId === id) createNewNote();
+        fetchNotes(accessToken, encKey); // 목록 갱신
+      } else {
+        alert('삭제 실패');
+      }
+    } catch (e) { alert('오류 발생'); }
+  };
+
+  const handleLogout = () => {
+    setView('login');
+    setAccessToken('');
+    setEncKey('');
+    setNotes([]);
+    setEditTitle('');
+    setEditContent('');
+    setActiveNoteId(null);
+  };
+
   useEffect(() => {
     if (!accessToken || !editTitle) return;
-
-    const timer = setTimeout(() => {
-      // 현재 보고 있는 ID(activeNoteId)를 넘겨줌
-      saveToCloud(activeNoteId, editTitle, editContent);
-    }, 1000); 
-
+    const timer = setTimeout(() => { saveToCloud(activeNoteId, editTitle, editContent); }, 1000); 
     return () => clearTimeout(timer);
-  }, [editTitle, editContent]); // activeNoteId는 의존성에서 뺌 (무한루프 방지)
+  }, [editTitle, editContent]);
 
   const selectNote = (note: DecryptedNote) => {
-    setActiveNoteId(note.id); // 기존 글 ID 세팅
+    setActiveNoteId(note.id);
     setEditTitle(note.title);
     setEditContent(note.content);
   };
 
   const createNewNote = () => {
-    setActiveNoteId(null); // ID 초기화 (새 글)
+    setActiveNoteId(null);
     setEditTitle('');
     setEditContent('');
   };
 
-  // --- [UI 렌더링] ---
   if (view === 'login') return (
-    <div style={{height:'100vh', display:'flex', justifyContent:'center', alignItems:'center', background:'#050505', color:'white'}}>
+    <div style={{height:'100vh', width:'100vw', display:'flex', justifyContent:'center', alignItems:'center', background:'#050505', color:'white', overflow:'hidden'}}>
       <div style={{width:'400px', padding:'50px 40px', background:'#161616', border:'1px solid #333', borderRadius:'16px', display:'flex', flexDirection:'column', alignItems:'center', boxShadow:'0 0 60px rgba(255,255,255,0.05)'}}>
         <div style={{marginBottom:'30px'}}><img src="/logo.png" style={{width:'80px', filter:'invert(1) brightness(2)'}} /></div>
         <h1 style={{fontSize:'28px', fontWeight:'800', marginBottom:'40px'}}>Secret Vault</h1>
@@ -170,52 +180,122 @@ export default function Home() {
   );
 
   return (
-    <div style={{display:'flex', height:'100vh', background:'#0a0a0a', color:'#e0e0e0', fontFamily:'sans-serif'}}>
-      <div style={{width: sidebarOpen ? '260px' : '0px', background:'#111', borderRight:'1px solid #333', transition:'width 0.3s ease', overflow:'hidden', display:'flex', flexDirection:'column'}}>
-        <div style={{padding:'20px', borderBottom:'1px solid #333', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+    <div style={{display:'flex', height:'100vh', width:'100vw', background:'#0a0a0a', color:'#e0e0e0', fontFamily:'sans-serif', overflow:'hidden'}}>
+      
+      {/* 사이드바 */}
+      <div style={{width: sidebarOpen ? '260px' : '0px', height: '100%', background:'#111', borderRight:'1px solid #333', transition:'width 0.3s ease', display:'flex', flexDirection:'column', flexShrink: 0}}>
+        <div style={{padding:'20px', borderBottom:'1px solid #333', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0}}>
           <div style={{display:'flex', alignItems:'center', gap:'10px', fontWeight:'bold', color:'white'}}>
             <img src="/logo.png" style={{width:'20px', filter:'invert(1)'}} /><span>내 금고</span>
           </div>
           <button onClick={createNewNote} style={{background:'none', border:'none', cursor:'pointer', color:'#888', padding:'5px'}}><Plus size={20}/></button>
         </div>
+        
         <div style={{flex:1, overflowY:'auto', padding:'10px'}}>
           {notes.map(note => (
             <div key={note.id} onClick={()=>selectNote(note)} 
+              className="note-item"
               style={{
-                padding:'12px', borderRadius:'6px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px',
+                padding:'12px', borderRadius:'6px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px',
                 background: activeNoteId === note.id ? '#222' : 'transparent', 
                 color: activeNoteId === note.id ? 'white' : '#888',
-                marginBottom:'4px', border: activeNoteId === note.id ? '1px solid #333' : '1px solid transparent'
+                marginBottom:'4px', border: activeNoteId === note.id ? '1px solid #333' : '1px solid transparent',
+                position: 'relative'
               }}>
-              <FileText size={16} />
-              <span style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', fontSize:'14px'}}>{note.title}</span>
+              <div style={{display:'flex', alignItems:'center', gap:'10px', overflow:'hidden'}}>
+                <FileText size={16} flex-shrink={0} />
+                <span style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', fontSize:'14px'}}>{note.title}</span>
+              </div>
+              
+              {/* ★ 삭제 버튼 (휴지통) - 마우스 올리면 보임 */}
+              <button 
+                onClick={(e) => handleDeleteNote(e, note.id)}
+                style={{background:'none', border:'none', color:'#555', cursor:'pointer', padding:'4px', display:'flex'}}
+                title="영구 삭제"
+                onMouseOver={(e) => e.currentTarget.style.color = '#ff4444'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#555'}
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           ))}
         </div>
-        <div style={{padding:'15px', borderTop:'1px solid #333'}}>
-           <div onClick={()=>setView('login')} style={{display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', color:'#666', fontSize:'14px', paddingLeft:'5px'}}>
-            <LogOut size={16}/> <span>로그아웃</span>
-          </div>
-        </div>
+        {/* 하단 여백 (로그아웃은 이제 상단으로 이동했으므로 삭제하거나 유지) */}
       </div>
 
-      <div style={{flex:1, display:'flex', flexDirection:'column', height:'100vh', background:'#0a0a0a'}}>
-        <div style={{height:'60px', display:'flex', alignItems:'center', padding:'0 30px', borderBottom:'1px solid #333'}}>
+      {/* 메인 컨텐츠 */}
+      <div style={{flex:1, display:'flex', flexDirection:'column', height:'100%', overflow:'hidden'}}>
+        
+        {/* 상단바 */}
+        <div style={{height:'60px', display:'flex', alignItems:'center', padding:'0 30px', borderBottom:'1px solid #333', flexShrink:0}}>
           <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{background:'none', border:'none', color:'#666', cursor:'pointer', marginRight:'20px'}}><ChevronLeft/></button>
+          
           <div style={{flex:1}}/>
-          <div style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'13px', color:'#666'}}>
+          
+          {/* 저장 상태 */}
+          <div style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'13px', color:'#666', marginRight:'20px'}}>
             {saveStatus === 'saving' && <><Loader2 size={14} className="animate-spin" /> 저장 중...</>}
-            {saveStatus === 'saved' && lastSavedTime && <><CheckCircle size={14} color="#4caf50" /> {lastSavedTime}에 저장됨</>}
+            {saveStatus === 'saved' && lastSavedTime && <><CheckCircle size={14} color="#4caf50" /> 저장됨</>}
             {saveStatus === 'error' && <span style={{color:'red'}}>저장 실패!</span>}
+          </div>
+
+          {/* ★ 우측 상단 프로필 버튼 */}
+          <div style={{position:'relative'}}>
+            <button 
+              onClick={() => setProfileOpen(!profileOpen)}
+              style={{
+                display:'flex', alignItems:'center', gap:'8px', padding:'6px 12px', 
+                background:'#222', border:'1px solid #333', borderRadius:'20px', 
+                color:'white', cursor:'pointer', fontSize:'13px'
+              }}
+            >
+              <User size={14} />
+              <span>{currentUserId}</span>
+            </button>
+
+            {/* 프로필 드롭다운 메뉴 */}
+            {profileOpen && (
+              <div style={{
+                position:'absolute', top:'45px', right:'0', width:'200px', 
+                background:'#161616', border:'1px solid #333', borderRadius:'8px', 
+                boxShadow:'0 10px 30px rgba(0,0,0,0.5)', zIndex:100, overflow:'hidden'
+              }}>
+                <div style={{padding:'15px', borderBottom:'1px solid #333'}}>
+                  <p style={{fontSize:'12px', color:'#888', marginBottom:'4px'}}>Signed in as</p>
+                  <p style={{fontWeight:'bold', color:'white'}}>{currentUserId}</p>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  style={{
+                    width:'100%', padding:'12px', background:'transparent', border:'none', 
+                    color:'#ff4444', cursor:'pointer', textAlign:'left', fontSize:'14px', 
+                    display:'flex', alignItems:'center', gap:'8px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#222'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <LogOut size={14} /> 로그아웃
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         <div style={{flex:1, display:'flex', overflow:'hidden'}}>
-          <div style={{flex:1, padding:'40px', borderRight:'1px solid #222', overflowY:'auto'}}>
-            <input placeholder="제목 없음" value={editTitle} onChange={e=>setEditTitle(e.target.value)} style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none'}}/>
-            <textarea placeholder="내용을 입력하세요..." value={editContent} onChange={e=>setEditContent(e.target.value)} style={{width:'100%', height:'calc(100% - 100px)', background:'transparent', border:'none', color:'#ccc', fontSize:'16px', lineHeight:'1.7', resize:'none', outline:'none', fontFamily:'monospace'}}/>
+          <div style={{flex:1, padding:'40px', borderRight:'1px solid #222', overflowY:'auto', height:'100%'}}>
+            <input 
+              placeholder="제목 없음" 
+              value={editTitle} 
+              onChange={e=>setEditTitle(e.target.value)}
+              style={{width:'100%', background:'transparent', border:'none', fontSize:'36px', fontWeight:'800', color:'white', marginBottom:'30px', outline:'none'}}
+            />
+            <textarea 
+              placeholder="내용을 입력하세요..." 
+              value={editContent} onChange={e=>setEditContent(e.target.value)}
+              style={{width:'100%', minHeight:'500px', height:'auto', background:'transparent', border:'none', color:'#ccc', fontSize:'16px', lineHeight:'1.7', resize:'none', outline:'none', fontFamily:'monospace'}}
+            />
           </div>
-          <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#0a0a0a'}}>
+          <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#0a0a0a', height:'100%'}}>
             <div className="markdown-body" style={{color:'#ddd', lineHeight:'1.7'}}>
               <h1 style={{fontSize:'36px', fontWeight:'800', borderBottom:'1px solid #333', paddingBottom:'20px', marginBottom:'30px'}}>{editTitle || '제목 없음'}</h1>
               <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={{
