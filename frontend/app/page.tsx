@@ -1,65 +1,98 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import CryptoJS from 'crypto-js';
 
 export default function Home() {
+  const [note, setNote] = useState(''); // 입력한 메모
+  const [password, setPassword] = useState(''); // 잠금 비밀번호
+  const [status, setStatus] = useState(''); // 상태 메시지
+  const [apiUrl, setApiUrl] = useState('');
+
+  // 환경변수에서 API 주소 가져오기
+  useEffect(() => {
+    setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
+  }, []);
+
+  // 1. 암호화 및 저장 (Client-Side Encryption)
+  const handleSave = async () => {
+    if (!note || !password) {
+      alert('메모와 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+
+    try {
+      // 핵심: 브라우저에서 암호화 수행 (서버는 절대 원문을 모름)
+      const encrypted = CryptoJS.AES.encrypt(note, password).toString();
+      
+      console.log('원본:', note);
+      console.log('암호화됨:', encrypted);
+
+      // 백엔드로 전송
+      const response = await fetch(`${apiUrl}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: encrypted, // 암호문만 보냄
+          password_hash: CryptoJS.SHA256(password).toString() // 검증용 해시
+        }),
+      });
+
+      if (response.ok) {
+        setStatus(`✅ 저장 성공! (서버에 저장된 데이터: ${encrypted.substring(0, 15)}...)`);
+        setNote(''); // 입력창 비우기
+      } else {
+        setStatus('❌ 저장 실패');
+      }
+    } catch (error) {
+      console.error(error);
+      setStatus('❌ 에러 발생');
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main style={{ padding: '50px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+      <h1>🔒 Zero-Knowledge Cloud Vault</h1>
+      <p style={{ color: '#666' }}>AWS도 당신의 데이터를 훔쳐볼 수 없습니다.</p>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '30px' }}>
+        <textarea
+          placeholder="나만의 비밀 메모를 입력하세요..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={5}
+          style={{ padding: '10px', fontSize: '16px', width: '100%' }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        
+        <input
+          type="password"
+          placeholder="암호화 키 (비밀번호)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ padding: '10px', fontSize: '16px' }}
+        />
+
+        <button 
+          onClick={handleSave}
+          style={{ 
+            padding: '15px', 
+            backgroundColor: '#0070f3', 
+            color: 'white', 
+            border: 'none', 
+            cursor: 'pointer',
+            fontSize: '18px',
+            fontWeight: 'bold'
+          }}
+        >
+          🔒 안전하게 클라우드에 저장
+        </button>
+      </div>
+
+      {status && (
+        <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
+          {status}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
