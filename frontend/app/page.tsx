@@ -298,6 +298,7 @@ export default function Home() {
           <div style={{flex:1, padding:'40px', overflowY:'auto', background:'#0a0a0a', height:'100%'}}>
             <div className="markdown-body" style={{color:'#ddd', lineHeight:'1.7'}}>
               <h1 style={{fontSize:'36px', fontWeight:'800', borderBottom:'1px solid #333', paddingBottom:'20px', marginBottom:'30px'}}>{editTitle || '제목 없음'}</h1>
+              {/* [수정할 부분] ReactMarkdown 컴포넌트 */}
               <ReactMarkdown 
                 remarkPlugins={[remarkMath]} 
                 rehypePlugins={[rehypeKatex]} 
@@ -305,11 +306,14 @@ export default function Home() {
                   h1: ({node, ...props}) => <h1 style={{fontSize:'2em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
                   h2: ({node, ...props}) => <h2 style={{fontSize:'1.5em', borderBottom:'1px solid #333', marginTop:'1.5em'}} {...props} />,
                   code: ({node, ...props}) => <code style={{background:'#222', padding:'2px 6px', borderRadius:'4px', color:'#ff8787', fontFamily:'monospace'}} {...props} />,
-                  blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'3px solid #fff', paddingLeft:'20px', color:'#888', margin:'20px 0'}} {...props} />
+                  blockquote: ({node, ...props}) => <blockquote style={{borderLeft:'3px solid #fff', paddingLeft:'20px', color:'#888', margin:'20px 0'}} {...props} />,
+                  // ★ p 태그 스타일 강제 적용 (CSS가 안 먹을 경우 대비)
+                  p: ({node, ...props}) => <p style={{marginBottom: '1em', minHeight: '1em', whiteSpace: 'pre-wrap'}} {...props} />
                 }}
               >
-                {/* ★ 핵심: 엔터를 '스페이스 두 번 + 엔터'로 치환해서 강제 줄바꿈 (문제 2 해결) */}
-                {editContent.replace(/\n/g, '  \n') || '*내용이 없습니다.*'}
+                {/* ★ 핵심 마법 코드: 엔터(\n)를 '스페이스 두 번 + 엔터'로 강제 치환 */}
+                {/* 이렇게 하면 엔터를 여러 번 쳐도 그대로 반영됩니다. */}
+                {editContent ? editContent.replace(/\n/g, '  \n') : '*내용이 없습니다.*'}
               </ReactMarkdown>
             </div>
           </div>
