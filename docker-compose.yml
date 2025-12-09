@@ -15,7 +15,7 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
 
-  # 2. 백엔드 (8001번으로 노출)
+  # 2. 백엔드 (호스트 8001번으로 노출)
   backend:
     build: ./backend
     container_name: vault-backend
@@ -29,7 +29,7 @@ services:
     ports:
       - "127.0.0.1:8001:8000"
 
-  # 3. 프론트엔드 (3001번으로 노출)
+  # 3. 프론트엔드 (호스트 3001번으로 노출)
   frontend:
     build:
       context: ./frontend
