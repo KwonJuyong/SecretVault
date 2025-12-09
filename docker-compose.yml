@@ -27,7 +27,7 @@ services:
       - .env
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
 
   # 3. 프론트엔드 (3001번으로 노출)
   frontend:
@@ -42,7 +42,7 @@ services:
       - .env
     command: npm run dev
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
 
 volumes:
   postgres_data:
