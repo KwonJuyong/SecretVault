@@ -1,4 +1,5 @@
 import uuid
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,8 +11,23 @@ from models import User, Workspace, WorkspaceMember, Page
 from routers import auth, workspaces, pages
 
 
+def wait_for_db(max_retries=10, delay=2):
+    """Wait for the database to be ready."""
+    for i in range(max_retries):
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            print("Database is ready.")
+            return
+        except Exception as e:
+            print(f"Waiting for database... ({i+1}/{max_retries})")
+            time.sleep(delay)
+    raise RuntimeError("Database not available after retries")
+
+
 def run_migration():
     """Migrate data from old schema (notes table) to new schema (pages table)."""
+    wait_for_db()
     inspector = inspect(engine)
     existing_tables = inspector.get_table_names()
 

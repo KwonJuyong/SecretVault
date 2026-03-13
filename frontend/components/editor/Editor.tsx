@@ -107,7 +107,7 @@ export default function Editor({
               <h1 className="text-4xl font-extrabold text-neutral-900 dark:text-white mb-8 pb-4 border-b border-neutral-200 dark:border-neutral-800">
                 {title || 'Untitled'}
               </h1>
-              <div className="prose prose-neutral dark:prose-invert max-w-none">
+              <div className="max-w-none text-neutral-800 dark:text-neutral-200 leading-relaxed">
                 <ReactMarkdown
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
