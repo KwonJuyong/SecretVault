@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+// Always use relative path - nginx proxies /api/ to backend
+const API_BASE = '/api';
 
 class ApiClient {
   private getToken(): string | null {
