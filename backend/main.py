@@ -1,149 +1,122 @@
-import os
-from datetime import datetime, timedelta
-from typing import List, Optional
+import uuid
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from jose import JWTError, jwt
+from sqlalchemy import inspect, text
 
-# SQLAlchemy
-from sqlalchemy import create_engine, Column, Integer, String, Text
-from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from database import engine, Base, SessionLocal
+from models import User, Workspace, WorkspaceMember, Page
+from routers import auth, workspaces, pages
 
-# 1. 설정 및 DB 연결
-app = FastAPI()
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/cloudvault")
+def run_migration():
+    """Migrate data from old schema (notes table) to new schema (pages table)."""
+    inspector = inspect(engine)
+    existing_tables = inspector.get_table_names()
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+    # Create all new tables
+    Base.metadata.create_all(bind=engine)
 
-SECRET_KEY = "super_secret_project_key_cloud_computing_2025"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+    if "notes" not in existing_tables:
+        return
 
-origins = ["http://localhost:3000", "http://54.180.32.224:3000", "*"]
+    db = SessionLocal()
+    try:
+        # Check if notes table has data
+        result = db.execute(text("SELECT COUNT(*) FROM notes"))
+        count = result.scalar()
+        if count == 0:
+            db.execute(text("DROP TABLE IF EXISTS notes"))
+            db.commit()
+            return
+
+        # Migrate each user's notes
+        users = db.query(User).all()
+        for user in users:
+            # Ensure user has a workspace
+            membership = (
+                db.query(WorkspaceMember)
+                .filter(WorkspaceMember.user_id == user.id)
+                .first()
+            )
+            if not membership:
+                ws = Workspace(
+                    id=uuid.uuid4(),
+                    name=f"{user.user_id}'s Workspace",
+                    icon="",
+                    owner_id=user.id,
+                )
+                db.add(ws)
+                db.flush()
+                mem = WorkspaceMember(
+                    workspace_id=ws.id,
+                    user_id=user.id,
+                    role="owner",
+                )
+                db.add(mem)
+                db.flush()
+                workspace_id = ws.id
+            else:
+                workspace_id = membership.workspace_id
+
+            # Get notes for this user
+            notes = db.execute(
+                text("SELECT id, title, content FROM notes WHERE user_id = :uid ORDER BY id"),
+                {"uid": user.user_id},
+            ).fetchall()
+
+            for i, note in enumerate(notes):
+                page = Page(
+                    id=uuid.uuid4(),
+                    workspace_id=workspace_id,
+                    parent_id=None,
+                    created_by=user.id,
+                    title=note[1] or "",
+                    content=note[2] or "",
+                    icon="",
+                    position=float(i + 1),
+                )
+                db.add(page)
+
+        db.commit()
+        # Drop old table after successful migration
+        db.execute(text("DROP TABLE IF EXISTS notes"))
+        db.commit()
+        print("Migration complete: notes -> pages")
+    except Exception as e:
+        db.rollback()
+        print(f"Migration error: {e}")
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    run_migration()
+    yield
+
+
+app = FastAPI(title="SecretVault API", version="2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 2. DB 모델
-class UserTable(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, unique=True, index=True)
-    password_hash = Column(String)
+app.include_router(auth.router)
+app.include_router(workspaces.router)
+app.include_router(pages.router)
 
-class NoteTable(Base):
-    __tablename__ = "notes"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, index=True)
-    title = Column(Text)
-    content = Column(Text)
 
-Base.metadata.create_all(bind=engine)
-
-# 3. Pydantic 모델
-class UserAuth(BaseModel):
-    user_id: str
-    password_hash: str
-
-class NoteInput(BaseModel):
-    title: str
-    content: str
-
-class NoteResponse(BaseModel):
-    id: int
-    title: str
-    content: str
-    class Config:
-        from_attributes = True
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-# 4. 유틸리티
-def get_db():
-    db = SessionLocal()
-    try: yield db
-    finally: db.close()
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None: raise HTTPException(status_code=401)
-    except JWTError: raise HTTPException(status_code=401)
-    return user_id
-
-# 5. API 엔드포인트
 @app.get("/")
-def read_root():
-    return {"status": "Cloud Vault Backend v8.0 (Delete & Profile)"}
+def root():
+    return {"status": "SecretVault API v2.0"}
 
-@app.post("/signup")
-def signup(user: UserAuth, db: Session = Depends(get_db)):
-    if db.query(UserTable).filter(UserTable.user_id == user.user_id).first():
-        raise HTTPException(status_code=400, detail="ID Exists")
-    new_user = UserTable(user_id=user.user_id, password_hash=user.password_hash)
-    db.add(new_user)
-    db.commit()
-    return {"message": "Success"}
 
-@app.post("/login", response_model=Token)
-def login(user: UserAuth, db: Session = Depends(get_db)):
-    db_user = db.query(UserTable).filter(UserTable.user_id == user.user_id).first()
-    if not db_user or db_user.password_hash != user.password_hash:
-        raise HTTPException(status_code=401, detail="Invalid Auth")
-    return {"access_token": create_access_token(data={"sub": user.user_id}), "token_type": "bearer"}
-
-@app.post("/notes", response_model=NoteResponse)
-def create_note(note: NoteInput, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    new_note = NoteTable(user_id=user_id, title=note.title, content=note.content)
-    db.add(new_note)
-    db.commit()
-    db.refresh(new_note)
-    return new_note
-
-@app.put("/notes/{note_id}", response_model=NoteResponse)
-def update_note(note_id: int, note: NoteInput, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_note = db.query(NoteTable).filter(NoteTable.id == note_id, NoteTable.user_id == user_id).first()
-    if not db_note: raise HTTPException(status_code=404)
-    db_note.title = note.title
-    db_note.content = note.content
-    db.commit()
-    db.refresh(db_note)
-    return db_note
-
-# ★ [삭제 기능 추가]
-@app.delete("/notes/{note_id}")
-def delete_note(note_id: int, user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    # 내 ID로 쓴 글 중 해당 note_id를 찾아서 삭제
-    db_note = db.query(NoteTable).filter(NoteTable.id == note_id, NoteTable.user_id == user_id).first()
-    if not db_note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    
-    db.delete(db_note)
-    db.commit()
-    return {"status": "deleted"}
-
-@app.get("/notes", response_model=List[NoteResponse])
-def get_notes(user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(NoteTable).filter(NoteTable.user_id == user_id).order_by(NoteTable.id.desc()).all()
+@app.get("/health")
+def health():
+    return {"status": "ok"}

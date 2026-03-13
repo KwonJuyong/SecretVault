@@ -1,59 +1,65 @@
-:root {
-  --background: #0a0a0a;
-  --foreground: #e0e0e0;
-}
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
+/* Base resets */
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-html,
-body {
-  width: 100vw;
-  height: 100vh;
-  /* 스크롤바 제거 */
-  overflow: hidden; 
-  background-color: var(--background);
-  color: var(--foreground);
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* 내부 스크롤바 디자인 (다크 테마) */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #111; 
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #333; 
-  border-radius: 4px;
+  background: #d4d4d4;
+  border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: #a3a3a3;
 }
 
-.markdown-body p {
-  margin-bottom: 1em !important; /* 문단 사이 여백 추가 */
-  min-height: 1em; /* 빈 줄도 높이를 가지도록 강제 */
+.dark ::-webkit-scrollbar-thumb {
+  background: #404040;
 }
 
-.markdown-body h1, 
-.markdown-body h2, 
-.markdown-body h3 {
-  margin-top: 1.5em !important;
-  margin-bottom: 0.5em !important;
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #525252;
 }
 
-.markdown-body ul, 
-.markdown-body ol {
-  margin-bottom: 1em !important;
-  padding-left: 20px !important;
+/* Smooth transitions */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: #bfdbfe;
+  color: #1e3a5f;
+}
+
+.dark ::selection {
+  background: #1e3a5f;
+  color: #bfdbfe;
 }
