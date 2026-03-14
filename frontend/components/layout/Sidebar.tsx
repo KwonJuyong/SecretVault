@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { decrypt } from '@/lib/crypto';
-import type { PageTreeItem } from '@/lib/types';
+import type { PageTreeItem, Workspace } from '@/lib/types';
+import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
 import {
   Plus, Search, FileText, ChevronRight, ChevronDown,
-  Trash2, Settings, LogOut, User, MoreHorizontal,
+  Trash2, LogOut, Settings,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -17,12 +18,18 @@ interface SidebarProps {
   onDeletePage: (id: string) => void;
   onOpenSearch: () => void;
   onOpenTrash: () => void;
+  onSwitchWorkspace: (workspace: Workspace) => void;
+  onOpenWorkspaceSettings: (workspace: Workspace) => void;
+  onCreateWorkspace: () => void;
+  currentWorkspaceId: string;
   collapsed: boolean;
 }
 
 export default function Sidebar({
   pages, activePageId, onSelectPage, onCreatePage,
   onDeletePage, onOpenSearch, onOpenTrash, collapsed,
+  onSwitchWorkspace, onOpenWorkspaceSettings, onCreateWorkspace,
+  currentWorkspaceId,
 }: SidebarProps) {
   const { userId, displayName, logout, encKey } = useAuth();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -45,7 +52,6 @@ export default function Sidebar({
     return decrypted || 'Untitled';
   };
 
-  // Build tree from flat list
   const rootPages = pages.filter(p => !p.parent_id);
   const childrenOf = (parentId: string) => pages.filter(p => p.parent_id === parentId);
 
@@ -111,39 +117,14 @@ export default function Sidebar({
 
   return (
     <div className="w-[260px] h-full flex flex-col bg-neutral-50 dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex-shrink-0">
-      {/* Header */}
+      {/* Workspace Switcher */}
       <div className="p-3 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="relative">
-          <button
-            onClick={() => setProfileOpen(!profileOpen)}
-            className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
-          >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {(displayName || userId).charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 truncate">
-              {displayName || userId}
-            </span>
-          </button>
-
-          {profileOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-              <div className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
-                <div className="p-3 border-b border-neutral-100 dark:border-neutral-700">
-                  <p className="text-xs text-neutral-500">Signed in as</p>
-                  <p className="text-sm font-semibold text-neutral-800 dark:text-white">{userId}</p>
-                </div>
-                <button
-                  onClick={logout}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
-                >
-                  <LogOut size={15} /> Sign Out
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        <WorkspaceSwitcher
+          currentWorkspaceId={currentWorkspaceId}
+          onSwitch={onSwitchWorkspace}
+          onOpenSettings={onOpenWorkspaceSettings}
+          onCreateWorkspace={onCreateWorkspace}
+        />
       </div>
 
       {/* Actions */}
@@ -188,7 +169,7 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-neutral-200 dark:border-neutral-800">
+      <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5">
         <button
           onClick={onOpenTrash}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
@@ -196,6 +177,36 @@ export default function Sidebar({
           <Trash2 size={16} />
           <span>Trash</span>
         </button>
+        {/* User profile */}
+        <div className="relative">
+          <button
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+          >
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+              {(displayName || userId).charAt(0).toUpperCase()}
+            </div>
+            <span className="truncate">{displayName || userId}</span>
+          </button>
+
+          {profileOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+              <div className="absolute left-0 bottom-full mb-1 w-56 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
+                <div className="p-3 border-b border-neutral-100 dark:border-neutral-700">
+                  <p className="text-xs text-neutral-500">Signed in as</p>
+                  <p className="text-sm font-semibold text-neutral-800 dark:text-white">{userId}</p>
+                </div>
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                >
+                  <LogOut size={15} /> Sign Out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

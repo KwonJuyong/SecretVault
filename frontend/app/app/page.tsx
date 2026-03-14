@@ -5,16 +5,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { encrypt, decrypt } from '@/lib/crypto';
-import type { PageTreeItem, PageData } from '@/lib/types';
+import type { PageTreeItem, PageData, Workspace } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import Editor from '@/components/editor/Editor';
 import SearchModal from '@/components/search/SearchModal';
 import TrashPanel from '@/components/layout/TrashPanel';
+import WorkspaceSettings from '@/components/workspace/WorkspaceSettings';
+import CreateWorkspaceModal from '@/components/workspace/CreateWorkspaceModal';
 import { FileText, Plus } from 'lucide-react';
 
 export default function AppPage() {
-  const { isAuthenticated, isLoading, workspaceId, encKey } = useAuth();
+  const { isAuthenticated, isLoading, workspaceId, encKey, switchWorkspace } = useAuth();
   const router = useRouter();
 
   const [pages, setPages] = useState<PageTreeItem[]>([]);
@@ -26,9 +28,12 @@ export default function AppPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
+  const [settingsWorkspace, setSettingsWorkspace] = useState<Workspace | null>(null);
+  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstLoad = useRef(true);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -36,6 +41,62 @@ export default function AppPage() {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!workspaceId || !isAuthenticated) return;
+
+    const token = sessionStorage.getItem('access_token');
+    if (!token) return;
+
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/api/ws/${workspaceId}?token=${token}`;
+
+    const connectWebSocket = () => {
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'page_updated' || msg.type === 'page_created' || msg.type === 'page_deleted') {
+            // Refresh pages list when any team member makes changes
+            fetchPages();
+          }
+        } catch {
+          // ignore
+        }
+      };
+
+      ws.onclose = () => {
+        // Reconnect after 3 seconds
+        setTimeout(() => {
+          if (wsRef.current === ws) {
+            connectWebSocket();
+          }
+        }, 3000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+
+      wsRef.current = ws;
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        wsRef.current = null;
+        ws.close();
+      }
+    };
+  }, [workspaceId, isAuthenticated]);
 
   // Fetch pages
   const fetchPages = useCallback(async () => {
@@ -49,7 +110,13 @@ export default function AppPage() {
   }, [workspaceId]);
 
   useEffect(() => {
-    if (workspaceId) fetchPages();
+    if (workspaceId) {
+      setActivePageId(null);
+      setEditTitle('');
+      setEditContent('');
+      setEditIcon('');
+      fetchPages();
+    }
   }, [workspaceId, fetchPages]);
 
   // Load page content
@@ -70,7 +137,7 @@ export default function AppPage() {
     }
   }, [workspaceId, encKey]);
 
-  // Auto-save
+  // Auto-save with WebSocket broadcast
   const savePage = useCallback(async () => {
     if (!activePageId || !workspaceId) return;
     setSaveStatus('saving');
@@ -84,6 +151,14 @@ export default function AppPage() {
       });
       setSaveStatus('saved');
       fetchPages();
+
+      // Notify other clients via WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'page_updated',
+          page_id: activePageId,
+        }));
+      }
     } catch (e) {
       setSaveStatus('error');
       console.error('Failed to save:', e);
@@ -115,6 +190,11 @@ export default function AppPage() {
       });
       await fetchPages();
       loadPage(data.id);
+
+      // Notify others
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'page_created', page_id: data.id }));
+      }
     } catch (e) {
       console.error('Failed to create page:', e);
     }
@@ -132,10 +212,24 @@ export default function AppPage() {
         setEditIcon('');
       }
       fetchPages();
+
+      // Notify others
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'page_deleted', page_id: pageId }));
+      }
     } catch (e) {
       console.error('Failed to delete page:', e);
     }
   }, [workspaceId, activePageId, fetchPages]);
+
+  // Workspace switching
+  const handleSwitchWorkspace = useCallback((workspace: Workspace) => {
+    switchWorkspace(workspace.id);
+  }, [switchWorkspace]);
+
+  const handleWorkspaceCreated = useCallback((workspace: Workspace) => {
+    switchWorkspace(workspace.id);
+  }, [switchWorkspace]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -172,6 +266,10 @@ export default function AppPage() {
         onDeletePage={deletePage}
         onOpenSearch={() => setShowSearch(true)}
         onOpenTrash={() => setShowTrash(true)}
+        onSwitchWorkspace={handleSwitchWorkspace}
+        onOpenWorkspaceSettings={(ws) => setSettingsWorkspace(ws)}
+        onCreateWorkspace={() => setShowCreateWorkspace(true)}
+        currentWorkspaceId={workspaceId}
         collapsed={!sidebarOpen}
       />
 
@@ -228,6 +326,19 @@ export default function AppPage() {
           workspaceId={workspaceId}
           onClose={() => setShowTrash(false)}
           onRestore={fetchPages}
+        />
+      )}
+      {settingsWorkspace && (
+        <WorkspaceSettings
+          workspace={settingsWorkspace}
+          onClose={() => setSettingsWorkspace(null)}
+          onUpdated={fetchPages}
+        />
+      )}
+      {showCreateWorkspace && (
+        <CreateWorkspaceModal
+          onClose={() => setShowCreateWorkspace(false)}
+          onCreated={handleWorkspaceCreated}
         />
       )}
     </div>

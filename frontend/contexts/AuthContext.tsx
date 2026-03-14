@@ -18,6 +18,7 @@ interface AuthContextType extends AuthState {
   login: (userId: string, password: string) => Promise<void>;
   signup: (userId: string, password: string, displayName?: string) => Promise<string>;
   logout: () => void;
+  switchWorkspace: (workspaceId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -98,8 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const switchWorkspace = (workspaceId: string) => {
+    sessionStorage.setItem('workspace_id', workspaceId);
+    setState(prev => ({ ...prev, workspaceId }));
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, signup, logout }}>
+    <AuthContext.Provider value={{ ...state, login, signup, logout, switchWorkspace }}>
       {children}
     </AuthContext.Provider>
   );

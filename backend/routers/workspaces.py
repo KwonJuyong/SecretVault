@@ -144,3 +144,84 @@ def invite_member(
     db.add(member)
     db.commit()
     return {"message": "Member invited successfully"}
+
+
+@router.post("/{workspace_id}/members/remove")
+def remove_member(
+    workspace_id: str,
+    data: InviteMember,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ws_uuid = uuid.UUID(workspace_id)
+    # Verify owner/admin
+    membership = (
+        db.query(WorkspaceMember)
+        .filter(
+            WorkspaceMember.workspace_id == ws_uuid,
+            WorkspaceMember.user_id == current_user.id,
+            WorkspaceMember.role.in_(["owner", "admin"]),
+        )
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="Only owners and admins can remove members")
+
+    target_user = db.query(User).filter(User.user_id == data.user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Cannot remove owner
+    target_membership = (
+        db.query(WorkspaceMember)
+        .filter(WorkspaceMember.workspace_id == ws_uuid, WorkspaceMember.user_id == target_user.id)
+        .first()
+    )
+    if not target_membership:
+        raise HTTPException(status_code=404, detail="Member not found")
+    if target_membership.role == "owner":
+        raise HTTPException(status_code=400, detail="Cannot remove the workspace owner")
+
+    db.delete(target_membership)
+    db.commit()
+    return {"message": "Member removed successfully"}
+
+
+@router.put("/{workspace_id}/members/role")
+def update_member_role(
+    workspace_id: str,
+    data: InviteMember,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ws_uuid = uuid.UUID(workspace_id)
+    # Only owner can change roles
+    membership = (
+        db.query(WorkspaceMember)
+        .filter(
+            WorkspaceMember.workspace_id == ws_uuid,
+            WorkspaceMember.user_id == current_user.id,
+            WorkspaceMember.role == "owner",
+        )
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=403, detail="Only the workspace owner can change roles")
+
+    target_user = db.query(User).filter(User.user_id == data.user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target_membership = (
+        db.query(WorkspaceMember)
+        .filter(WorkspaceMember.workspace_id == ws_uuid, WorkspaceMember.user_id == target_user.id)
+        .first()
+    )
+    if not target_membership:
+        raise HTTPException(status_code=404, detail="Member not found")
+    if target_membership.role == "owner":
+        raise HTTPException(status_code=400, detail="Cannot change the owner's role")
+
+    target_membership.role = data.role or "member"
+    db.commit()
+    return {"message": "Role updated successfully"}
