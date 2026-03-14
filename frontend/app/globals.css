@@ -11,16 +11,13 @@
   padding: 0;
 }
 
-html {
+html, body {
   height: 100%;
   width: 100%;
 }
 
 body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  background-color: #fafafa;
+  background-color: #ffffff;
   color: #171717;
 }
 
@@ -76,7 +73,7 @@ body {
   }
 }
 
-/* KaTeX overrides for dark mode */
+/* KaTeX dark mode */
 @media (prefers-color-scheme: dark) {
   .katex {
     color: #e5e5e5;
@@ -93,16 +90,12 @@ pre::-webkit-scrollbar-thumb {
   border-radius: 2px;
 }
 
-/* Task list checkbox styling */
-.prose-sv input[type="checkbox"] {
+/* Checkbox styling */
+input[type="checkbox"] {
   accent-color: #2563eb;
 }
 
-/* Markdown preview prose styling */
-.prose-sv > :first-child {
-  margin-top: 0;
-}
-
-.prose-sv > :last-child {
-  margin-bottom: 0;
+/* Auto-resize textarea - remove default styles */
+textarea {
+  field-sizing: content;
 }
