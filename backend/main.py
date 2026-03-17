@@ -25,11 +25,10 @@ def wait_for_db(max_retries=10, delay=2):
 
 
 def run_migration():
-    """Drop all tables and recreate for fresh start."""
+    """Create tables if they don't exist."""
     wait_for_db()
-    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    print("Database reset complete: all tables recreated.")
+    print("Database ready.")
 
 
 @asynccontextmanager

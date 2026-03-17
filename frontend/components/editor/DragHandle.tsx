@@ -3,6 +3,7 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { NodeSelection } from '@tiptap/pm/state';
+import { Node as PMNode } from '@tiptap/pm/model';
 
 export const DragHandle = Extension.create({
   name: 'dragHandle',
@@ -36,6 +37,8 @@ export const DragHandle = Extension.create({
           let currentBlockPos: number | null = null;
           let currentBlockDom: HTMLElement | null = null;
           let isDragging = false;
+          let dragStartPos: number | null = null;
+          let dragNode: PMNode | null = null;
 
           const positionHandle = (blockEl: HTMLElement) => {
             if (!wrapper) return;
@@ -47,10 +50,33 @@ export const DragHandle = Extension.create({
             handle.style.left = `${editorRect.left - wrapperRect.left - 26}px`;
           };
 
-          // Mousedown: select the block (don't preventDefault — allow drag to start)
+          const findDropTarget = (clientY: number): { pos: number; after: boolean } | null => {
+            const doc = editorView.state.doc;
+            let result: { pos: number; after: boolean } | null = null;
+
+            doc.forEach((node, offset) => {
+              try {
+                const dom = editorView.nodeDOM(offset) as HTMLElement;
+                if (!dom || !dom.getBoundingClientRect) return;
+                const rect = dom.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (clientY >= rect.top && clientY <= rect.bottom) {
+                  result = { pos: offset, after: clientY > mid };
+                } else if (clientY > rect.bottom) {
+                  result = { pos: offset, after: true };
+                }
+              } catch { /* skip */ }
+            });
+
+            return result;
+          };
+
+          // Mousedown: select block, store drag info
           handle.addEventListener('mousedown', () => {
             if (currentBlockPos === null) return;
             try {
+              dragStartPos = currentBlockPos;
+              dragNode = editorView.state.doc.nodeAt(currentBlockPos);
               const tr = editorView.state.tr.setSelection(
                 NodeSelection.create(editorView.state.doc, currentBlockPos)
               );
@@ -58,65 +84,42 @@ export const DragHandle = Extension.create({
             } catch { /* ignore */ }
           });
 
-          // Dragstart: set ProseMirror's dragging state
           handle.addEventListener('dragstart', (e) => {
-            if (currentBlockPos === null) return;
+            if (dragStartPos === null || !dragNode) return;
             isDragging = true;
             handle.style.display = 'none';
-
-            try {
-              const { state } = editorView;
-              // Ensure NodeSelection
-              if (!(state.selection instanceof NodeSelection)) {
-                const tr = state.tr.setSelection(
-                  NodeSelection.create(state.doc, currentBlockPos)
-                );
-                editorView.dispatch(tr);
-              }
-
-              const slice = editorView.state.selection.content();
-              e.dataTransfer!.effectAllowed = 'move';
-              e.dataTransfer!.setData('application/x-prosemirror-drag', 'true');
-
-              // Set ProseMirror's internal dragging state
-              (editorView as any).dragging = { slice, move: true };
-            } catch { /* ignore */ }
+            e.dataTransfer!.effectAllowed = 'move';
+            e.dataTransfer!.setData('text/plain', '');
           });
 
           handle.addEventListener('dragend', () => {
             isDragging = false;
+            dragStartPos = null;
+            dragNode = null;
             dropLine.style.display = 'none';
             currentBlockDom = null;
             currentBlockPos = null;
           });
 
-          // Show drop indicator while dragging over editor
+          // Dragover on editor: show drop indicator
           editorView.dom.addEventListener('dragover', (e) => {
             if (!isDragging || !wrapper) return;
             e.preventDefault();
             e.dataTransfer!.dropEffect = 'move';
 
-            // Find the nearest block boundary
-            const pos = editorView.posAtCoords({ left: e.clientX, top: e.clientY });
-            if (!pos) return;
+            const target = findDropTarget(e.clientY);
+            if (!target) { dropLine.style.display = 'none'; return; }
 
             try {
-              const $pos = editorView.state.doc.resolve(pos.pos);
-              const before = $pos.before($pos.depth >= 1 ? 1 : 0);
-              const domNode = editorView.nodeDOM(before >= 0 ? before : 0) as HTMLElement;
-              if (!domNode) return;
-
+              const dom = editorView.nodeDOM(target.pos) as HTMLElement;
+              if (!dom) return;
               const wrapperRect = wrapper.getBoundingClientRect();
-              const nodeRect = domNode.getBoundingClientRect();
               const editorRect = editorView.dom.getBoundingClientRect();
-              const midY = nodeRect.top + nodeRect.height / 2;
+              const nodeRect = dom.getBoundingClientRect();
 
-              let lineY: number;
-              if (e.clientY < midY) {
-                lineY = nodeRect.top - wrapperRect.top + wrapper.scrollTop;
-              } else {
-                lineY = nodeRect.bottom - wrapperRect.top + wrapper.scrollTop;
-              }
+              const lineY = target.after
+                ? nodeRect.bottom - wrapperRect.top + wrapper.scrollTop
+                : nodeRect.top - wrapperRect.top + wrapper.scrollTop;
 
               dropLine.style.display = 'block';
               dropLine.style.top = `${lineY}px`;
@@ -127,12 +130,58 @@ export const DragHandle = Extension.create({
             }
           });
 
-          editorView.dom.addEventListener('dragleave', () => {
+          editorView.dom.addEventListener('dragleave', (e) => {
+            const related = e.relatedTarget as HTMLElement;
+            if (related && editorView.dom.contains(related)) return;
             dropLine.style.display = 'none';
           });
 
-          editorView.dom.addEventListener('drop', () => {
+          // Drop: manually move the block
+          editorView.dom.addEventListener('drop', (e) => {
+            if (!isDragging || dragStartPos === null || !dragNode) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const target = findDropTarget(e.clientY);
+            if (!target) { isDragging = false; dropLine.style.display = 'none'; return; }
+
+            try {
+              const { state } = editorView;
+              const node = state.doc.nodeAt(dragStartPos);
+              if (!node) return;
+
+              const nodeSize = node.nodeSize;
+              const targetNode = state.doc.nodeAt(target.pos);
+              if (!targetNode) return;
+
+              // Calculate insert position
+              let insertPos = target.after ? target.pos + targetNode.nodeSize : target.pos;
+
+              // Don't drop on itself
+              if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
+                isDragging = false;
+                dropLine.style.display = 'none';
+                return;
+              }
+
+              const tr = state.tr;
+
+              if (dragStartPos < insertPos) {
+                // Dragging down: insert first, then delete (positions shift)
+                tr.insert(insertPos, node);
+                tr.delete(dragStartPos, dragStartPos + nodeSize);
+              } else {
+                // Dragging up: delete first, then insert
+                tr.delete(dragStartPos, dragStartPos + nodeSize);
+                tr.insert(insertPos, node);
+              }
+
+              editorView.dispatch(tr);
+            } catch { /* ignore */ }
+
             isDragging = false;
+            dragStartPos = null;
+            dragNode = null;
             dropLine.style.display = 'none';
           });
 
