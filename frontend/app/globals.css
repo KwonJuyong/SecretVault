@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import 'katex/dist/katex.min.css';
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -157,51 +156,6 @@ textarea {
 /* ============================= */
 /* Code Block (Lowlight)         */
 /* ============================= */
-.code-block-wrapper {
-  position: relative;
-  margin: 1em 0;
-}
-
-.code-block-header {
-  display: flex;
-  justify-content: flex-end;
-  background: #1a1f2e;
-  border-radius: 0.75em 0.75em 0 0;
-  padding: 0.4em 0.75em;
-  border-bottom: 1px solid #2d3548;
-}
-
-.code-block-lang-select {
-  background: #2d3548;
-  color: #9ca3af;
-  border: 1px solid #3d4a60;
-  border-radius: 0.35em;
-  padding: 0.15em 0.5em;
-  font-size: 0.75em;
-  cursor: pointer;
-  outline: none;
-  font-family: ui-monospace, monospace;
-}
-
-.code-block-lang-select:hover { background: #3d4a60; color: #d1d5db; }
-.code-block-lang-select option { background: #1f2937; color: #d1d5db; }
-
-.code-block-wrapper pre {
-  background: #1f2937 !important;
-  color: #e5e7eb;
-  border-radius: 0 0 0.75em 0.75em;
-  padding: 1em 1.25em;
-  overflow-x: auto;
-  margin: 0;
-}
-
-.code-block-wrapper pre code {
-  background: none;
-  color: inherit;
-  padding: 0;
-  font-size: 0.875em;
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-}
 
 /* Syntax highlighting */
 .tiptap-content .hljs-comment, .tiptap-content .hljs-quote { color: #6b7280; font-style: italic; }
@@ -222,9 +176,23 @@ textarea {
 .tiptap-content .hljs-symbol { color: #f472b6; }
 .tiptap-content .hljs-property { color: #67e8f9; }
 
-/* Fallback for non-NodeView code blocks */
-.tiptap-content pre { background: #1f2937; color: #e5e7eb; border-radius: 0.75em; padding: 1em 1.25em; overflow-x: auto; margin: 1em 0; }
-.tiptap-content pre code { background: none; color: inherit; padding: 0; font-size: 0.875em; }
+/* Code blocks */
+.tiptap-content pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 0.75em;
+  padding: 1em 1.25em;
+  overflow-x: auto;
+  margin: 1em 0;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+.tiptap-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: 0.875em;
+  font-family: inherit;
+}
 
 /* ============================= */
 /* Table                         */
@@ -375,10 +343,7 @@ textarea {
   .tiptap-content .subpage-link:hover { background: #111827; }
 
   /* Code block */
-  .code-block-header { background: #0f1219; border-bottom-color: #1e2533; }
-  .code-block-lang-select { background: #1e2533; border-color: #2d3548; color: #9ca3af; }
-  .code-block-lang-select:hover { background: #2d3548; color: #d1d5db; }
-  .code-block-wrapper pre { background: #111827 !important; }
+  .tiptap-content pre { background: #181825; color: #cdd6f4; }
 
   /* Math */
   .math-inline-rendered:hover { background: #1e3a5f; }
@@ -401,5 +366,4 @@ textarea {
   .tiptap-content table { page-break-inside: avoid; }
   .tiptap-content img { max-width: 100%; page-break-inside: avoid; }
   .tiptap-content pre { background: #f5f5f5 !important; color: #333 !important; border: 1px solid #ddd; }
-  .code-block-header { display: none !important; }
 }

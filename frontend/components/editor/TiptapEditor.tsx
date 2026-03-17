@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useEditor, EditorContent, ReactNodeViewRenderer } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -15,8 +15,8 @@ import TaskItem from '@tiptap/extension-task-item';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import EditorToolbar from './EditorToolbar';
+import CodeBlockToolbar from './CodeBlockView';
 import SlashMenu, { BlockType } from './SlashMenu';
-import CodeBlockView from './CodeBlockView';
 import { MathInline, MathBlock } from './MathExtension';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
 
@@ -56,11 +56,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
       TableHeader,
       TaskList,
       TaskItem.configure({ nested: true }),
-      CodeBlockLowlight.extend({
-        addNodeView() {
-          return ReactNodeViewRenderer(CodeBlockView);
-        },
-      }).configure({ lowlight }),
+      CodeBlockLowlight.configure({ lowlight }),
       MathInline,
       MathBlock,
     ],
@@ -84,9 +80,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
                 setSlashOpen(true);
                 setSlashFilter('');
                 slashStartRef.current = pos;
-              } catch {
-                // ignore
-              }
+              } catch { /* ignore */ }
             }, 0);
           }
         }
@@ -240,11 +234,18 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
     slashStartRef.current = null;
   }, []);
 
+  const isTableActive = editor?.isActive('table') ?? false;
+  const isCodeBlockActive = editor?.isActive('codeBlock') ?? false;
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <EditorToolbar editor={editor} onInsertImage={handleInsertImage} />
 
-      {editor?.isActive('table') && (
+      {/* Code block language selector */}
+      {isCodeBlockActive && editor && <CodeBlockToolbar editor={editor} />}
+
+      {/* Table controls */}
+      {isTableActive && editor && (
         <div className="flex items-center gap-1 px-5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs flex-wrap">
           <span className="text-neutral-400 mr-2">Table:</span>
           <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col Before</button>
@@ -261,7 +262,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950 editor-scroll-container">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950">
         <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 py-6 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>

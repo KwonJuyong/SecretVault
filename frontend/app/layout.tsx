@@ -21,6 +21,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
       </body>
