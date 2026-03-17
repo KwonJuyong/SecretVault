@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@tiptap/extension-code-block-lowlight": "^3.20.4",
+    "@tiptap/extension-code-block-lowlight": "^2.27.2",
     "@tiptap/extension-image": "^2.11.0",
     "@tiptap/extension-placeholder": "^2.11.0",
     "@tiptap/extension-table": "^2.11.0",
