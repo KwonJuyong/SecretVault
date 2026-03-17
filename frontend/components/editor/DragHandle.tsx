@@ -14,6 +14,7 @@ export const DragHandle = Extension.create({
         view(editorView) {
           const handle = document.createElement('div');
           handle.className = 'block-drag-handle';
+          handle.draggable = true;
           handle.innerHTML = `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
             <circle cx="2" cy="2" r="1.2"/><circle cx="8" cy="2" r="1.2"/>
             <circle cx="2" cy="7" r="1.2"/><circle cx="8" cy="7" r="1.2"/>
@@ -21,92 +22,33 @@ export const DragHandle = Extension.create({
           </svg>`;
           handle.style.display = 'none';
 
-          // Move up/down buttons
-          const moveUp = document.createElement('button');
-          moveUp.className = 'block-move-btn';
-          moveUp.innerHTML = '&#9650;';
-          moveUp.title = 'Move up';
-
-          const moveDown = document.createElement('button');
-          moveDown.className = 'block-move-btn';
-          moveDown.innerHTML = '&#9660;';
-          moveDown.title = 'Move down';
-
-          const container = document.createElement('div');
-          container.className = 'block-handle-group';
-          container.style.display = 'none';
-          container.appendChild(moveUp);
-          container.appendChild(handle);
-          container.appendChild(moveDown);
+          const dropLine = document.createElement('div');
+          dropLine.className = 'block-drop-indicator';
+          dropLine.style.display = 'none';
 
           const wrapper = editorView.dom.parentElement;
           if (wrapper) {
             wrapper.style.position = 'relative';
-            wrapper.appendChild(container);
+            wrapper.appendChild(handle);
+            wrapper.appendChild(dropLine);
           }
 
           let currentBlockPos: number | null = null;
           let currentBlockDom: HTMLElement | null = null;
+          let isDragging = false;
 
-          const positionContainer = (blockEl: HTMLElement) => {
+          const positionHandle = (blockEl: HTMLElement) => {
             if (!wrapper) return;
             const wrapperRect = wrapper.getBoundingClientRect();
             const editorRect = editorView.dom.getBoundingClientRect();
             const blockRect = blockEl.getBoundingClientRect();
-
-            container.style.display = 'flex';
-            container.style.top = `${blockRect.top - wrapperRect.top + wrapper.scrollTop}px`;
-            container.style.left = `${editorRect.left - wrapperRect.left - 32}px`;
-            container.style.height = `${blockRect.height}px`;
+            handle.style.display = 'flex';
+            handle.style.top = `${blockRect.top - wrapperRect.top + wrapper.scrollTop + 2}px`;
+            handle.style.left = `${editorRect.left - wrapperRect.left - 26}px`;
           };
 
-          // Move block up
-          moveUp.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            if (currentBlockPos === null) return;
-            const { state, dispatch } = editorView;
-            const $pos = state.doc.resolve(currentBlockPos);
-            if ($pos.index($pos.depth) === 0) return; // already first
-            try {
-              const node = state.doc.nodeAt(currentBlockPos);
-              if (!node) return;
-              const nodeBefore = $pos.nodeBefore;
-              if (!nodeBefore) return;
-              const beforePos = currentBlockPos - nodeBefore.nodeSize;
-              const tr = state.tr;
-              tr.delete(currentBlockPos, currentBlockPos + node.nodeSize);
-              tr.insert(beforePos, node);
-              tr.setSelection(NodeSelection.create(tr.doc, beforePos));
-              dispatch(tr);
-              currentBlockPos = beforePos;
-            } catch { /* ignore */ }
-          });
-
-          // Move block down
-          moveDown.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            if (currentBlockPos === null) return;
-            const { state, dispatch } = editorView;
-            try {
-              const node = state.doc.nodeAt(currentBlockPos);
-              if (!node) return;
-              const afterPos = currentBlockPos + node.nodeSize;
-              if (afterPos >= state.doc.content.size) return; // already last
-              const nodeAfter = state.doc.nodeAt(afterPos);
-              if (!nodeAfter) return;
-              const tr = state.tr;
-              tr.delete(afterPos, afterPos + nodeAfter.nodeSize);
-              tr.insert(currentBlockPos, nodeAfter);
-              const newPos = currentBlockPos + nodeAfter.nodeSize;
-              tr.setSelection(NodeSelection.create(tr.doc, newPos));
-              dispatch(tr);
-              currentBlockPos = newPos;
-            } catch { /* ignore */ }
-          });
-
-          // Select block on handle click
-          handle.addEventListener('mousedown', (e) => {
-            e.preventDefault();
+          // Mousedown: select the block (don't preventDefault — allow drag to start)
+          handle.addEventListener('mousedown', () => {
             if (currentBlockPos === null) return;
             try {
               const tr = editorView.state.tr.setSelection(
@@ -116,9 +58,88 @@ export const DragHandle = Extension.create({
             } catch { /* ignore */ }
           });
 
+          // Dragstart: set ProseMirror's dragging state
+          handle.addEventListener('dragstart', (e) => {
+            if (currentBlockPos === null) return;
+            isDragging = true;
+            handle.style.display = 'none';
+
+            try {
+              const { state } = editorView;
+              // Ensure NodeSelection
+              if (!(state.selection instanceof NodeSelection)) {
+                const tr = state.tr.setSelection(
+                  NodeSelection.create(state.doc, currentBlockPos)
+                );
+                editorView.dispatch(tr);
+              }
+
+              const slice = editorView.state.selection.content();
+              e.dataTransfer!.effectAllowed = 'move';
+              e.dataTransfer!.setData('application/x-prosemirror-drag', 'true');
+
+              // Set ProseMirror's internal dragging state
+              (editorView as any).dragging = { slice, move: true };
+            } catch { /* ignore */ }
+          });
+
+          handle.addEventListener('dragend', () => {
+            isDragging = false;
+            dropLine.style.display = 'none';
+            currentBlockDom = null;
+            currentBlockPos = null;
+          });
+
+          // Show drop indicator while dragging over editor
+          editorView.dom.addEventListener('dragover', (e) => {
+            if (!isDragging || !wrapper) return;
+            e.preventDefault();
+            e.dataTransfer!.dropEffect = 'move';
+
+            // Find the nearest block boundary
+            const pos = editorView.posAtCoords({ left: e.clientX, top: e.clientY });
+            if (!pos) return;
+
+            try {
+              const $pos = editorView.state.doc.resolve(pos.pos);
+              const before = $pos.before($pos.depth >= 1 ? 1 : 0);
+              const domNode = editorView.nodeDOM(before >= 0 ? before : 0) as HTMLElement;
+              if (!domNode) return;
+
+              const wrapperRect = wrapper.getBoundingClientRect();
+              const nodeRect = domNode.getBoundingClientRect();
+              const editorRect = editorView.dom.getBoundingClientRect();
+              const midY = nodeRect.top + nodeRect.height / 2;
+
+              let lineY: number;
+              if (e.clientY < midY) {
+                lineY = nodeRect.top - wrapperRect.top + wrapper.scrollTop;
+              } else {
+                lineY = nodeRect.bottom - wrapperRect.top + wrapper.scrollTop;
+              }
+
+              dropLine.style.display = 'block';
+              dropLine.style.top = `${lineY}px`;
+              dropLine.style.left = `${editorRect.left - wrapperRect.left}px`;
+              dropLine.style.width = `${editorRect.width}px`;
+            } catch {
+              dropLine.style.display = 'none';
+            }
+          });
+
+          editorView.dom.addEventListener('dragleave', () => {
+            dropLine.style.display = 'none';
+          });
+
+          editorView.dom.addEventListener('drop', () => {
+            isDragging = false;
+            dropLine.style.display = 'none';
+          });
+
           const onMouseMove = (e: MouseEvent) => {
+            if (isDragging) return;
             const target = e.target as HTMLElement;
-            if (container.contains(target)) return;
+            if (handle.contains(target)) return;
 
             let blockEl: HTMLElement | null = null;
             let el: HTMLElement | null = target;
@@ -137,20 +158,21 @@ export const DragHandle = Extension.create({
                 const resolved = editorView.state.doc.resolve(pos);
                 currentBlockPos = resolved.before(resolved.depth >= 1 ? 1 : 0);
                 if (currentBlockPos < 0) currentBlockPos = 0;
-                positionContainer(blockEl);
+                positionHandle(blockEl);
               } catch {
-                container.style.display = 'none';
+                handle.style.display = 'none';
                 currentBlockPos = null;
               }
             }
           };
 
           const onMouseLeave = (e: MouseEvent) => {
+            if (isDragging) return;
             const related = e.relatedTarget as HTMLElement;
-            if (related && container.contains(related)) return;
+            if (related && handle.contains(related)) return;
             setTimeout(() => {
-              if (!container.matches(':hover')) {
-                container.style.display = 'none';
+              if (!handle.matches(':hover') && !isDragging) {
+                handle.style.display = 'none';
                 currentBlockDom = null;
                 currentBlockPos = null;
               }
@@ -160,22 +182,24 @@ export const DragHandle = Extension.create({
           editorView.dom.addEventListener('mousemove', onMouseMove);
           editorView.dom.addEventListener('mouseleave', onMouseLeave);
 
-          container.addEventListener('mouseleave', (e) => {
+          handle.addEventListener('mouseleave', (e) => {
+            if (isDragging) return;
             const related = e.relatedTarget as HTMLElement;
             if (related && editorView.dom.contains(related)) return;
-            container.style.display = 'none';
+            handle.style.display = 'none';
             currentBlockDom = null;
             currentBlockPos = null;
           });
 
           return {
             update() {
-              if (currentBlockDom && container.style.display !== 'none') {
-                positionContainer(currentBlockDom);
+              if (currentBlockDom && handle.style.display !== 'none' && !isDragging) {
+                positionHandle(currentBlockDom);
               }
             },
             destroy() {
-              container.remove();
+              handle.remove();
+              dropLine.remove();
               editorView.dom.removeEventListener('mousemove', onMouseMove);
               editorView.dom.removeEventListener('mouseleave', onMouseLeave);
             },

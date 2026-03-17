@@ -82,10 +82,10 @@ export default function Sidebar({
     return (
       <div key={page.id}>
         <div
-          className={`group flex items-center gap-1 py-1 px-2 mx-1 rounded-lg cursor-pointer transition-colors text-sm ${
+          className={`group flex items-center gap-1 py-1 px-2 mx-1 rounded-lg cursor-pointer transition-colors duration-200 text-sm ${
             isActive
-              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-              : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              ? 'bg-blue-50/70 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300'
+              : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800'
           }`}
           style={{ paddingLeft: `${depth * 20 + 8}px` }}
           onClick={() => onSelectPage(page.id)}
@@ -130,9 +130,9 @@ export default function Sidebar({
   };
 
   return (
-    <div className="w-[260px] h-full flex flex-col bg-neutral-50 dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex-shrink-0">
+    <div className="w-[260px] h-full flex flex-col bg-[#f8f8f7] dark:bg-[#1a1a1a] border-r border-neutral-200/70 dark:border-neutral-800 flex-shrink-0">
       {/* Workspace Switcher */}
-      <div className="p-3 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="p-3 border-b border-neutral-200/70 dark:border-neutral-800">
         <WorkspaceSwitcher
           currentWorkspaceId={currentWorkspaceId}
           onSwitch={onSwitchWorkspace}
@@ -145,7 +145,7 @@ export default function Sidebar({
       <div className="p-2 space-y-0.5">
         <button
           onClick={onOpenSearch}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200"
         >
           <Search size={16} />
           <span>Search</span>
@@ -183,11 +183,11 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5">
-        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
+      <div className="p-2 border-t border-neutral-200/70 dark:border-neutral-800 space-y-0.5">
+        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200">
           <Trash2 size={16} /><span>Trash</span>
         </button>
-        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
+        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200">
           <HelpCircle size={16} /><span>Help & Guide</span>
         </button>
 
@@ -195,7 +195,7 @@ export default function Sidebar({
         <div className="relative">
           <button
             onClick={openUserMenu}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200"
           >
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
               {(displayName || email || '?').charAt(0).toUpperCase()}

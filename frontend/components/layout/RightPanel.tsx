@@ -58,9 +58,9 @@ export default function RightPanel({ content, title, onClose, onExportMarkdown, 
   };
 
   return (
-    <div className="w-[260px] h-full flex flex-col bg-neutral-50 dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 flex-shrink-0">
+    <div className="w-[260px] h-full flex flex-col bg-[#f8f8f7] dark:bg-[#1a1a1a] border-l border-neutral-200/70 dark:border-neutral-800 flex-shrink-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200/70 dark:border-neutral-800">
         <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Page Info</span>
         <button
           onClick={onClose}
@@ -111,7 +111,7 @@ export default function RightPanel({ content, title, onClose, onExportMarkdown, 
       </div>
 
       {/* Export */}
-      <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 space-y-1">
+      <div className="p-3 border-t border-neutral-200/70 dark:border-neutral-800 space-y-1">
         <span className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-1 block mb-2">Export</span>
         <button
           onClick={onExportMarkdown}

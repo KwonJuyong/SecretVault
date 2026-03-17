@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import TiptapEditor from './TiptapEditor';
 import { FileText, Plus, ChevronRight } from 'lucide-react';
 
@@ -56,6 +56,14 @@ export default function Editor({
 }: EditorProps) {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [activeCategory, setActiveCategory] = useState(0);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus title when loading an empty/new page
+  useEffect(() => {
+    if (title === '' || title === 'Untitled') {
+      setTimeout(() => titleRef.current?.focus(), 100);
+    }
+  }, [title]);
 
   const handleContentChange = useCallback((html: string) => {
     onChangeContent(html);
@@ -112,11 +120,12 @@ export default function Editor({
 
           {/* Title input */}
           <input
+            ref={titleRef}
             type="text"
             value={title}
             onChange={e => onChangeTitle(e.target.value)}
             placeholder="Untitled"
-            className="w-full text-[38px] font-extrabold text-neutral-900 dark:text-white bg-transparent border-none outline-none placeholder-neutral-300 dark:placeholder-neutral-600 leading-tight"
+            className="w-full text-[36px] font-bold text-neutral-900 dark:text-white bg-transparent border-none outline-none placeholder-neutral-400 dark:placeholder-neutral-600 leading-tight"
           />
         </div>
       </div>
