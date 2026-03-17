@@ -203,12 +203,36 @@ export default function AppPage() {
     }
   }, [workspaceId, encKey, fetchPages, loadPage]);
 
-  // Create sub-page (child of current page)
-  const createSubPage = useCallback(() => {
-    if (activePageId) {
-      createPage(activePageId);
+  // Create sub-page (child of current page) without navigating away
+  const createSubPage = useCallback(async () => {
+    if (!activePageId || !workspaceId) return;
+    try {
+      // Save current page first
+      const encTitle = encrypt(editTitle || 'Untitled', encKey);
+      const encContent = encrypt(editContent, encKey);
+      await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, {
+        title: encTitle,
+        content: encContent,
+        icon: editIcon,
+      });
+
+      // Create the sub-page
+      const subEncTitle = encrypt('', encKey);
+      const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
+        title: subEncTitle,
+        content: '',
+        parent_id: activePageId,
+        icon: '',
+      });
+      await fetchPages();
+
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'page_created', page_id: data.id }));
+      }
+    } catch (e) {
+      console.error('Failed to create sub-page:', e);
     }
-  }, [activePageId, createPage]);
+  }, [activePageId, workspaceId, editTitle, editContent, editIcon, encKey, fetchPages]);
 
   // Delete page (soft)
   const deletePage = useCallback(async (pageId: string) => {

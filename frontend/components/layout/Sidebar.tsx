@@ -172,20 +172,20 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5">
-        <button onClick={onOpenProfile} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100 transition">
+        <button onClick={onOpenProfile} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
           <User size={16} /><span>Profile</span>
         </button>
-        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100 transition">
+        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
           <Trash2 size={16} /><span>Trash</span>
         </button>
-        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100 transition">
+        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
           <HelpCircle size={16} /><span>Help & Guide</span>
         </button>
         {/* User profile */}
         <div className="relative">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100 transition"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
           >
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
               {(displayName || userId).charAt(0).toUpperCase()}
@@ -195,12 +195,12 @@ export default function Sidebar({
           {profileOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-              <div className="absolute left-0 bottom-full mb-1 w-56 bg-white rounded-xl shadow-lg border border-neutral-200 z-50 overflow-hidden">
-                <div className="p-3 border-b border-neutral-100">
-                  <p className="text-xs text-neutral-500">Signed in as</p>
-                  <p className="text-sm font-semibold text-neutral-800">{userId}</p>
+              <div className="absolute left-0 bottom-full mb-1 w-56 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
+                <div className="p-3 border-b border-neutral-100 dark:border-neutral-700">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Signed in as</p>
+                  <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">{userId}</p>
                 </div>
-                <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 transition">
+                <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                   <LogOut size={15} /> Sign Out
                 </button>
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -12,9 +12,16 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
 import EditorToolbar from './EditorToolbar';
 import SlashMenu, { BlockType } from './SlashMenu';
+import CodeBlockView from './CodeBlockView';
+import { MathInline, MathBlock } from './MathExtension';
+import { DragHandle } from './DragHandle';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
+
+const lowlight = createLowlight(common);
 
 interface TiptapEditorProps {
   content: string;
@@ -36,6 +43,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        codeBlock: false, // disable default, use lowlight version
       }),
       Underline,
       Placeholder.configure({
@@ -50,12 +58,22 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
       TableHeader,
       TaskList,
       TaskItem.configure({ nested: true }),
+      CodeBlockLowlight.extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(CodeBlockView);
+        },
+      }).configure({ lowlight }),
+      MathInline,
+      MathBlock,
+      DragHandle,
     ],
     content: '',
     editorProps: {
       attributes: {
-        class: 'tiptap-content outline-none min-h-[70vh] px-8 sm:px-16 lg:px-24 py-8',
+        class: 'tiptap-content outline-none min-h-[70vh] px-8 sm:px-16 lg:px-24 py-8 pb-[40vh]',
       },
+      scrollThreshold: 100,
+      scrollMargin: 80,
       handleKeyDown: (view, event) => {
         // Detect `/` at start of empty line to open slash menu
         if (event.key === '/' && !slashOpen) {
@@ -186,7 +204,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
   }, [editor]);
 
   // Handle slash menu command selection
-  const handleSlashSelect = useCallback((type: BlockType) => {
+  const handleSlashSelect = useCallback(async (type: BlockType) => {
     if (!editor || slashStartRef.current === null) return;
 
     // Delete the `/filter` text
@@ -238,14 +256,23 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
       case 'image':
         fileInputRef.current?.click();
         break;
-      case 'subpage':
+      case 'mathInline':
+        editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run();
+        break;
+      case 'mathBlock':
+        editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run();
+        break;
+      case 'subpage': {
+        // Trigger content save via onChange, then create sub-page without navigating
+        onChange(editor.getHTML());
         onInsertSubPage?.();
         break;
+      }
     }
 
     setSlashOpen(false);
     slashStartRef.current = null;
-  }, [editor, onInsertSubPage]);
+  }, [editor, onInsertSubPage, onChange]);
 
   const handleSlashClose = useCallback(() => {
     setSlashOpen(false);
@@ -256,13 +283,19 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
     <div className="flex flex-col h-full overflow-hidden">
       <EditorToolbar editor={editor} onInsertImage={handleInsertImage} />
       {editor?.isActive('table') && (
-        <div className="flex items-center gap-1 px-4 py-1.5 border-b border-neutral-100 bg-neutral-50 text-xs">
+        <div className="flex items-center gap-1 px-4 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs flex-wrap">
           <span className="text-neutral-400 mr-2">Table:</span>
-          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 text-neutral-600">+ Column</button>
-          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 text-neutral-600">+ Row</button>
-          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2 py-0.5 rounded hover:bg-red-50 text-red-500">- Column</button>
-          <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-2 py-0.5 rounded hover:bg-red-50 text-red-500">- Row</button>
-          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2 py-0.5 rounded hover:bg-red-50 text-red-500">Delete Table</button>
+          <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col Before</button>
+          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col After</button>
+          <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row Before</button>
+          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row After</button>
+          <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Merge Cells</button>
+          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Split Cell</button>
+          <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Column</button>
+          <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Row</button>
+          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">Delete Table</button>
         </div>
       )}
       <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950">

@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare,
-  Quote, Code2, Minus, Table, Type, Image, FileText,
+  Quote, Code2, Minus, Table, Type, Image, FileText, Sigma, Pi,
 } from 'lucide-react';
 
-export type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo' | 'quote' | 'code' | 'divider' | 'table' | 'image' | 'subpage';
+export type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo' | 'quote' | 'code' | 'divider' | 'table' | 'image' | 'subpage' | 'mathInline' | 'mathBlock';
 
 export interface SlashCommand {
   type: BlockType;
@@ -29,6 +29,8 @@ const commands: SlashCommand[] = [
   { type: 'divider', label: 'Divider', description: 'Horizontal line separator', icon: <Minus size={20} />, keywords: ['divider', 'separator', 'line', 'hr'] },
   { type: 'table', label: 'Table', description: 'Insert a table (3x3)', icon: <Table size={20} />, keywords: ['table', 'grid', 'spreadsheet'] },
   { type: 'image', label: 'Image', description: 'Upload an image', icon: <Image size={20} />, keywords: ['image', 'photo', 'picture', 'img'] },
+  { type: 'mathInline', label: 'Inline Math', description: 'Inline LaTeX formula ($e^2$)', icon: <Sigma size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'inline', 'katex'] },
+  { type: 'mathBlock', label: 'Block Math', description: 'Display LaTeX equation ($$...$$)', icon: <Pi size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'block', 'display', 'katex'] },
   { type: 'subpage', label: 'Sub-page', description: 'Create a nested page', icon: <FileText size={20} />, keywords: ['subpage', 'page', 'nested', 'child', 'sub'] },
 ];
 

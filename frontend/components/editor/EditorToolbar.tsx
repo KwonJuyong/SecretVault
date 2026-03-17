@@ -26,18 +26,18 @@ export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarPr
       title={title}
       className={`p-1.5 rounded-md transition-colors ${
         active
-          ? 'bg-blue-100 text-blue-700'
-          : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+          : 'text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200'
       }`}
     >
       {children}
     </button>
   );
 
-  const Sep = () => <div className="w-px h-5 bg-neutral-200 mx-1" />;
+  const Sep = () => <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-700 mx-1" />;
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-neutral-200 bg-white flex-wrap flex-shrink-0">
+    <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex-wrap flex-shrink-0">
       <Btn onClick={() => editor.chain().focus().undo().run()} title="Undo"><Undo2 size={15} /></Btn>
       <Btn onClick={() => editor.chain().focus().redo().run()} title="Redo"><Redo2 size={15} /></Btn>
       <Sep />

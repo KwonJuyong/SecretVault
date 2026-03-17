@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'katex/dist/katex.min.css';
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -103,9 +104,6 @@ textarea {
 /* ===================== */
 /* Tiptap Editor Styles  */
 /* ===================== */
-/* ===================== */
-/* Tiptap Editor Styles  */
-/* ===================== */
 .tiptap-content { font-size: 1rem; line-height: 1.75; color: #374151; }
 .tiptap-content > * + * { margin-top: 0.75em; }
 .tiptap-content p.is-editor-empty:first-child::before {
@@ -119,8 +117,6 @@ textarea {
 .tiptap-content u { text-decoration: underline; }
 .tiptap-content s { text-decoration: line-through; color: #9ca3af; }
 .tiptap-content code { background: #f3f4f6; color: #dc2626; padding: 0.15em 0.4em; border-radius: 0.3em; font-family: ui-monospace, monospace; font-size: 0.9em; }
-.tiptap-content pre { background: #1f2937; color: #e5e7eb; border-radius: 0.75em; padding: 1em 1.25em; overflow-x: auto; margin: 1em 0; }
-.tiptap-content pre code { background: none; color: inherit; padding: 0; font-size: 0.875em; }
 .tiptap-content blockquote { border-left: 3px solid #3b82f6; padding-left: 1em; margin: 1em 0; color: #6b7280; font-style: italic; }
 .tiptap-content ul { list-style-type: disc; padding-left: 1.5em; margin: 0.5em 0; }
 .tiptap-content ol { list-style-type: decimal; padding-left: 1.5em; margin: 0.5em 0; }
@@ -137,21 +133,288 @@ textarea {
 .tiptap-content img { max-width: 100%; height: auto; border-radius: 0.5em; margin: 1em 0; }
 .tiptap-content img.ProseMirror-selectednode { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
-/* Table styles - enhanced */
-.tiptap-content table { border-collapse: collapse; width: 100%; margin: 1.5em 0; border: 1px solid #e5e7eb; border-radius: 0.5em; overflow: hidden; table-layout: fixed; }
-.tiptap-content th, .tiptap-content td { border: 1px solid #e5e7eb; padding: 0.6em 0.85em; text-align: left; vertical-align: top; min-width: 80px; position: relative; word-wrap: break-word; }
+/* ===================== */
+/* Code Block with Syntax Highlighting */
+/* ===================== */
+.code-block-wrapper {
+  position: relative;
+  margin: 1em 0;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: flex-end;
+  background: #1a1f2e;
+  border-radius: 0.75em 0.75em 0 0;
+  padding: 0.35em 0.75em;
+  border-bottom: 1px solid #2d3548;
+}
+
+.code-block-lang-select {
+  background: #2d3548;
+  color: #9ca3af;
+  border: 1px solid #3d4a60;
+  border-radius: 0.35em;
+  padding: 0.15em 0.5em;
+  font-size: 0.75em;
+  cursor: pointer;
+  outline: none;
+  font-family: ui-monospace, monospace;
+}
+
+.code-block-lang-select:hover {
+  background: #3d4a60;
+  color: #d1d5db;
+}
+
+.code-block-lang-select option {
+  background: #1f2937;
+  color: #d1d5db;
+}
+
+.code-block-wrapper pre {
+  background: #1f2937 !important;
+  color: #e5e7eb;
+  border-radius: 0 0 0.75em 0.75em;
+  padding: 1em 1.25em;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.code-block-wrapper pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: 0.875em;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+/* Syntax highlighting colors (lowlight/highlight.js) */
+.tiptap-content .hljs-comment,
+.tiptap-content .hljs-quote { color: #6b7280; font-style: italic; }
+.tiptap-content .hljs-keyword,
+.tiptap-content .hljs-selector-tag { color: #c084fc; }
+.tiptap-content .hljs-string,
+.tiptap-content .hljs-addition { color: #86efac; }
+.tiptap-content .hljs-number,
+.tiptap-content .hljs-literal { color: #fbbf24; }
+.tiptap-content .hljs-built_in,
+.tiptap-content .hljs-type { color: #67e8f9; }
+.tiptap-content .hljs-attr,
+.tiptap-content .hljs-attribute { color: #fbbf24; }
+.tiptap-content .hljs-name,
+.tiptap-content .hljs-tag { color: #f87171; }
+.tiptap-content .hljs-selector-class,
+.tiptap-content .hljs-selector-id { color: #a78bfa; }
+.tiptap-content .hljs-title,
+.tiptap-content .hljs-section { color: #60a5fa; font-weight: 600; }
+.tiptap-content .hljs-variable,
+.tiptap-content .hljs-template-variable { color: #f472b6; }
+.tiptap-content .hljs-deletion { color: #fca5a5; background: #450a0a; }
+.tiptap-content .hljs-meta { color: #94a3b8; }
+.tiptap-content .hljs-function { color: #60a5fa; }
+.tiptap-content .hljs-params { color: #e5e7eb; }
+.tiptap-content .hljs-regexp { color: #fbbf24; }
+.tiptap-content .hljs-symbol { color: #f472b6; }
+.tiptap-content .hljs-property { color: #67e8f9; }
+
+/* Fallback for non-NodeView code blocks */
+.tiptap-content pre { background: #1f2937; color: #e5e7eb; border-radius: 0.75em; padding: 1em 1.25em; overflow-x: auto; margin: 1em 0; }
+.tiptap-content pre code { background: none; color: inherit; padding: 0; font-size: 0.875em; }
+
+/* ===================== */
+/* Table styles - enhanced with resizable width */
+/* ===================== */
+.tiptap-content .tableWrapper {
+  overflow-x: auto;
+  margin: 1em 0;
+  max-width: 100%;
+}
+
+.tiptap-content table {
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5em;
+  overflow: hidden;
+  /* Removed width: 100% and table-layout: fixed to allow flexible sizing */
+}
+
+.tiptap-content th, .tiptap-content td {
+  border: 1px solid #e5e7eb;
+  padding: 0.6em 0.85em;
+  text-align: left;
+  vertical-align: top;
+  min-width: 80px;
+  position: relative;
+  word-wrap: break-word;
+}
+
 .tiptap-content th { background: #f9fafb; font-weight: 600; color: #374151; font-size: 0.9em; }
 .tiptap-content td { background: white; }
 .tiptap-content tr:hover td { background: #f9fafb; }
 .tiptap-content .selectedCell { background: #dbeafe !important; }
-.tiptap-content .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #3b82f6; cursor: col-resize; z-index: 10; }
-.tiptap-content .tableWrapper { overflow-x: auto; margin: 1em 0; }
+.tiptap-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #3b82f6;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+/* Resize wrapper to allow overall table width adjustment */
+.tiptap-content .tableWrapper {
+  position: relative;
+  display: inline-block;
+  min-width: 200px;
+  max-width: 100%;
+}
 
 /* Sub-page link blocks */
 .tiptap-content .subpage-link { display: flex; align-items: center; gap: 0.5em; padding: 0.5em 0.75em; border-radius: 0.5em; background: #f9fafb; border: 1px solid #e5e7eb; cursor: pointer; transition: background 0.15s; margin: 0.5em 0; text-decoration: none; color: #374151; }
 .tiptap-content .subpage-link:hover { background: #f3f4f6; }
 
-/* Dark mode for tiptap */
+/* ===================== */
+/* Math (LaTeX) styles   */
+/* ===================== */
+.math-inline-wrapper {
+  display: inline;
+}
+
+.math-inline-rendered {
+  display: inline;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.math-inline-rendered:hover {
+  background: #eff6ff;
+}
+
+.math-inline-rendered.math-selected {
+  background: #dbeafe;
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+.math-inline-input {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  color: #374151;
+  outline: none;
+  min-width: 80px;
+}
+
+.math-inline-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.math-block-wrapper {
+  margin: 1em 0;
+  padding: 1em 1.25em;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75em;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.math-block-wrapper:hover {
+  background: #f3f4f6;
+}
+
+.math-block-wrapper.math-editing {
+  text-align: left;
+  cursor: default;
+}
+
+.math-block-wrapper.math-selected {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.math-block-label {
+  font-size: 0.75em;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 0.5em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.math-block-input {
+  width: 100%;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.5em 0.75em;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  color: #374151;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.math-block-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.math-block-rendered .katex-display {
+  margin: 0;
+}
+
+/* ===================== */
+/* Drag Handle           */
+/* ===================== */
+.drag-handle {
+  position: absolute;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: grab;
+  color: #9ca3af;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+  z-index: 30;
+  user-select: none;
+}
+
+.drag-handle:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: #e5e7eb;
+}
+
+/* ProseMirror dragging state */
+.ProseMirror-selectednode {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ===================== */
+/* Dark mode for tiptap  */
+/* ===================== */
 @media (prefers-color-scheme: dark) {
   .tiptap-content { color: #d1d5db; }
   .tiptap-content h1, .tiptap-content h2, .tiptap-content h3 { color: #f3f4f6; }
@@ -170,9 +433,32 @@ textarea {
   .tiptap-content p.is-editor-empty:first-child::before { color: #525252; }
   .tiptap-content .subpage-link { background: #1f2937; border-color: #374151; color: #d1d5db; }
   .tiptap-content .subpage-link:hover { background: #111827; }
+
+  /* Code block dark mode */
+  .code-block-header { background: #0f1219; border-bottom-color: #1e2533; }
+  .code-block-lang-select { background: #1e2533; border-color: #2d3548; color: #9ca3af; }
+  .code-block-lang-select:hover { background: #2d3548; color: #d1d5db; }
+  .code-block-wrapper pre { background: #111827 !important; }
+
+  /* Math dark mode */
+  .math-inline-rendered:hover { background: #1e3a5f; }
+  .math-inline-rendered.math-selected { background: #1e3a5f; }
+  .math-inline-input { background: #1f2937; border-color: #374151; color: #d1d5db; }
+  .math-inline-input:focus { border-color: #3b82f6; }
+  .math-block-wrapper { background: #111827; border-color: #374151; }
+  .math-block-wrapper:hover { background: #1a2332; }
+  .math-block-input { background: #0a0a0a; border-color: #374151; color: #d1d5db; }
+  .math-block-input:focus { border-color: #3b82f6; }
+
+  /* Drag handle dark mode */
+  .drag-handle { color: #525252; }
+  .drag-handle:hover { background: #1f2937; color: #9ca3af; }
+  .drag-handle:active { background: #374151; }
 }
 
-/* Print styles for PDF export */
+/* ===================== */
+/* Print styles          */
+/* ===================== */
 @media print {
   body { background: white !important; color: black !important; }
   .no-print { display: none !important; }
@@ -183,4 +469,6 @@ textarea {
   .tiptap-content table { page-break-inside: avoid; }
   .tiptap-content img { max-width: 100%; page-break-inside: avoid; }
   .tiptap-content pre { background: #f5f5f5 !important; color: #333 !important; border: 1px solid #ddd; }
+  .drag-handle { display: none !important; }
+  .code-block-header { display: none !important; }
 }
