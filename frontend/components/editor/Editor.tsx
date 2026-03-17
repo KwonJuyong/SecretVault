@@ -2,6 +2,13 @@
 
 import { useState, useCallback } from 'react';
 import TiptapEditor from './TiptapEditor';
+import { FileText, Plus, ChevronRight } from 'lucide-react';
+
+interface SubPageItem {
+  id: string;
+  title: string;
+  icon: string;
+}
 
 interface EditorProps {
   title: string;
@@ -10,15 +17,45 @@ interface EditorProps {
   onChangeTitle: (title: string) => void;
   onChangeContent: (content: string) => void;
   onChangeIcon: (icon: string) => void;
+  subPages?: SubPageItem[];
+  onCreateSubPage?: () => void;
+  onNavigateToPage?: (pageId: string) => void;
 }
+
+const emojiCategories = [
+  {
+    name: 'Common',
+    emojis: ['', '\u{1F4DD}', '\u{1F4CB}', '\u{1F4D6}', '\u{1F4DA}', '\u{1F4A1}', '\u{1F680}', '\u2B50', '\u{1F525}', '\u{1F4E6}', '\u{1F50D}', '\u{1F512}', '\u{1F3AF}', '\u2705', '\u26A0\uFE0F', '\u{1F4AC}', '\u{1F4BB}', '\u{1F9EA}', '\u{1F4CA}', '\u{1F4C1}'],
+  },
+  {
+    name: 'Objects',
+    emojis: ['\u{1F4CC}', '\u{1F4CE}', '\u{1F4D1}', '\u{1F4D2}', '\u{1F4D3}', '\u{1F4D4}', '\u{1F4D5}', '\u{1F4D7}', '\u{1F4D8}', '\u{1F4D9}', '\u{1F4DC}', '\u{1F4E7}', '\u{1F4E8}', '\u{1F4E9}', '\u{1F4EA}', '\u2709\uFE0F', '\u{1F4F0}', '\u{1F5DE}\uFE0F', '\u{1F4F1}', '\u{1F5A5}\uFE0F'],
+  },
+  {
+    name: 'People',
+    emojis: ['\u{1F464}', '\u{1F465}', '\u{1F468}\u200D\u{1F4BB}', '\u{1F469}\u200D\u{1F4BB}', '\u{1F9D1}\u200D\u{1F4BC}', '\u{1F4AA}', '\u{1F44D}', '\u{1F44E}', '\u{1F44F}', '\u{1F91D}', '\u270C\uFE0F', '\u{1F64F}', '\u{1F914}', '\u{1F4AD}', '\u{1F4A4}', '\u{1F389}', '\u{1F38A}', '\u{1F381}', '\u{1F3C6}', '\u{1F3C5}'],
+  },
+  {
+    name: 'Nature',
+    emojis: ['\u{1F31F}', '\u2600\uFE0F', '\u{1F324}\uFE0F', '\u{1F327}\uFE0F', '\u26A1', '\u{1F308}', '\u{1F33B}', '\u{1F33A}', '\u{1F337}', '\u{1F331}', '\u{1F332}', '\u{1F333}', '\u{1F335}', '\u{1F340}', '\u{1F341}', '\u{1F34E}', '\u{1F34A}', '\u{1F353}', '\u{1F352}', '\u{1F349}'],
+  },
+  {
+    name: 'Symbols',
+    emojis: ['\u2764\uFE0F', '\u{1F499}', '\u{1F49A}', '\u{1F49B}', '\u{1F49C}', '\u{1F90D}', '\u{1F5A4}', '\u{1F4AF}', '\u{1F4A5}', '\u{1F4AB}', '\u2728', '\u{1F6A9}', '\u{1F3F3}\uFE0F', '\u{1F6D1}', '\u267B\uFE0F', '\u2757', '\u2753', '\u{1F198}', '\u{1F195}', '\u{1F51D}'],
+  },
+  {
+    name: 'Animals',
+    emojis: ['\u{1F436}', '\u{1F431}', '\u{1F42D}', '\u{1F439}', '\u{1F430}', '\u{1F98A}', '\u{1F43B}', '\u{1F43C}', '\u{1F428}', '\u{1F42F}', '\u{1F981}', '\u{1F984}', '\u{1F422}', '\u{1F40D}', '\u{1F433}', '\u{1F419}', '\u{1F99E}', '\u{1F41D}', '\u{1F98B}', '\u{1F426}'],
+  },
+];
 
 export default function Editor({
   title, content, icon,
   onChangeTitle, onChangeContent, onChangeIcon,
+  subPages = [], onCreateSubPage, onNavigateToPage,
 }: EditorProps) {
   const [showIconPicker, setShowIconPicker] = useState(false);
-
-  const commonEmojis = ['', '\u{1F4DD}', '\u{1F4CB}', '\u{1F4D6}', '\u{1F4DA}', '\u{1F4A1}', '\u{1F680}', '\u2B50', '\u{1F525}', '\u{1F4E6}', '\u{1F50D}', '\u{1F512}', '\u{1F3AF}', '\u2705', '\u26A0\uFE0F', '\u{1F4AC}', '\u{1F4BB}', '\u{1F9EA}', '\u{1F4CA}', '\u{1F4C1}'];
+  const [activeCategory, setActiveCategory] = useState(0);
 
   const handleContentChange = useCallback((html: string) => {
     onChangeContent(html);
@@ -26,11 +63,13 @@ export default function Editor({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <div className="max-w-3xl mx-auto w-full px-6 sm:px-12 pt-8 pb-2 bg-white">
-        <div className="relative mb-3 inline-block">
+      {/* Title area - full width, Notion-like */}
+      <div className="w-full px-8 sm:px-16 lg:px-24 pt-10 pb-4 bg-white dark:bg-neutral-950">
+        {/* Icon picker */}
+        <div className="relative mb-4 inline-block">
           <button
             onClick={() => setShowIconPicker(!showIconPicker)}
-            className="text-4xl hover:bg-neutral-100 rounded-xl p-1 transition"
+            className="text-5xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2 transition"
             title="Change icon"
           >
             {icon || '\u{1F4C4}'}
@@ -38,31 +77,88 @@ export default function Editor({
           {showIconPicker && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowIconPicker(false)} />
-              <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-xl shadow-xl border border-neutral-200 p-2.5 grid grid-cols-5 gap-1 w-56">
-                {commonEmojis.map((emoji, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { onChangeIcon(emoji); setShowIconPicker(false); }}
-                    className="text-xl p-2 rounded-lg hover:bg-neutral-100 transition"
-                  >
-                    {emoji || '\u274C'}
-                  </button>
-                ))}
+              <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 w-80 overflow-hidden">
+                {/* Category tabs */}
+                <div className="flex gap-0.5 px-2 pt-2 pb-1 overflow-x-auto border-b border-neutral-100 dark:border-neutral-800">
+                  {emojiCategories.map((cat, i) => (
+                    <button
+                      key={cat.name}
+                      onClick={() => setActiveCategory(i)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${
+                        i === activeCategory
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+                {/* Emoji grid */}
+                <div className="p-2 grid grid-cols-8 gap-0.5 max-h-48 overflow-y-auto">
+                  {emojiCategories[activeCategory].emojis.map((emoji, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { onChangeIcon(emoji); setShowIconPicker(false); }}
+                      className="text-xl p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition flex items-center justify-center"
+                    >
+                      {emoji || '\u274C'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}
         </div>
 
+        {/* Title input - large, Notion-like */}
         <input
           type="text"
           value={title}
           onChange={e => onChangeTitle(e.target.value)}
           placeholder="Untitled"
-          className="w-full text-4xl font-extrabold text-neutral-900 bg-transparent border-none outline-none placeholder-neutral-300 mb-1"
+          className="w-full text-[42px] font-extrabold text-neutral-900 dark:text-white bg-transparent border-none outline-none placeholder-neutral-300 dark:placeholder-neutral-600 leading-tight"
         />
       </div>
 
-      <TiptapEditor content={content} onChange={handleContentChange} />
+      {/* Editor content */}
+      <TiptapEditor
+        content={content}
+        onChange={handleContentChange}
+        onInsertSubPage={onCreateSubPage}
+      />
+
+      {/* Sub-pages section */}
+      {(subPages.length > 0 || onCreateSubPage) && (
+        <div className="border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-8 sm:px-16 lg:px-24 py-4">
+          {subPages.length > 0 && (
+            <div className="space-y-1 mb-3">
+              {subPages.map(sp => (
+                <button
+                  key={sp.id}
+                  onClick={() => onNavigateToPage?.(sp.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition text-left group"
+                >
+                  <span className="text-lg">{sp.icon || '\u{1F4C4}'}</span>
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate flex-1">
+                    {sp.title || 'Untitled'}
+                  </span>
+                  <ChevronRight size={14} className="text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 transition" />
+                </button>
+              ))}
+            </div>
+          )}
+          {onCreateSubPage && (
+            <button
+              onClick={onCreateSubPage}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
+            >
+              <Plus size={15} />
+              <span>Add a sub-page</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

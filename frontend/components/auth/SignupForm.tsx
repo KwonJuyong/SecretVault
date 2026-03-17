@@ -45,7 +45,7 @@ export default function SignupForm() {
   return (
     <div className="min-h-screen flex">
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex-col justify-between p-12 text-white">
+      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex-col justify-between px-16 py-14 text-white">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
@@ -54,11 +54,11 @@ export default function SignupForm() {
             <span className="text-xl font-bold tracking-tight">SecretVault</span>
           </div>
         </div>
-        <div>
-          <h2 className="text-3xl font-bold leading-tight mb-4">
+        <div className="pr-6">
+          <h2 className="text-3xl font-bold leading-tight mb-5">
             Start collaborating<br />securely today.
           </h2>
-          <p className="text-blue-200/70 text-sm leading-relaxed max-w-sm">
+          <p className="text-blue-200/70 text-sm leading-relaxed max-w-[340px]">
             Create your free account and set up your encrypted workspace in seconds.
             Invite your team members and start working together.
           </p>
@@ -69,7 +69,7 @@ export default function SignupForm() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-6">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-12">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">

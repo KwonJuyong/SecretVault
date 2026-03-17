@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -8,6 +8,7 @@ import { encrypt, decrypt } from '@/lib/crypto';
 import type { PageTreeItem, PageData, Workspace } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
+import RightPanel from '@/components/layout/RightPanel';
 import Editor from '@/components/editor/Editor';
 import SearchModal from '@/components/search/SearchModal';
 import TrashPanel from '@/components/layout/TrashPanel';
@@ -15,6 +16,7 @@ import WorkspaceSettings from '@/components/workspace/WorkspaceSettings';
 import CreateWorkspaceModal from '@/components/workspace/CreateWorkspaceModal';
 import TipsModal from '@/components/ui/TipsModal';
 import ProfileModal from '@/components/ui/ProfileModal';
+import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import { FileText, Plus } from 'lucide-react';
 
 export default function AppPage() {
@@ -28,6 +30,7 @@ export default function AppPage() {
   const [editIcon, setEditIcon] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
   const [settingsWorkspace, setSettingsWorkspace] = useState<Workspace | null>(null);
@@ -67,7 +70,6 @@ export default function AppPage() {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'page_updated' || msg.type === 'page_created' || msg.type === 'page_deleted') {
-            // Refresh pages list when any team member makes changes
             fetchPages();
           }
         } catch {
@@ -76,7 +78,6 @@ export default function AppPage() {
       };
 
       ws.onclose = () => {
-        // Reconnect after 3 seconds
         setTimeout(() => {
           if (wsRef.current === ws) {
             connectWebSocket();
@@ -156,7 +157,6 @@ export default function AppPage() {
       setSaveStatus('saved');
       fetchPages();
 
-      // Notify other clients via WebSocket
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
           type: 'page_updated',
@@ -195,7 +195,6 @@ export default function AppPage() {
       await fetchPages();
       loadPage(data.id);
 
-      // Notify others
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'page_created', page_id: data.id }));
       }
@@ -203,6 +202,13 @@ export default function AppPage() {
       console.error('Failed to create page:', e);
     }
   }, [workspaceId, encKey, fetchPages, loadPage]);
+
+  // Create sub-page (child of current page)
+  const createSubPage = useCallback(() => {
+    if (activePageId) {
+      createPage(activePageId);
+    }
+  }, [activePageId, createPage]);
 
   // Delete page (soft)
   const deletePage = useCallback(async (pageId: string) => {
@@ -217,7 +223,6 @@ export default function AppPage() {
       }
       fetchPages();
 
-      // Notify others
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'page_deleted', page_id: pageId }));
       }
@@ -225,6 +230,18 @@ export default function AppPage() {
       console.error('Failed to delete page:', e);
     }
   }, [workspaceId, activePageId, fetchPages]);
+
+  // Get sub-pages of current page (decrypted)
+  const subPages = useMemo(() => {
+    if (!activePageId) return [];
+    return pages
+      .filter(p => p.parent_id === activePageId)
+      .map(p => ({
+        id: p.id,
+        title: decrypt(p.title, encKey) || 'Untitled',
+        icon: p.icon || '',
+      }));
+  }, [pages, activePageId, encKey]);
 
   // Workspace switching
   const handleSwitchWorkspace = useCallback((workspace: Workspace) => {
@@ -234,6 +251,18 @@ export default function AppPage() {
   const handleWorkspaceCreated = useCallback((workspace: Workspace) => {
     switchWorkspace(workspace.id);
   }, [switchWorkspace]);
+
+  // Export functions
+  const handleExportMarkdown = useCallback(() => {
+    const md = htmlToMarkdown(editContent);
+    const filename = `${editTitle || 'Untitled'}.md`;
+    const fullContent = `# ${editTitle || 'Untitled'}\n\n${md}`;
+    downloadFile(fullContent, filename, 'text/markdown;charset=utf-8');
+  }, [editTitle, editContent]);
+
+  const handleExportPDF = useCallback(() => {
+    exportPDF(editTitle || 'Untitled', editContent);
+  }, [editTitle, editContent]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -286,6 +315,8 @@ export default function AppPage() {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           saveStatus={saveStatus}
           pageTitle={activePageId ? decryptedTitle : undefined}
+          rightPanelOpen={rightPanelOpen}
+          onToggleRightPanel={activePageId ? () => setRightPanelOpen(!rightPanelOpen) : undefined}
         />
 
         {activePageId ? (
@@ -296,10 +327,13 @@ export default function AppPage() {
             onChangeTitle={setEditTitle}
             onChangeContent={setEditContent}
             onChangeIcon={setEditIcon}
+            subPages={subPages}
+            onCreateSubPage={createSubPage}
+            onNavigateToPage={loadPage}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
+            <div className="text-center px-6">
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800 mb-6">
                 <FileText size={32} className="text-neutral-400" />
               </div>
@@ -318,6 +352,17 @@ export default function AppPage() {
           </div>
         )}
       </div>
+
+      {/* Right Panel */}
+      {activePageId && rightPanelOpen && (
+        <RightPanel
+          content={editContent}
+          title={decryptedTitle}
+          onClose={() => setRightPanelOpen(false)}
+          onExportMarkdown={handleExportMarkdown}
+          onExportPDF={handleExportPDF}
+        />
+      )}
 
       {/* Modals */}
       {showSearch && (
