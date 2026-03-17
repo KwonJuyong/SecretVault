@@ -227,10 +227,14 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         onChange(editor.getHTML());
         const created = await onInsertSubPage?.();
         if (created) {
+          // Insert link at cursor position
           editor.chain().focus().insertContent({
             type: 'subPageLink',
             attrs: { pageId: created.id, title: created.title || 'Untitled' },
           }).run();
+          // Save and navigate to the new sub-page
+          onChange(editor.getHTML());
+          onNavigateToPage?.(created.id);
         }
         break;
       }

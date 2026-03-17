@@ -129,39 +129,7 @@ export default function Editor({
         onNavigateToPage={onNavigateToPage}
       />
 
-      {/* Sub-pages section */}
-      {(subPages.length > 0 || onCreateSubPage) && (
-        <div className="border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-          <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 py-4">
-            {subPages.length > 0 && (
-              <div className="space-y-1 mb-3">
-                {subPages.map(sp => (
-                  <button
-                    key={sp.id}
-                    onClick={() => onNavigateToPage?.(sp.id)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition text-left group"
-                  >
-                    <span className="text-lg">{sp.icon || '\u{1F4C4}'}</span>
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate flex-1">
-                      {sp.title || 'Untitled'}
-                    </span>
-                    <ChevronRight size={14} className="text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 transition" />
-                  </button>
-                ))}
-              </div>
-            )}
-            {onCreateSubPage && (
-              <button
-                onClick={onCreateSubPage}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
-              >
-                <Plus size={15} />
-                <span>Add a sub-page</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Sub-pages are shown inline in editor via SubPageNode */}
     </div>
   );
 }
