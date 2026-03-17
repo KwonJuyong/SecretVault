@@ -1,30 +1,15 @@
 'use client';
 
-import { Node, mergeAttributes, textblockTypeInputRule } from '@tiptap/core';
+import { Node, mergeAttributes, InputRule } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { InputRule } from '@tiptap/core';
+import katex from 'katex';
 
 // ========== Inline Math ==========
 function MathInlineView({ node, updateAttributes, selected, editor, getPos }: any) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(!node.attrs.latex);
   const [latex, setLatex] = useState(node.attrs.latex || '');
   const inputRef = useRef<HTMLInputElement>(null);
-  const renderedRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (!editing && renderedRef.current && node.attrs.latex) {
-      try {
-        const katex = require('katex');
-        katex.render(node.attrs.latex, renderedRef.current, {
-          throwOnError: false,
-          displayMode: false,
-        });
-      } catch {
-        renderedRef.current.textContent = node.attrs.latex;
-      }
-    }
-  }, [node.attrs.latex, editing]);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -32,11 +17,14 @@ function MathInlineView({ node, updateAttributes, selected, editor, getPos }: an
     }
   }, [editing]);
 
+  const rendered = node.attrs.latex
+    ? katex.renderToString(node.attrs.latex, { throwOnError: false, displayMode: false })
+    : '';
+
   const handleSave = useCallback(() => {
     if (latex.trim()) {
       updateAttributes({ latex: latex.trim() });
     } else {
-      // Delete the node if empty
       const pos = getPos();
       editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
     }
@@ -57,7 +45,7 @@ function MathInlineView({ node, updateAttributes, selected, editor, getPos }: an
             if (e.key === 'Escape') { setEditing(false); }
           }}
           className="math-inline-input"
-          placeholder="LaTeX (e.g. e^2)"
+          placeholder="e.g. e^{i\pi}+1=0"
         />
       </NodeViewWrapper>
     );
@@ -68,9 +56,8 @@ function MathInlineView({ node, updateAttributes, selected, editor, getPos }: an
       as="span"
       className={`math-inline-rendered ${selected ? 'math-selected' : ''}`}
       onClick={() => setEditing(true)}
-      title="Click to edit"
     >
-      <span ref={renderedRef} />
+      <span dangerouslySetInnerHTML={{ __html: rendered }} />
     </NodeViewWrapper>
   );
 }
@@ -82,9 +69,7 @@ export const MathInline = Node.create({
   atom: true,
 
   addAttributes() {
-    return {
-      latex: { default: '' },
-    };
+    return { latex: { default: '' } };
   },
 
   parseHTML() {
@@ -102,16 +87,10 @@ export const MathInline = Node.create({
   addInputRules() {
     return [
       new InputRule({
-        // Match $...$ but not $$
         find: /(?<![\\$])\$([^$\s][^$]*[^$\s]|[^$\s])\$$/,
         handler: ({ state, range, match }) => {
-          const latex = match[1];
           const { tr } = state;
-          tr.replaceWith(
-            range.from,
-            range.to,
-            this.type.create({ latex })
-          );
+          tr.replaceWith(range.from, range.to, this.type.create({ latex: match[1] }));
         },
       }),
     ];
@@ -123,27 +102,16 @@ function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any
   const [editing, setEditing] = useState(!node.attrs.latex);
   const [latex, setLatex] = useState(node.attrs.latex || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const renderedRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!editing && renderedRef.current && node.attrs.latex) {
-      try {
-        const katex = require('katex');
-        katex.render(node.attrs.latex, renderedRef.current, {
-          throwOnError: false,
-          displayMode: true,
-        });
-      } catch {
-        renderedRef.current.textContent = node.attrs.latex;
-      }
-    }
-  }, [node.attrs.latex, editing]);
 
   useEffect(() => {
     if (editing && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [editing]);
+
+  const rendered = node.attrs.latex
+    ? katex.renderToString(node.attrs.latex, { throwOnError: false, displayMode: true })
+    : '';
 
   const handleSave = useCallback(() => {
     if (latex.trim()) {
@@ -180,9 +148,8 @@ function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any
     <NodeViewWrapper
       className={`math-block-wrapper math-block-rendered ${selected ? 'math-selected' : ''}`}
       onClick={() => setEditing(true)}
-      title="Click to edit"
     >
-      <div ref={renderedRef} />
+      <div dangerouslySetInnerHTML={{ __html: rendered }} />
     </NodeViewWrapper>
   );
 }
@@ -193,9 +160,7 @@ export const MathBlock = Node.create({
   atom: true,
 
   addAttributes() {
-    return {
-      latex: { default: '' },
-    };
+    return { latex: { default: '' } };
   },
 
   parseHTML() {

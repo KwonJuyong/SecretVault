@@ -18,7 +18,6 @@ import EditorToolbar from './EditorToolbar';
 import SlashMenu, { BlockType } from './SlashMenu';
 import CodeBlockView from './CodeBlockView';
 import { MathInline, MathBlock } from './MathExtension';
-import { DragHandle } from './DragHandle';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
 
 const lowlight = createLowlight(common);
@@ -33,7 +32,6 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Slash menu state
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashPos, setSlashPos] = useState({ top: 0, left: 0 });
@@ -43,7 +41,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        codeBlock: false, // disable default, use lowlight version
+        codeBlock: false,
       }),
       Underline,
       Placeholder.configure({
@@ -65,17 +63,15 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
       }).configure({ lowlight }),
       MathInline,
       MathBlock,
-      DragHandle,
     ],
     content: '',
     editorProps: {
       attributes: {
-        class: 'tiptap-content outline-none min-h-[70vh] px-8 sm:px-16 lg:px-24 py-8 pb-[40vh]',
+        class: 'tiptap-content outline-none',
       },
       scrollThreshold: 100,
       scrollMargin: 80,
       handleKeyDown: (view, event) => {
-        // Detect `/` at start of empty line to open slash menu
         if (event.key === '/' && !slashOpen) {
           const { $from } = view.state.selection;
           const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
@@ -89,7 +85,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
                 setSlashFilter('');
                 slashStartRef.current = pos;
               } catch {
-                // ignore if pos is invalid
+                // ignore
               }
             }, 0);
           }
@@ -145,7 +141,6 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
     onUpdate: ({ editor }) => {
       if (suppressUpdate.current) return;
 
-      // Track slash filter text
       if (slashOpen && slashStartRef.current !== null) {
         try {
           const { from } = editor.state.selection;
@@ -203,67 +198,33 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
     e.target.value = '';
   }, [editor]);
 
-  // Handle slash menu command selection
   const handleSlashSelect = useCallback(async (type: BlockType) => {
     if (!editor || slashStartRef.current === null) return;
 
-    // Delete the `/filter` text
     try {
       const { from } = editor.state.selection;
       const start = slashStartRef.current;
       if (start >= 0 && from >= start) {
         editor.chain().focus().deleteRange({ from: start, to: from }).run();
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
 
-    // Execute the command
     switch (type) {
-      case 'paragraph':
-        editor.chain().focus().setParagraph().run();
-        break;
-      case 'h1':
-        editor.chain().focus().toggleHeading({ level: 1 }).run();
-        break;
-      case 'h2':
-        editor.chain().focus().toggleHeading({ level: 2 }).run();
-        break;
-      case 'h3':
-        editor.chain().focus().toggleHeading({ level: 3 }).run();
-        break;
-      case 'bullet':
-        editor.chain().focus().toggleBulletList().run();
-        break;
-      case 'numbered':
-        editor.chain().focus().toggleOrderedList().run();
-        break;
-      case 'todo':
-        editor.chain().focus().toggleTaskList().run();
-        break;
-      case 'quote':
-        editor.chain().focus().toggleBlockquote().run();
-        break;
-      case 'code':
-        editor.chain().focus().toggleCodeBlock().run();
-        break;
-      case 'divider':
-        editor.chain().focus().setHorizontalRule().run();
-        break;
-      case 'table':
-        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-        break;
-      case 'image':
-        fileInputRef.current?.click();
-        break;
-      case 'mathInline':
-        editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run();
-        break;
-      case 'mathBlock':
-        editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run();
-        break;
+      case 'paragraph': editor.chain().focus().setParagraph().run(); break;
+      case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+      case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+      case 'h3': editor.chain().focus().toggleHeading({ level: 3 }).run(); break;
+      case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
+      case 'numbered': editor.chain().focus().toggleOrderedList().run(); break;
+      case 'todo': editor.chain().focus().toggleTaskList().run(); break;
+      case 'quote': editor.chain().focus().toggleBlockquote().run(); break;
+      case 'code': editor.chain().focus().toggleCodeBlock().run(); break;
+      case 'divider': editor.chain().focus().setHorizontalRule().run(); break;
+      case 'table': editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+      case 'image': fileInputRef.current?.click(); break;
+      case 'mathInline': editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run(); break;
+      case 'mathBlock': editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run(); break;
       case 'subpage': {
-        // Trigger content save via onChange, then create sub-page without navigating
         onChange(editor.getHTML());
         onInsertSubPage?.();
         break;
@@ -282,28 +243,32 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <EditorToolbar editor={editor} onInsertImage={handleInsertImage} />
+
       {editor?.isActive('table') && (
-        <div className="flex items-center gap-1 px-4 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs flex-wrap">
+        <div className="flex items-center gap-1 px-5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs flex-wrap">
           <span className="text-neutral-400 mr-2">Table:</span>
           <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col Before</button>
           <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col After</button>
           <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row Before</button>
           <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row After</button>
           <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Merge Cells</button>
-          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Split Cell</button>
+          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Merge</button>
+          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Split</button>
           <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Column</button>
+          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Col</button>
           <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Row</button>
-          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">Delete Table</button>
+          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">Delete</button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950">
-        <EditorContent editor={editor} />
+
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950 editor-scroll-container">
+        <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 py-6 pb-[50vh]">
+          <EditorContent editor={editor} />
+        </div>
       </div>
+
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      {/* Slash command menu */}
       {slashOpen && (
         <SlashMenu
           filter={slashFilter}

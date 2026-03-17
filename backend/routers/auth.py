@@ -24,7 +24,6 @@ def signup(data: UserSignup, db: Session = Depends(get_db)):
     db.add(user)
     db.flush()
 
-    # Create default personal workspace
     workspace = Workspace(
         id=uuid.uuid4(),
         name=f"{data.user_id}'s Workspace",
@@ -47,18 +46,26 @@ def signup(data: UserSignup, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.user_id == data.user_id).first()
-    if not user or not verify_password(data.password_hash, user.password_hash):
+    # Single query: fetch user + workspace in one round-trip
+    result = (
+        db.query(User, WorkspaceMember.workspace_id)
+        .outerjoin(WorkspaceMember, WorkspaceMember.user_id == User.id)
+        .filter(User.user_id == data.user_id)
+        .first()
+    )
+
+    if not result:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Upgrade legacy hash to bcrypt
+    user, workspace_id = result
+
+    if not verify_password(data.password_hash, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Upgrade legacy hash to bcrypt (one-time cost)
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(data.password_hash)
         db.commit()
-
-    # Get user's default workspace
-    member = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == user.id).first()
-    workspace_id = str(member.workspace_id) if member else ""
 
     token = create_access_token(data={"sub": user.user_id})
     return {
@@ -66,7 +73,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user_id": user.user_id,
         "display_name": user.display_name,
-        "workspace_id": workspace_id,
+        "workspace_id": str(workspace_id) if workspace_id else "",
     }
 
 

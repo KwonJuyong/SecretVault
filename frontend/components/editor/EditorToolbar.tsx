@@ -37,7 +37,7 @@ export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarPr
   const Sep = () => <div className="w-px h-5 bg-neutral-200 dark:bg-neutral-700 mx-1" />;
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex-wrap flex-shrink-0">
+    <div className="flex items-center gap-0.5 px-5 py-2 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex-wrap flex-shrink-0">
       <Btn onClick={() => editor.chain().focus().undo().run()} title="Undo"><Undo2 size={15} /></Btn>
       <Btn onClick={() => editor.chain().focus().redo().run()} title="Redo"><Redo2 size={15} /></Btn>
       <Sep />

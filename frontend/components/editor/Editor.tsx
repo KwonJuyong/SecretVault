@@ -63,62 +63,62 @@ export default function Editor({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      {/* Title area - full width, Notion-like */}
-      <div className="w-full px-8 sm:px-16 lg:px-24 pt-10 pb-4 bg-white dark:bg-neutral-950">
-        {/* Icon picker */}
-        <div className="relative mb-4 inline-block">
-          <button
-            onClick={() => setShowIconPicker(!showIconPicker)}
-            className="text-5xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2 transition"
-            title="Change icon"
-          >
-            {icon || '\u{1F4C4}'}
-          </button>
-          {showIconPicker && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowIconPicker(false)} />
-              <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 w-80 overflow-hidden">
-                {/* Category tabs */}
-                <div className="flex gap-0.5 px-2 pt-2 pb-1 overflow-x-auto border-b border-neutral-100 dark:border-neutral-800">
-                  {emojiCategories.map((cat, i) => (
-                    <button
-                      key={cat.name}
-                      onClick={() => setActiveCategory(i)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${
-                        i === activeCategory
-                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
+      {/* Title area - centered with max-width */}
+      <div className="w-full bg-white dark:bg-neutral-950">
+        <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 pt-8 pb-3">
+          {/* Icon picker */}
+          <div className="relative mb-3 inline-block">
+            <button
+              onClick={() => setShowIconPicker(!showIconPicker)}
+              className="text-5xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2 transition"
+              title="Change icon"
+            >
+              {icon || '\u{1F4C4}'}
+            </button>
+            {showIconPicker && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowIconPicker(false)} />
+                <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 w-80 overflow-hidden">
+                  <div className="flex gap-0.5 px-2 pt-2 pb-1 overflow-x-auto border-b border-neutral-100 dark:border-neutral-800">
+                    {emojiCategories.map((cat, i) => (
+                      <button
+                        key={cat.name}
+                        onClick={() => setActiveCategory(i)}
+                        className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${
+                          i === activeCategory
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-2 grid grid-cols-8 gap-0.5 max-h-48 overflow-y-auto">
+                    {emojiCategories[activeCategory].emojis.map((emoji, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { onChangeIcon(emoji); setShowIconPicker(false); }}
+                        className="text-xl p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition flex items-center justify-center"
+                      >
+                        {emoji || '\u274C'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                {/* Emoji grid */}
-                <div className="p-2 grid grid-cols-8 gap-0.5 max-h-48 overflow-y-auto">
-                  {emojiCategories[activeCategory].emojis.map((emoji, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { onChangeIcon(emoji); setShowIconPicker(false); }}
-                      className="text-xl p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition flex items-center justify-center"
-                    >
-                      {emoji || '\u274C'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
 
-        {/* Title input - large, Notion-like */}
-        <input
-          type="text"
-          value={title}
-          onChange={e => onChangeTitle(e.target.value)}
-          placeholder="Untitled"
-          className="w-full text-[42px] font-extrabold text-neutral-900 dark:text-white bg-transparent border-none outline-none placeholder-neutral-300 dark:placeholder-neutral-600 leading-tight"
-        />
+          {/* Title input */}
+          <input
+            type="text"
+            value={title}
+            onChange={e => onChangeTitle(e.target.value)}
+            placeholder="Untitled"
+            className="w-full text-[38px] font-extrabold text-neutral-900 dark:text-white bg-transparent border-none outline-none placeholder-neutral-300 dark:placeholder-neutral-600 leading-tight"
+          />
+        </div>
       </div>
 
       {/* Editor content */}
@@ -130,33 +130,35 @@ export default function Editor({
 
       {/* Sub-pages section */}
       {(subPages.length > 0 || onCreateSubPage) && (
-        <div className="border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-8 sm:px-16 lg:px-24 py-4">
-          {subPages.length > 0 && (
-            <div className="space-y-1 mb-3">
-              {subPages.map(sp => (
-                <button
-                  key={sp.id}
-                  onClick={() => onNavigateToPage?.(sp.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition text-left group"
-                >
-                  <span className="text-lg">{sp.icon || '\u{1F4C4}'}</span>
-                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate flex-1">
-                    {sp.title || 'Untitled'}
-                  </span>
-                  <ChevronRight size={14} className="text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 transition" />
-                </button>
-              ))}
-            </div>
-          )}
-          {onCreateSubPage && (
-            <button
-              onClick={onCreateSubPage}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
-            >
-              <Plus size={15} />
-              <span>Add a sub-page</span>
-            </button>
-          )}
+        <div className="border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+          <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 py-4">
+            {subPages.length > 0 && (
+              <div className="space-y-1 mb-3">
+                {subPages.map(sp => (
+                  <button
+                    key={sp.id}
+                    onClick={() => onNavigateToPage?.(sp.id)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition text-left group"
+                  >
+                    <span className="text-lg">{sp.icon || '\u{1F4C4}'}</span>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate flex-1">
+                      {sp.title || 'Untitled'}
+                    </span>
+                    <ChevronRight size={14} className="text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 transition" />
+                  </button>
+                ))}
+              </div>
+            )}
+            {onCreateSubPage && (
+              <button
+                onClick={onCreateSubPage}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
+              >
+                <Plus size={15} />
+                <span>Add a sub-page</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

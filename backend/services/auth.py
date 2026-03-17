@@ -17,25 +17,29 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
+def _is_bcrypt_hash(hashed: str) -> bool:
+    """Quick check if string looks like a bcrypt hash."""
+    return hashed.startswith(("$2b$", "$2a$", "$2y$"))
+
+
 def verify_password(plain: str, hashed: str) -> bool:
-    # Try bcrypt first
+    # Check legacy plain SHA256 first (fast path, avoids expensive bcrypt)
+    if not _is_bcrypt_hash(hashed):
+        return plain == hashed
+    # Bcrypt verification
     try:
-        if pwd_context.verify(plain, hashed):
-            return True
+        return pwd_context.verify(plain, hashed)
     except Exception:
-        pass
-    # Fallback: legacy plain SHA256 comparison (for old users)
-    if plain == hashed:
-        return True
-    return False
+        return False
 
 
 def needs_rehash(hashed: str) -> bool:
     """Check if a password hash needs to be upgraded to bcrypt."""
+    if not _is_bcrypt_hash(hashed):
+        return True
     try:
         return pwd_context.needs_update(hashed)
     except Exception:
-        # Not a valid bcrypt hash (legacy plain hash)
         return True
 
 

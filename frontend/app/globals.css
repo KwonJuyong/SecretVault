@@ -53,7 +53,7 @@ body {
   color: #1e3a5f;
 }
 
-/* Dark mode */
+/* Dark mode base */
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #0a0a0a;
@@ -74,13 +74,6 @@ body {
   }
 }
 
-/* KaTeX dark mode */
-@media (prefers-color-scheme: dark) {
-  .katex {
-    color: #e5e5e5;
-  }
-}
-
 /* Code block scrollbar */
 pre::-webkit-scrollbar {
   height: 4px;
@@ -96,46 +89,74 @@ input[type="checkbox"] {
   accent-color: #2563eb;
 }
 
-/* Auto-resize textarea - remove default styles */
+/* Auto-resize textarea */
 textarea {
   field-sizing: content;
 }
 
-/* ===================== */
-/* Tiptap Editor Styles  */
-/* ===================== */
-.tiptap-content { font-size: 1rem; line-height: 1.75; color: #374151; }
-.tiptap-content > * + * { margin-top: 0.75em; }
-.tiptap-content p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder); float: left; color: #d1d5db; pointer-events: none; height: 0;
+/* ============================= */
+/* Tiptap Editor Content Styles  */
+/* ============================= */
+.tiptap-content {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #374151;
+  min-height: 60vh;
 }
+
+.tiptap-content > * + * {
+  margin-top: 0.75em;
+}
+
+/* Placeholder */
+.tiptap-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #d1d5db;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Headings */
 .tiptap-content h1 { font-size: 2em; font-weight: 800; line-height: 1.2; margin-top: 1.5em; margin-bottom: 0.5em; color: #111827; }
 .tiptap-content h2 { font-size: 1.5em; font-weight: 700; line-height: 1.3; margin-top: 1.25em; margin-bottom: 0.4em; color: #111827; padding-bottom: 0.3em; border-bottom: 1px solid #f3f4f6; }
 .tiptap-content h3 { font-size: 1.25em; font-weight: 600; line-height: 1.4; margin-top: 1em; margin-bottom: 0.3em; color: #111827; }
+
+/* Inline formatting */
 .tiptap-content strong { font-weight: 700; }
 .tiptap-content em { font-style: italic; }
 .tiptap-content u { text-decoration: underline; }
 .tiptap-content s { text-decoration: line-through; color: #9ca3af; }
 .tiptap-content code { background: #f3f4f6; color: #dc2626; padding: 0.15em 0.4em; border-radius: 0.3em; font-family: ui-monospace, monospace; font-size: 0.9em; }
+
+/* Blockquote */
 .tiptap-content blockquote { border-left: 3px solid #3b82f6; padding-left: 1em; margin: 1em 0; color: #6b7280; font-style: italic; }
+
+/* Lists */
 .tiptap-content ul { list-style-type: disc; padding-left: 1.5em; margin: 0.5em 0; }
 .tiptap-content ol { list-style-type: decimal; padding-left: 1.5em; margin: 0.5em 0; }
 .tiptap-content li { margin: 0.25em 0; }
 .tiptap-content li p { margin: 0; }
 .tiptap-content li > ul, .tiptap-content li > ol { margin-top: 0.25em; }
+
+/* Task list */
 .tiptap-content ul[data-type="taskList"] { list-style: none; padding-left: 0; }
 .tiptap-content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5em; }
 .tiptap-content ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 0.3em; }
 .tiptap-content ul[data-type="taskList"] li > label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
 .tiptap-content ul[data-type="taskList"] li[data-checked="true"] > div > p { text-decoration: line-through; color: #9ca3af; }
+
+/* Divider */
 .tiptap-content hr { border: none; border-top: 2px solid #e5e7eb; margin: 2em 0; }
+
+/* Links & Images */
 .tiptap-content a { color: #2563eb; text-decoration: underline; }
 .tiptap-content img { max-width: 100%; height: auto; border-radius: 0.5em; margin: 1em 0; }
 .tiptap-content img.ProseMirror-selectednode { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
-/* ===================== */
-/* Code Block with Syntax Highlighting */
-/* ===================== */
+/* ============================= */
+/* Code Block (Lowlight)         */
+/* ============================= */
 .code-block-wrapper {
   position: relative;
   margin: 1em 0;
@@ -146,7 +167,7 @@ textarea {
   justify-content: flex-end;
   background: #1a1f2e;
   border-radius: 0.75em 0.75em 0 0;
-  padding: 0.35em 0.75em;
+  padding: 0.4em 0.75em;
   border-bottom: 1px solid #2d3548;
 }
 
@@ -162,15 +183,8 @@ textarea {
   font-family: ui-monospace, monospace;
 }
 
-.code-block-lang-select:hover {
-  background: #3d4a60;
-  color: #d1d5db;
-}
-
-.code-block-lang-select option {
-  background: #1f2937;
-  color: #d1d5db;
-}
+.code-block-lang-select:hover { background: #3d4a60; color: #d1d5db; }
+.code-block-lang-select option { background: #1f2937; color: #d1d5db; }
 
 .code-block-wrapper pre {
   background: #1f2937 !important;
@@ -186,30 +200,20 @@ textarea {
   color: inherit;
   padding: 0;
   font-size: 0.875em;
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-/* Syntax highlighting colors (lowlight/highlight.js) */
-.tiptap-content .hljs-comment,
-.tiptap-content .hljs-quote { color: #6b7280; font-style: italic; }
-.tiptap-content .hljs-keyword,
-.tiptap-content .hljs-selector-tag { color: #c084fc; }
-.tiptap-content .hljs-string,
-.tiptap-content .hljs-addition { color: #86efac; }
-.tiptap-content .hljs-number,
-.tiptap-content .hljs-literal { color: #fbbf24; }
-.tiptap-content .hljs-built_in,
-.tiptap-content .hljs-type { color: #67e8f9; }
-.tiptap-content .hljs-attr,
-.tiptap-content .hljs-attribute { color: #fbbf24; }
-.tiptap-content .hljs-name,
-.tiptap-content .hljs-tag { color: #f87171; }
-.tiptap-content .hljs-selector-class,
-.tiptap-content .hljs-selector-id { color: #a78bfa; }
-.tiptap-content .hljs-title,
-.tiptap-content .hljs-section { color: #60a5fa; font-weight: 600; }
-.tiptap-content .hljs-variable,
-.tiptap-content .hljs-template-variable { color: #f472b6; }
+/* Syntax highlighting */
+.tiptap-content .hljs-comment, .tiptap-content .hljs-quote { color: #6b7280; font-style: italic; }
+.tiptap-content .hljs-keyword, .tiptap-content .hljs-selector-tag { color: #c084fc; }
+.tiptap-content .hljs-string, .tiptap-content .hljs-addition { color: #86efac; }
+.tiptap-content .hljs-number, .tiptap-content .hljs-literal { color: #fbbf24; }
+.tiptap-content .hljs-built_in, .tiptap-content .hljs-type { color: #67e8f9; }
+.tiptap-content .hljs-attr, .tiptap-content .hljs-attribute { color: #fbbf24; }
+.tiptap-content .hljs-name, .tiptap-content .hljs-tag { color: #f87171; }
+.tiptap-content .hljs-selector-class, .tiptap-content .hljs-selector-id { color: #a78bfa; }
+.tiptap-content .hljs-title, .tiptap-content .hljs-section { color: #60a5fa; font-weight: 600; }
+.tiptap-content .hljs-variable, .tiptap-content .hljs-template-variable { color: #f472b6; }
 .tiptap-content .hljs-deletion { color: #fca5a5; background: #450a0a; }
 .tiptap-content .hljs-meta { color: #94a3b8; }
 .tiptap-content .hljs-function { color: #60a5fa; }
@@ -222,9 +226,9 @@ textarea {
 .tiptap-content pre { background: #1f2937; color: #e5e7eb; border-radius: 0.75em; padding: 1em 1.25em; overflow-x: auto; margin: 1em 0; }
 .tiptap-content pre code { background: none; color: inherit; padding: 0; font-size: 0.875em; }
 
-/* ===================== */
-/* Table styles - enhanced with resizable width */
-/* ===================== */
+/* ============================= */
+/* Table                         */
+/* ============================= */
 .tiptap-content .tableWrapper {
   overflow-x: auto;
   margin: 1em 0;
@@ -237,7 +241,6 @@ textarea {
   border: 1px solid #e5e7eb;
   border-radius: 0.5em;
   overflow: hidden;
-  /* Removed width: 100% and table-layout: fixed to allow flexible sizing */
 }
 
 .tiptap-content th, .tiptap-content td {
@@ -254,6 +257,7 @@ textarea {
 .tiptap-content td { background: white; }
 .tiptap-content tr:hover td { background: #f9fafb; }
 .tiptap-content .selectedCell { background: #dbeafe !important; }
+
 .tiptap-content .column-resize-handle {
   position: absolute;
   right: -2px;
@@ -265,24 +269,14 @@ textarea {
   z-index: 10;
 }
 
-/* Resize wrapper to allow overall table width adjustment */
-.tiptap-content .tableWrapper {
-  position: relative;
-  display: inline-block;
-  min-width: 200px;
-  max-width: 100%;
-}
-
-/* Sub-page link blocks */
+/* Sub-page links */
 .tiptap-content .subpage-link { display: flex; align-items: center; gap: 0.5em; padding: 0.5em 0.75em; border-radius: 0.5em; background: #f9fafb; border: 1px solid #e5e7eb; cursor: pointer; transition: background 0.15s; margin: 0.5em 0; text-decoration: none; color: #374151; }
 .tiptap-content .subpage-link:hover { background: #f3f4f6; }
 
-/* ===================== */
-/* Math (LaTeX) styles   */
-/* ===================== */
-.math-inline-wrapper {
-  display: inline;
-}
+/* ============================= */
+/* Math (LaTeX / KaTeX)          */
+/* ============================= */
+.math-inline-wrapper { display: inline; }
 
 .math-inline-rendered {
   display: inline;
@@ -292,15 +286,8 @@ textarea {
   transition: background 0.15s;
 }
 
-.math-inline-rendered:hover {
-  background: #eff6ff;
-}
-
-.math-inline-rendered.math-selected {
-  background: #dbeafe;
-  outline: 2px solid #3b82f6;
-  outline-offset: 1px;
-}
+.math-inline-rendered:hover { background: #eff6ff; }
+.math-inline-rendered.math-selected { background: #dbeafe; outline: 2px solid #3b82f6; outline-offset: 1px; }
 
 .math-inline-input {
   background: #f3f4f6;
@@ -314,10 +301,7 @@ textarea {
   min-width: 80px;
 }
 
-.math-inline-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
+.math-inline-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
 .math-block-wrapper {
   margin: 1em 0;
@@ -330,19 +314,9 @@ textarea {
   transition: background 0.15s;
 }
 
-.math-block-wrapper:hover {
-  background: #f3f4f6;
-}
-
-.math-block-wrapper.math-editing {
-  text-align: left;
-  cursor: default;
-}
-
-.math-block-wrapper.math-selected {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
+.math-block-wrapper:hover { background: #f3f4f6; }
+.math-block-wrapper.math-editing { text-align: left; cursor: default; }
+.math-block-wrapper.math-selected { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
 .math-block-label {
   font-size: 0.75em;
@@ -367,55 +341,17 @@ textarea {
   min-height: 60px;
 }
 
-.math-block-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
+.math-block-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+.math-block-rendered .katex-display { margin: 0; }
 
-.math-block-rendered .katex-display {
-  margin: 0;
-}
-
-/* ===================== */
-/* Drag Handle           */
-/* ===================== */
-.drag-handle {
-  position: absolute;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  cursor: grab;
-  color: #9ca3af;
-  background: transparent;
-  transition: background 0.15s, color 0.15s;
-  z-index: 30;
-  user-select: none;
-}
-
-.drag-handle:hover {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-  background: #e5e7eb;
-}
-
-/* ProseMirror dragging state */
-.ProseMirror-selectednode {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* ===================== */
-/* Dark mode for tiptap  */
-/* ===================== */
+/* ============================= */
+/* Dark mode                     */
+/* ============================= */
 @media (prefers-color-scheme: dark) {
+  /* KaTeX */
+  .katex { color: #e5e5e5; }
+
+  /* Tiptap content */
   .tiptap-content { color: #d1d5db; }
   .tiptap-content h1, .tiptap-content h2, .tiptap-content h3 { color: #f3f4f6; }
   .tiptap-content h2 { border-bottom-color: #374151; }
@@ -423,52 +359,47 @@ textarea {
   .tiptap-content pre { background: #111827; color: #e5e7eb; }
   .tiptap-content blockquote { border-left-color: #60a5fa; color: #9ca3af; }
   .tiptap-content hr { border-top-color: #374151; }
+  .tiptap-content s { color: #6b7280; }
+  .tiptap-content p.is-editor-empty:first-child::before { color: #525252; }
+
+  /* Table */
   .tiptap-content table { border-color: #374151; }
   .tiptap-content th, .tiptap-content td { border-color: #374151; }
   .tiptap-content th { background: #1f2937; color: #d1d5db; }
   .tiptap-content td { background: #0a0a0a; }
   .tiptap-content tr:hover td { background: #111827; }
   .tiptap-content .selectedCell { background: #1e3a5f !important; }
-  .tiptap-content s { color: #6b7280; }
-  .tiptap-content p.is-editor-empty:first-child::before { color: #525252; }
+
+  /* Sub-page links */
   .tiptap-content .subpage-link { background: #1f2937; border-color: #374151; color: #d1d5db; }
   .tiptap-content .subpage-link:hover { background: #111827; }
 
-  /* Code block dark mode */
+  /* Code block */
   .code-block-header { background: #0f1219; border-bottom-color: #1e2533; }
   .code-block-lang-select { background: #1e2533; border-color: #2d3548; color: #9ca3af; }
   .code-block-lang-select:hover { background: #2d3548; color: #d1d5db; }
   .code-block-wrapper pre { background: #111827 !important; }
 
-  /* Math dark mode */
+  /* Math */
   .math-inline-rendered:hover { background: #1e3a5f; }
   .math-inline-rendered.math-selected { background: #1e3a5f; }
   .math-inline-input { background: #1f2937; border-color: #374151; color: #d1d5db; }
-  .math-inline-input:focus { border-color: #3b82f6; }
   .math-block-wrapper { background: #111827; border-color: #374151; }
   .math-block-wrapper:hover { background: #1a2332; }
   .math-block-input { background: #0a0a0a; border-color: #374151; color: #d1d5db; }
-  .math-block-input:focus { border-color: #3b82f6; }
-
-  /* Drag handle dark mode */
-  .drag-handle { color: #525252; }
-  .drag-handle:hover { background: #1f2937; color: #9ca3af; }
-  .drag-handle:active { background: #374151; }
 }
 
-/* ===================== */
-/* Print styles          */
-/* ===================== */
+/* ============================= */
+/* Print                         */
+/* ============================= */
 @media print {
   body { background: white !important; color: black !important; }
   .no-print { display: none !important; }
   .tiptap-content { padding: 0 !important; min-height: auto !important; }
-  .tiptap-content h1 { color: black; }
-  .tiptap-content h2 { color: black; border-bottom-color: #ccc; }
-  .tiptap-content h3 { color: black; }
+  .tiptap-content h1, .tiptap-content h2, .tiptap-content h3 { color: black; }
+  .tiptap-content h2 { border-bottom-color: #ccc; }
   .tiptap-content table { page-break-inside: avoid; }
   .tiptap-content img { max-width: 100%; page-break-inside: avoid; }
   .tiptap-content pre { background: #f5f5f5 !important; color: #333 !important; border: 1px solid #ddd; }
-  .drag-handle { display: none !important; }
   .code-block-header { display: none !important; }
 }
