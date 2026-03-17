@@ -5,16 +5,18 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import katex from 'katex';
 
-// ========== Inline Math ==========
+// ========== Inline Math ($e^2$ style) ==========
 function MathInlineView({ node, updateAttributes, selected, editor, getPos }: any) {
   const [editing, setEditing] = useState(!node.attrs.latex);
   const [latex, setLatex] = useState(node.attrs.latex || '');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editing && inputRef.current) {
-      inputRef.current.focus();
-    }
+    setLatex(node.attrs.latex || '');
+  }, [node.attrs.latex]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus();
   }, [editing]);
 
   const rendered = node.attrs.latex
@@ -57,7 +59,7 @@ function MathInlineView({ node, updateAttributes, selected, editor, getPos }: an
       className={`math-inline-rendered ${selected ? 'math-selected' : ''}`}
       onClick={() => setEditing(true)}
     >
-      <span dangerouslySetInnerHTML={{ __html: rendered }} />
+      <span dangerouslySetInnerHTML={{ __html: rendered || '<span style="color:#aaa">math</span>' }} />
     </NodeViewWrapper>
   );
 }
@@ -76,8 +78,13 @@ export const MathInline = Node.create({
     return [{ tag: 'span[data-math-inline]' }];
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ['span', mergeAttributes(HTMLAttributes, { 'data-math-inline': '' }), 0];
+  renderHTML({ node, HTMLAttributes }) {
+    // atom nodes must NOT have content hole (0)
+    const attrs = mergeAttributes(HTMLAttributes, {
+      'data-math-inline': '',
+      'data-latex': node.attrs.latex || '',
+    });
+    return ['span', attrs];
   },
 
   addNodeView() {
@@ -86,8 +93,9 @@ export const MathInline = Node.create({
 
   addInputRules() {
     return [
+      // Match $...$ (inline math) - e.g. typing $e^2$ triggers this
       new InputRule({
-        find: /(?<![\\$])\$([^$\s][^$]*[^$\s]|[^$\s])\$$/,
+        find: /(?<![\\$])\$([^$]+)\$$/,
         handler: ({ state, range, match }) => {
           const { tr } = state;
           tr.replaceWith(range.from, range.to, this.type.create({ latex: match[1] }));
@@ -97,16 +105,18 @@ export const MathInline = Node.create({
   },
 });
 
-// ========== Block Math ==========
+// ========== Block Math ($$...$$ style) ==========
 function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any) {
   const [editing, setEditing] = useState(!node.attrs.latex);
   const [latex, setLatex] = useState(node.attrs.latex || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (editing && textareaRef.current) {
-      textareaRef.current.focus();
-    }
+    setLatex(node.attrs.latex || '');
+  }, [node.attrs.latex]);
+
+  useEffect(() => {
+    if (editing && textareaRef.current) textareaRef.current.focus();
   }, [editing]);
 
   const rendered = node.attrs.latex
@@ -126,7 +136,7 @@ function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any
   if (editing) {
     return (
       <NodeViewWrapper className="math-block-wrapper math-editing">
-        <div className="math-block-label">Block Math (LaTeX)</div>
+        <div className="math-block-label">Block Math (LaTeX) - Ctrl+Enter to save</div>
         <textarea
           ref={textareaRef}
           value={latex}
@@ -137,7 +147,7 @@ function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any
             if (e.key === 'Escape') { handleSave(); }
           }}
           className="math-block-input"
-          placeholder="LaTeX expression (Ctrl+Enter to confirm)"
+          placeholder="e.g. \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}"
           rows={3}
         />
       </NodeViewWrapper>
@@ -149,7 +159,7 @@ function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any
       className={`math-block-wrapper math-block-rendered ${selected ? 'math-selected' : ''}`}
       onClick={() => setEditing(true)}
     >
-      <div dangerouslySetInnerHTML={{ __html: rendered }} />
+      <div dangerouslySetInnerHTML={{ __html: rendered || '<span style="color:#aaa">Click to add equation</span>' }} />
     </NodeViewWrapper>
   );
 }
@@ -167,8 +177,13 @@ export const MathBlock = Node.create({
     return [{ tag: 'div[data-math-block]' }];
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-math-block': '' }), 0];
+  renderHTML({ node, HTMLAttributes }) {
+    // atom nodes must NOT have content hole (0)
+    const attrs = mergeAttributes(HTMLAttributes, {
+      'data-math-block': '',
+      'data-latex': node.attrs.latex || '',
+    });
+    return ['div', attrs];
   },
 
   addNodeView() {
@@ -177,11 +192,12 @@ export const MathBlock = Node.create({
 
   addInputRules() {
     return [
+      // Match $$...$$ (block math) - e.g. typing $$\frac{1}{2}$$ triggers this
       new InputRule({
-        find: /^\$\$\s$/,
-        handler: ({ state, range }) => {
+        find: /^\$\$([^$]+)\$\$$/,
+        handler: ({ state, range, match }) => {
           const { tr } = state;
-          tr.replaceWith(range.from, range.to, this.type.create({ latex: '' }));
+          tr.replaceWith(range.from, range.to, this.type.create({ latex: match[1] }));
         },
       }),
     ];

@@ -34,9 +34,11 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div style={{ minHeight: '100vh', display: 'flex', padding: '16px' }}>
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex-col justify-between px-14 py-12 text-white">
+      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex-col justify-between text-white"
+        style={{ borderRadius: '20px', padding: '56px' }}
+      >
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
@@ -60,8 +62,10 @@ export default function LoginForm() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-10 sm:px-16">
-        <div className="w-full max-w-[360px]">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950"
+        style={{ padding: '40px 48px', borderRadius: '20px' }}
+      >
+        <div style={{ width: '100%', maxWidth: '360px' }}>
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">

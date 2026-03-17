@@ -25,10 +25,11 @@ const lowlight = createLowlight(common);
 interface TiptapEditorProps {
   content: string;
   onChange: (html: string) => void;
-  onInsertSubPage?: () => void;
+  onInsertSubPage?: () => Promise<{ id: string; title: string } | undefined>;
+  onNavigateToPage?: (pageId: string) => void;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -220,7 +221,12 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
       case 'mathBlock': editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run(); break;
       case 'subpage': {
         onChange(editor.getHTML());
-        onInsertSubPage?.();
+        const created = await onInsertSubPage?.();
+        if (created) {
+          editor.chain().focus().insertContent(
+            `<p data-subpage-id="${created.id}" class="subpage-link">\u{1F4C4} ${created.title || 'Untitled'}</p>`
+          ).run();
+        }
         break;
       }
     }
@@ -253,6 +259,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
           <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row Before</button>
           <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row After</button>
           <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
+          <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Header Row</button>
           <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Merge</button>
           <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Split</button>
           <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
@@ -262,7 +269,19 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage }: Tip
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950">
+      <div
+        className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950"
+        onClick={e => {
+          const target = (e.target as HTMLElement).closest('[data-subpage-id]');
+          if (target) {
+            const pageId = target.getAttribute('data-subpage-id');
+            if (pageId && onNavigateToPage) {
+              e.preventDefault();
+              onNavigateToPage(pageId);
+            }
+          }
+        }}
+      >
         <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 py-6 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>

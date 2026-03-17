@@ -206,13 +206,13 @@ textarea {
 .tiptap-content table {
   border-collapse: collapse;
   margin: 1.5em 0;
-  border: 1px solid #e5e7eb;
+  border: 2px solid #d1d5db;
   border-radius: 0.5em;
   overflow: hidden;
 }
 
 .tiptap-content th, .tiptap-content td {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d1d5db;
   padding: 0.6em 0.85em;
   text-align: left;
   vertical-align: top;
@@ -221,7 +221,7 @@ textarea {
   word-wrap: break-word;
 }
 
-.tiptap-content th { background: #f9fafb; font-weight: 600; color: #374151; font-size: 0.9em; }
+.tiptap-content th { background: #f3f4f6; font-weight: 600; color: #1f2937; font-size: 0.9em; border-bottom: 2px solid #d1d5db; }
 .tiptap-content td { background: white; }
 .tiptap-content tr:hover td { background: #f9fafb; }
 .tiptap-content .selectedCell { background: #dbeafe !important; }
@@ -238,8 +238,24 @@ textarea {
 }
 
 /* Sub-page links */
-.tiptap-content .subpage-link { display: flex; align-items: center; gap: 0.5em; padding: 0.5em 0.75em; border-radius: 0.5em; background: #f9fafb; border: 1px solid #e5e7eb; cursor: pointer; transition: background 0.15s; margin: 0.5em 0; text-decoration: none; color: #374151; }
-.tiptap-content .subpage-link:hover { background: #f3f4f6; }
+.tiptap-content .subpage-link,
+.tiptap-content [data-subpage-id] {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 0.75em;
+  border-radius: 0.5em;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin: 0.5em 0;
+  text-decoration: none;
+  color: #374151;
+  font-weight: 500;
+}
+.tiptap-content .subpage-link:hover,
+.tiptap-content [data-subpage-id]:hover { background: #e5e7eb; }
 
 /* ============================= */
 /* Math (LaTeX / KaTeX)          */
@@ -331,16 +347,16 @@ textarea {
   .tiptap-content p.is-editor-empty:first-child::before { color: #525252; }
 
   /* Table */
-  .tiptap-content table { border-color: #374151; }
-  .tiptap-content th, .tiptap-content td { border-color: #374151; }
-  .tiptap-content th { background: #1f2937; color: #d1d5db; }
+  .tiptap-content table { border-color: #4b5563; }
+  .tiptap-content th, .tiptap-content td { border-color: #4b5563; }
+  .tiptap-content th { background: #1f2937; color: #e5e7eb; border-bottom-color: #4b5563; }
   .tiptap-content td { background: #0a0a0a; }
   .tiptap-content tr:hover td { background: #111827; }
   .tiptap-content .selectedCell { background: #1e3a5f !important; }
 
   /* Sub-page links */
-  .tiptap-content .subpage-link { background: #1f2937; border-color: #374151; color: #d1d5db; }
-  .tiptap-content .subpage-link:hover { background: #111827; }
+  .tiptap-content .subpage-link, .tiptap-content [data-subpage-id] { background: #1f2937; border-color: #374151; color: #d1d5db; }
+  .tiptap-content .subpage-link:hover, .tiptap-content [data-subpage-id]:hover { background: #374151; }
 
   /* Code block */
   .tiptap-content pre { background: #181825; color: #cdd6f4; }

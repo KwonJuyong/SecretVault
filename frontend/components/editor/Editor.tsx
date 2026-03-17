@@ -18,7 +18,7 @@ interface EditorProps {
   onChangeContent: (content: string) => void;
   onChangeIcon: (icon: string) => void;
   subPages?: SubPageItem[];
-  onCreateSubPage?: () => void;
+  onCreateSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
 }
 
@@ -126,6 +126,7 @@ export default function Editor({
         content={content}
         onChange={handleContentChange}
         onInsertSubPage={onCreateSubPage}
+        onNavigateToPage={onNavigateToPage}
       />
 
       {/* Sub-pages section */}

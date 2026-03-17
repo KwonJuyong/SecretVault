@@ -204,8 +204,8 @@ export default function AppPage() {
   }, [workspaceId, encKey, fetchPages, loadPage]);
 
   // Create sub-page (child of current page) without navigating away
-  const createSubPage = useCallback(async () => {
-    if (!activePageId || !workspaceId) return;
+  const createSubPage = useCallback(async (): Promise<{ id: string; title: string } | undefined> => {
+    if (!activePageId || !workspaceId) return undefined;
     try {
       // Save current page first
       const encTitle = encrypt(editTitle || 'Untitled', encKey);
@@ -217,7 +217,7 @@ export default function AppPage() {
       });
 
       // Create the sub-page
-      const subEncTitle = encrypt('', encKey);
+      const subEncTitle = encrypt('Untitled', encKey);
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
         title: subEncTitle,
         content: '',
@@ -229,8 +229,10 @@ export default function AppPage() {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'page_created', page_id: data.id }));
       }
+      return { id: data.id, title: 'Untitled' };
     } catch (e) {
       console.error('Failed to create sub-page:', e);
+      return undefined;
     }
   }, [activePageId, workspaceId, editTitle, editContent, editIcon, encKey, fetchPages]);
 
