@@ -72,8 +72,8 @@ export default function Editor({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Title area - centered with max-width */}
-      <div className="w-full bg-white dark:bg-neutral-950">
-        <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 pt-8 pb-3">
+      <div className="w-full bg-white dark:bg-[#191919]">
+        <div className="max-w-[720px] mx-auto px-6 sm:px-12 lg:px-16 pt-10 pb-1">
           {/* Icon picker */}
           <div className="relative mb-3 inline-block">
             <button
@@ -125,7 +125,7 @@ export default function Editor({
             value={title}
             onChange={e => onChangeTitle(e.target.value)}
             placeholder="Untitled"
-            className="w-full text-[36px] font-bold text-neutral-900 dark:text-white bg-transparent border-none outline-none placeholder-neutral-400 dark:placeholder-neutral-600 leading-tight"
+            className="w-full text-[40px] font-bold text-[rgb(55,53,47)] dark:text-[rgba(255,255,255,0.95)] bg-transparent border-none outline-none placeholder-[rgba(55,53,47,0.25)] dark:placeholder-[rgba(255,255,255,0.2)] leading-tight"
           />
         </div>
       </div>

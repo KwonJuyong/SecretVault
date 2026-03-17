@@ -39,6 +39,7 @@ export default function AppPage() {
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstLoad = useRef(true);
   const wsRef = useRef<WebSocket | null>(null);
+  const savePageRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -122,9 +123,17 @@ export default function AppPage() {
     }
   }, [workspaceId, fetchPages]);
 
-  // Load page content
+  // Load page content (flushes pending save first to prevent data loss)
   const loadPage = useCallback(async (pageId: string) => {
     if (!workspaceId) return;
+
+    // Flush any pending auto-save before switching pages
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      try { await savePageRef.current(); } catch { /* ignore */ }
+    }
+
     try {
       const data = await api.get<PageData>(`/workspaces/${workspaceId}/pages/${pageId}`);
       const decryptedTitle = decrypt(data.title, encKey) || '';
@@ -166,6 +175,9 @@ export default function AppPage() {
       console.error('Failed to save:', e);
     }
   }, [activePageId, workspaceId, editTitle, editContent, editIcon, encKey, fetchPages]);
+
+  // Keep savePageRef in sync for use in loadPage without circular deps
+  useEffect(() => { savePageRef.current = savePage; }, [savePage]);
 
   useEffect(() => {
     if (isFirstLoad.current) {
@@ -302,7 +314,7 @@ export default function AppPage() {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-[#191919]">
         <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -313,7 +325,7 @@ export default function AppPage() {
   const decryptedTitle = editTitle || 'Untitled';
 
   return (
-    <div className="h-screen flex bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+    <div className="h-screen flex bg-white dark:bg-[#191919] text-neutral-900 dark:text-neutral-100">
       {/* Sidebar */}
       <Sidebar
         pages={pages}

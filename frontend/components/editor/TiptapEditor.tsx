@@ -224,15 +224,16 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       case 'mathInline': editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run(); break;
       case 'mathBlock': editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run(); break;
       case 'subpage': {
-        onChange(editor.getHTML());
+        // Save the cursor position BEFORE the async API call
+        const insertPos = editor.state.selection.from;
         const created = await onInsertSubPage?.();
         if (created) {
-          // Insert link at cursor position
-          editor.chain().focus().insertContent({
+          // Insert link at the exact saved position (not wherever cursor drifted)
+          editor.chain().focus().insertContentAt(insertPos, {
             type: 'subPageLink',
             attrs: { pageId: created.id, title: created.title || 'Untitled' },
           }).run();
-          // Save and navigate to the new sub-page
+          // Update content state so the pending save includes the link
           onChange(editor.getHTML());
           onNavigateToPage?.(created.id);
         }
@@ -261,7 +262,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
       {/* Table controls */}
       {isTableActive && editor && (
-        <div className="flex items-center gap-1 px-5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs flex-wrap">
+        <div className="flex items-center gap-1 px-5 py-1.5 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-[rgb(247,246,243)] dark:bg-[#2f3437] text-xs flex-wrap">
           <span className="text-neutral-400 mr-2">Table:</span>
           <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col Before</button>
           <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col After</button>
@@ -279,7 +280,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       )}
 
       <div
-        className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950"
+        className="flex-1 overflow-y-auto bg-white dark:bg-[#191919]"
         onClick={e => {
           const target = (e.target as HTMLElement).closest('[data-subpage-id]');
           if (target) {
@@ -291,7 +292,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[900px] mx-auto px-6 sm:px-12 lg:px-16 py-6 pb-[50vh]">
+        <div className="max-w-[720px] mx-auto px-6 sm:px-12 lg:px-16 py-6 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>
       </div>

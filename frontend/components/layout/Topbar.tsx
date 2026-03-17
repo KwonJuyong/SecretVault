@@ -13,7 +13,7 @@ interface TopbarProps {
 
 export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageTitle, rightPanelOpen, onToggleRightPanel }: TopbarProps) {
   return (
-    <div className="h-12 flex items-center px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)] bg-white dark:bg-[#161616] flex-shrink-0">
+    <div className="h-11 flex items-center px-4 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#202020] flex-shrink-0">
       <button
         onClick={onToggleSidebar}
         className="p-1.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-400 transition-colors duration-200 mr-2"
