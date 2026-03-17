@@ -93,6 +93,22 @@ textarea {
   field-sizing: content;
 }
 
+/* Shortcut kbd styling */
+.sc-kbd {
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sc-kbd { background: #1f2937; color: #9ca3af; border-color: #374151; }
+}
+
 /* ============================= */
 /* Tiptap Editor Content Styles  */
 /* ============================= */
