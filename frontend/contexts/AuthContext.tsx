@@ -7,7 +7,7 @@ import type { LoginResponse } from '@/lib/types';
 
 interface AuthState {
   isAuthenticated: boolean;
-  userId: string;
+  email: string;
   displayName: string;
   workspaceId: string;
   encKey: string;
@@ -15,8 +15,8 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (userId: string, password: string) => Promise<void>;
-  signup: (userId: string, password: string, displayName?: string) => Promise<string>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, username?: string) => Promise<string>;
   logout: () => void;
   switchWorkspace: (workspaceId: string) => void;
 }
@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
-    userId: '',
+    email: '',
     displayName: '',
     workspaceId: '',
     encKey: '',
@@ -35,16 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = sessionStorage.getItem('access_token');
-    const userId = sessionStorage.getItem('user_id');
+    const email = sessionStorage.getItem('email');
     const displayName = sessionStorage.getItem('display_name');
     const workspaceId = sessionStorage.getItem('workspace_id');
     const encKey = sessionStorage.getItem('enc_key');
 
-    if (token && userId && encKey && workspaceId) {
+    if (token && email && encKey && workspaceId) {
       setState({
         isAuthenticated: true,
-        userId,
-        displayName: displayName || userId,
+        email,
+        displayName: displayName || email,
         workspaceId,
         encKey,
         isLoading: false,
@@ -54,35 +54,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (userId: string, password: string) => {
+  const login = async (email: string, password: string) => {
     const { authHash, encKey } = deriveKeys(password);
     const data = await api.post<LoginResponse>('/login', {
-      user_id: userId,
+      email,
       password_hash: authHash,
     });
 
     sessionStorage.setItem('access_token', data.access_token);
-    sessionStorage.setItem('user_id', data.user_id);
-    sessionStorage.setItem('display_name', data.display_name || data.user_id);
+    sessionStorage.setItem('email', data.email);
+    sessionStorage.setItem('display_name', data.display_name || data.email);
     sessionStorage.setItem('workspace_id', data.workspace_id);
     sessionStorage.setItem('enc_key', encKey);
 
     setState({
       isAuthenticated: true,
-      userId: data.user_id,
-      displayName: data.display_name || data.user_id,
+      email: data.email,
+      displayName: data.display_name || data.email,
       workspaceId: data.workspace_id,
       encKey,
       isLoading: false,
     });
   };
 
-  const signup = async (userId: string, password: string, displayName?: string): Promise<string> => {
+  const signup = async (email: string, password: string, username?: string): Promise<string> => {
     const { authHash } = deriveKeys(password);
     const data = await api.post<{ message: string }>('/signup', {
-      user_id: userId,
+      email,
       password_hash: authHash,
-      display_name: displayName,
+      username,
     });
     return data.message;
   };
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.clear();
     setState({
       isAuthenticated: false,
-      userId: '',
+      email: '',
       displayName: '',
       workspaceId: '',
       encKey: '',

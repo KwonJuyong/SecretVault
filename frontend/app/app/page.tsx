@@ -15,7 +15,6 @@ import TrashPanel from '@/components/layout/TrashPanel';
 import WorkspaceSettings from '@/components/workspace/WorkspaceSettings';
 import CreateWorkspaceModal from '@/components/workspace/CreateWorkspaceModal';
 import TipsModal from '@/components/ui/TipsModal';
-import ProfileModal from '@/components/ui/ProfileModal';
 import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import { FileText, Plus } from 'lucide-react';
 
@@ -36,7 +35,6 @@ export default function AppPage() {
   const [settingsWorkspace, setSettingsWorkspace] = useState<Workspace | null>(null);
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
   const [showTips, setShowTips] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstLoad = useRef(true);
@@ -326,7 +324,6 @@ export default function AppPage() {
         onOpenSearch={() => setShowSearch(true)}
         onOpenTrash={() => setShowTrash(true)}
         onOpenTips={() => setShowTips(true)}
-        onOpenProfile={() => setShowProfile(true)}
         onSwitchWorkspace={handleSwitchWorkspace}
         onOpenWorkspaceSettings={(ws) => setSettingsWorkspace(ws)}
         onCreateWorkspace={() => setShowCreateWorkspace(true)}
@@ -419,7 +416,6 @@ export default function AppPage() {
         />
       )}
       {showTips && <TipsModal onClose={() => setShowTips(false)} />}
-      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </div>
   );
 }

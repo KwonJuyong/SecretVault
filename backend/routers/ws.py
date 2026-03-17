@@ -17,20 +17,20 @@ active_connections: Dict[str, Set[WebSocket]] = defaultdict(set)
 
 
 def verify_ws_token(token: str) -> str | None:
-    """Verify JWT token and return user_id."""
+    """Verify JWT token and return email."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        return user_id
+        email: str = payload.get("sub")
+        return email
     except JWTError:
         return None
 
 
-def verify_workspace_membership(user_id_str: str, workspace_id: str) -> bool:
+def verify_workspace_membership(email: str, workspace_id: str) -> bool:
     """Check if user is member of workspace."""
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.user_id == user_id_str).first()
+        user = db.query(User).filter(User.email == email).first()
         if not user:
             return False
         ws_uuid = uuid.UUID(workspace_id)
@@ -51,13 +51,13 @@ async def websocket_endpoint(
     token: str = Query(default=""),
 ):
     # Authenticate
-    user_id = verify_ws_token(token)
-    if not user_id:
+    email = verify_ws_token(token)
+    if not email:
         await websocket.close(code=4001, reason="Unauthorized")
         return
 
     # Verify workspace membership
-    if not verify_workspace_membership(user_id, workspace_id):
+    if not verify_workspace_membership(email, workspace_id):
         await websocket.close(code=4003, reason="Access denied")
         return
 
@@ -70,7 +70,7 @@ async def websocket_endpoint(
             # Broadcast to all other connections in the same workspace
             try:
                 message = json.loads(data)
-                message["user_id"] = user_id
+                message["email"] = email
                 broadcast_data = json.dumps(message)
             except json.JSONDecodeError:
                 continue

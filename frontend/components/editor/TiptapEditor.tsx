@@ -18,6 +18,8 @@ import EditorToolbar from './EditorToolbar';
 import CodeBlockToolbar from './CodeBlockView';
 import SlashMenu, { BlockType } from './SlashMenu';
 import { MathInline, MathBlock } from './MathExtension';
+import { SubPageNode } from './SubPageNode';
+import { DragHandle } from './DragHandle';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
 
 const lowlight = createLowlight(common);
@@ -60,6 +62,8 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       CodeBlockLowlight.configure({ lowlight }),
       MathInline,
       MathBlock,
+      SubPageNode,
+      DragHandle,
     ],
     content: '',
     editorProps: {
@@ -223,9 +227,10 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         onChange(editor.getHTML());
         const created = await onInsertSubPage?.();
         if (created) {
-          editor.chain().focus().insertContent(
-            `<p data-subpage-id="${created.id}" class="subpage-link">\u{1F4C4} ${created.title || 'Untitled'}</p>`
-          ).run();
+          editor.chain().focus().insertContent({
+            type: 'subPageLink',
+            attrs: { pageId: created.id, title: created.title || 'Untitled' },
+          }).run();
         }
         break;
       }

@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { decrypt } from '@/lib/crypto';
+import { api } from '@/lib/api';
 import type { PageTreeItem, Workspace } from '@/lib/types';
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
 import {
   Plus, Search, FileText, ChevronRight, ChevronDown,
-  Trash2, LogOut, Settings, HelpCircle, User,
+  Trash2, LogOut, HelpCircle, Save,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,7 +20,6 @@ interface SidebarProps {
   onOpenSearch: () => void;
   onOpenTrash: () => void;
   onOpenTips: () => void;
-  onOpenProfile: () => void;
   onSwitchWorkspace: (workspace: Workspace) => void;
   onOpenWorkspaceSettings: (workspace: Workspace) => void;
   onCreateWorkspace: () => void;
@@ -29,14 +29,16 @@ interface SidebarProps {
 
 export default function Sidebar({
   pages, activePageId, onSelectPage, onCreatePage,
-  onDeletePage, onOpenSearch, onOpenTrash, onOpenTips, onOpenProfile, collapsed,
+  onDeletePage, onOpenSearch, onOpenTrash, onOpenTips, collapsed,
   onSwitchWorkspace, onOpenWorkspaceSettings, onCreateWorkspace,
   currentWorkspaceId,
 }: SidebarProps) {
-  const { userId, displayName, logout, encKey } = useAuth();
+  const { email, displayName, logout, encKey } = useAuth();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   if (collapsed) return null;
 
@@ -56,6 +58,19 @@ export default function Sidebar({
 
   const rootPages = pages.filter(p => !p.parent_id);
   const childrenOf = (parentId: string) => pages.filter(p => p.parent_id === parentId);
+
+  const openUserMenu = () => {
+    setEditDisplayName(displayName || '');
+    setUserMenuOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      await api.put('/me', { display_name: editDisplayName });
+    } catch { /* ignore */ }
+    setSaving(false);
+  };
 
   const renderPageItem = (page: PageTreeItem, depth: number = 0) => {
     const isActive = page.id === activePageId;
@@ -89,10 +104,7 @@ export default function Sidebar({
           )}
 
           <span className="flex-shrink-0 text-base">{page.icon || ''}</span>
-
-          <span className="truncate flex-1 ml-1">
-            {title}
-          </span>
+          <span className="truncate flex-1 ml-1">{title}</span>
 
           {isHovered && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -172,35 +184,61 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5">
-        <button onClick={onOpenProfile} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
-          <User size={16} /><span>Profile</span>
-        </button>
         <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
           <Trash2 size={16} /><span>Trash</span>
         </button>
         <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
           <HelpCircle size={16} /><span>Help & Guide</span>
         </button>
-        {/* User profile */}
+
+        {/* User account - combined profile + logout */}
         <div className="relative">
           <button
-            onClick={() => setProfileOpen(!profileOpen)}
+            onClick={openUserMenu}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
           >
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
-              {(displayName || userId).charAt(0).toUpperCase()}
+              {(displayName || email || '?').charAt(0).toUpperCase()}
             </div>
-            <span className="truncate">{displayName || userId}</span>
+            <span className="truncate">{displayName || email}</span>
           </button>
-          {profileOpen && (
+
+          {userMenuOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-              <div className="absolute left-0 bottom-full mb-1 w-56 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
-                <div className="p-3 border-b border-neutral-100 dark:border-neutral-700">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Signed in as</p>
-                  <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">{userId}</p>
+              <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+              <div className="absolute left-0 bottom-full mb-1 w-64 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
+                {/* Email */}
+                <div className="px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-neutral-700">
+                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-0.5">Account</p>
+                  <p className="text-sm text-neutral-800 dark:text-neutral-200 truncate">{email}</p>
                 </div>
-                <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+
+                {/* Display name edit */}
+                <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700">
+                  <label className="text-[11px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block mb-1">Display Name</label>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={editDisplayName}
+                      onChange={e => setEditDisplayName(e.target.value)}
+                      className="flex-1 px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-800 dark:text-neutral-200 outline-none focus:border-blue-500"
+                      placeholder="Display name"
+                    />
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className="px-2 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition disabled:opacity-50"
+                    >
+                      <Save size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sign out */}
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                >
                   <LogOut size={15} /> Sign Out
                 </button>
               </div>

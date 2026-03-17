@@ -9,23 +9,21 @@ import type { UserProfile } from '@/lib/types';
 interface ProfileModalProps { onClose: () => void; }
 
 export default function ProfileModal({ onClose }: ProfileModalProps) {
-  const { userId } = useAuth();
+  const { email: userEmail } = useAuth();
   const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     api.get<UserProfile>('/me').then(data => {
       setDisplayName(data.display_name || '');
-      setEmail(data.email || '');
     }).catch(console.error);
   }, []);
 
   const handleSave = async () => {
     setSaving(true); setSaved(false);
     try {
-      await api.put('/me', { display_name: displayName, email });
+      await api.put('/me', { display_name: displayName });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) { console.error(e); }
@@ -42,16 +40,12 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Username</label>
-            <input type="text" value={userId} disabled className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-100 text-neutral-500 text-sm" />
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
+            <input type="email" value={userEmail} disabled className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-100 text-neutral-500 text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Display Name</label>
             <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your display name" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com" />
           </div>
           <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition disabled:opacity-50">
             <Save size={14} /> {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}

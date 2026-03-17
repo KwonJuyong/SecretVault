@@ -15,7 +15,7 @@ interface WorkspaceSettingsProps {
 }
 
 export default function WorkspaceSettings({ workspace, onClose, onUpdated }: WorkspaceSettingsProps) {
-  const { userId } = useAuth();
+  const { email: currentEmail } = useAuth();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteUserId, setInviteUserId] = useState('');
@@ -123,7 +123,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                 type="text"
                 value={inviteUserId}
                 onChange={e => setInviteUserId(e.target.value)}
-                placeholder="Username"
+                placeholder="Email"
                 className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/30"
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
               />
@@ -158,35 +158,35 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
             ) : (
               members.map(member => (
                 <div
-                  key={member.user_id}
+                  key={member.email}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 group"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {(member.display_name || member.user_id).charAt(0).toUpperCase()}
+                    {(member.display_name || member.email).charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
-                      {member.display_name || member.user_id}
-                      {member.user_id === userId && (
+                      {member.display_name || member.email}
+                      {member.email === currentEmail && (
                         <span className="ml-1.5 text-[10px] text-neutral-400 font-normal">(you)</span>
                       )}
                     </p>
-                    <p className="text-[11px] text-neutral-400">@{member.user_id}</p>
+                    <p className="text-[11px] text-neutral-400">@{member.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {roleIcon(member.role)}
-                    {isOwner && member.role !== 'owner' && member.user_id !== userId ? (
+                    {isOwner && member.role !== 'owner' && member.email !== currentEmail ? (
                       <>
                         <select
                           value={member.role}
-                          onChange={e => handleUpdateRole(member.user_id, e.target.value)}
+                          onChange={e => handleUpdateRole(member.email, e.target.value)}
                           className="text-xs px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 opacity-0 group-hover:opacity-100 transition outline-none"
                         >
                           <option value="member">Member</option>
                           <option value="admin">Admin</option>
                         </select>
                         <button
-                          onClick={() => handleRemoveMember(member.user_id)}
+                          onClick={() => handleRemoveMember(member.email)}
                           className="p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
                           title="Remove member"
                         >

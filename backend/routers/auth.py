@@ -13,20 +13,20 @@ router = APIRouter(tags=["auth"])
 
 @router.post("/signup")
 def signup(data: UserSignup, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.user_id == data.user_id).first():
-        raise HTTPException(status_code=400, detail="User ID already exists")
+    if db.query(User).filter(User.email == data.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
 
     user = User(
-        user_id=data.user_id,
+        email=data.email,
         password_hash=hash_password(data.password_hash),
-        display_name=data.display_name or data.user_id,
+        display_name=data.username or data.email,
     )
     db.add(user)
     db.flush()
 
     workspace = Workspace(
         id=uuid.uuid4(),
-        name=f"{data.user_id}'s Workspace",
+        name=f"{data.username or data.email}'s Workspace",
         icon="",
         owner_id=user.id,
     )
@@ -50,7 +50,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     result = (
         db.query(User, WorkspaceMember.workspace_id)
         .outerjoin(WorkspaceMember, WorkspaceMember.user_id == User.id)
-        .filter(User.user_id == data.user_id)
+        .filter(User.email == data.email)
         .first()
     )
 
@@ -67,11 +67,11 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         user.password_hash = hash_password(data.password_hash)
         db.commit()
 
-    token = create_access_token(data={"sub": user.user_id})
+    token = create_access_token(data={"sub": user.email})
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user_id": user.user_id,
+        "email": user.email,
         "display_name": user.display_name,
         "workspace_id": str(workspace_id) if workspace_id else "",
     }
@@ -80,9 +80,8 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserProfile)
 def get_profile(current_user: User = Depends(get_current_user)):
     return UserProfile(
-        user_id=current_user.user_id,
-        display_name=current_user.display_name,
         email=current_user.email,
+        display_name=current_user.display_name,
         created_at=str(current_user.created_at) if current_user.created_at else None,
     )
 
@@ -95,13 +94,10 @@ def update_profile(
 ):
     if data.display_name is not None:
         current_user.display_name = data.display_name
-    if data.email is not None:
-        current_user.email = data.email
     db.commit()
     db.refresh(current_user)
     return UserProfile(
-        user_id=current_user.user_id,
-        display_name=current_user.display_name,
         email=current_user.email,
+        display_name=current_user.display_name,
         created_at=str(current_user.created_at) if current_user.created_at else None,
     )

@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginForm() {
-  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -16,29 +16,27 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId.trim() || !password.trim()) {
-      setError('Please enter your username and password.');
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter your email and password.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await login(userId, password);
+      await login(email, password);
       router.push('/app');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed.';
-      setError(message === 'Unauthorized' ? 'Invalid username or password.' : message);
+      setError(message === 'Unauthorized' ? 'Invalid email or password.' : message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', padding: '16px' }}>
+    <div className="min-h-screen flex">
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex-col justify-between text-white"
-        style={{ borderRadius: '20px', padding: '56px' }}
-      >
+      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex-col justify-between text-white px-16 py-14">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
@@ -62,10 +60,8 @@ export default function LoginForm() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950"
-        style={{ padding: '40px 48px', borderRadius: '20px' }}
-      >
-        <div style={{ width: '100%', maxWidth: '360px' }}>
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-12 sm:px-16">
+        <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
@@ -85,15 +81,15 @@ export default function LoginForm() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Username</label>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Email</label>
               <input
-                type="text"
-                value={userId}
-                onChange={e => setUserId(e.target.value)}
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                placeholder="Enter your username"
+                placeholder="Enter your email"
                 autoFocus
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
 

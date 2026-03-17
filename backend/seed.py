@@ -5,8 +5,8 @@ Usage (inside Docker container):
   docker-compose exec backend python seed.py
 
 Accounts created:
-  - researcher1 / 1234 (Display: Kim Juyong)
-  - researcher2 / 1234 (Display: Lee Minho)
+  - researcher1@test.com / 1234 (Display: Kim Juyong)
+  - researcher2@test.com / 1234 (Display: Lee Minho)
 
 Both are added to a shared "Research Lab" workspace.
 """
@@ -30,24 +30,24 @@ def seed():
 
     try:
         accounts = [
-            {"user_id": "researcher1", "password": "1234", "display_name": "Kim Juyong"},
-            {"user_id": "researcher2", "password": "1234", "display_name": "Lee Minho"},
+            {"email": "researcher1@test.com", "password": "1234", "display_name": "Kim Juyong"},
+            {"email": "researcher2@test.com", "password": "1234", "display_name": "Lee Minho"},
         ]
 
         created_users = []
 
         for acct in accounts:
             # Skip if user already exists
-            existing = db.query(User).filter(User.user_id == acct["user_id"]).first()
+            existing = db.query(User).filter(User.email == acct["email"]).first()
             if existing:
-                print(f"  User '{acct['user_id']}' already exists, skipping.")
+                print(f"  User '{acct['email']}' already exists, skipping.")
                 created_users.append(existing)
                 continue
 
             # Create user (replicating frontend + backend password flow)
             auth_hash = derive_auth_hash(acct["password"])
             user = User(
-                user_id=acct["user_id"],
+                email=acct["email"],
                 password_hash=hash_password(auth_hash),
                 display_name=acct["display_name"],
             )
@@ -57,7 +57,7 @@ def seed():
             # Create personal workspace
             personal_ws = Workspace(
                 id=uuid.uuid4(),
-                name=f"{acct['user_id']}'s Workspace",
+                name=f"{acct['display_name']}'s Workspace",
                 icon="\U0001F4BC",
                 owner_id=user.id,
             )
@@ -73,7 +73,7 @@ def seed():
             db.flush()
 
             created_users.append(user)
-            print(f"  Created user: {acct['user_id']} ({acct['display_name']})")
+            print(f"  Created user: {acct['email']} ({acct['display_name']})")
 
         # Create shared team workspace (if not exists)
         team_ws_name = "Research Lab"
@@ -109,7 +109,7 @@ def seed():
         print("\nSeed completed successfully!")
         print("\nTest accounts:")
         for acct in accounts:
-            print(f"  Username: {acct['user_id']}  Password: {acct['password']}  Name: {acct['display_name']}")
+            print(f"  Email: {acct['email']}  Password: {acct['password']}  Name: {acct['display_name']}")
 
     except Exception as e:
         db.rollback()

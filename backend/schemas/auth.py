@@ -4,18 +4,18 @@ from typing import Optional
 
 
 class UserSignup(BaseModel):
-    user_id: str
+    email: str
     password_hash: str
-    display_name: Optional[str] = None
+    username: Optional[str] = None
 
-    @field_validator('user_id')
+    @field_validator('email')
     @classmethod
-    def validate_user_id(cls, v: str) -> str:
-        v = v.strip()
-        if len(v) < 2 or len(v) > 50:
-            raise ValueError('Username must be 2-50 characters')
-        if not re.match(r'^[a-zA-Z0-9_.\-]+$', v):
-            raise ValueError('Username can only contain letters, numbers, _, ., -')
+    def validate_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', v):
+            raise ValueError('Invalid email format')
+        if len(v) > 200:
+            raise ValueError('Email too long')
         return v
 
     @field_validator('password_hash')
@@ -25,31 +25,30 @@ class UserSignup(BaseModel):
             raise ValueError('Invalid password hash')
         return v
 
-    @field_validator('display_name')
+    @field_validator('username')
     @classmethod
-    def validate_display_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
         if v and len(v) > 100:
             raise ValueError('Display name too long')
         return v
 
 
 class UserLogin(BaseModel):
-    user_id: str
+    email: str
     password_hash: str
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-    user_id: str
+    email: str
     display_name: Optional[str] = None
     workspace_id: str
 
 
 class UserProfile(BaseModel):
-    user_id: str
+    email: str
     display_name: Optional[str] = None
-    email: Optional[str] = None
     created_at: Optional[str] = None
 
     class Config:
@@ -58,4 +57,3 @@ class UserProfile(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     display_name: Optional[str] = None
-    email: Optional[str] = None

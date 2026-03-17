@@ -94,7 +94,7 @@ def list_members(
     )
     return [
         WorkspaceMemberResponse(
-            user_id=user.user_id,
+            email=user.email,
             display_name=user.display_name,
             role=mem.role,
             joined_at=mem.joined_at,
@@ -124,7 +124,7 @@ def invite_member(
     if not membership:
         raise HTTPException(status_code=403, detail="Only owners and admins can invite members")
 
-    target_user = db.query(User).filter(User.user_id == data.user_id).first()
+    target_user = db.query(User).filter(User.email == data.email).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -167,7 +167,7 @@ def remove_member(
     if not membership:
         raise HTTPException(status_code=403, detail="Only owners and admins can remove members")
 
-    target_user = db.query(User).filter(User.user_id == data.user_id).first()
+    target_user = db.query(User).filter(User.email == data.email).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -208,7 +208,7 @@ def update_member_role(
     if not membership:
         raise HTTPException(status_code=403, detail="Only the workspace owner can change roles")
 
-    target_user = db.query(User).filter(User.user_id == data.user_id).first()
+    target_user = db.query(User).filter(User.email == data.email).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 

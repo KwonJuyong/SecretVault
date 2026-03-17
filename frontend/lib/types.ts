@@ -1,15 +1,14 @@
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  user_id: string;
+  email: string;
   display_name: string | null;
   workspace_id: string;
 }
 
 export interface UserProfile {
-  user_id: string;
+  email: string;
   display_name: string | null;
-  email: string | null;
   created_at: string | null;
 }
 
@@ -47,7 +46,7 @@ export interface PageData {
 }
 
 export interface WorkspaceMember {
-  user_id: string;
+  email: string;
   display_name: string | null;
   role: string;
   joined_at: string | null;

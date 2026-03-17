@@ -23,12 +23,12 @@ class WorkspaceResponse(BaseModel):
 
 
 class WorkspaceMemberResponse(BaseModel):
-    user_id: str
+    email: str
     display_name: Optional[str] = None
     role: str
     joined_at: Optional[datetime] = None
 
 
 class InviteMember(BaseModel):
-    user_id: str
+    email: str
     role: Optional[str] = "member"
