@@ -35,7 +35,7 @@ export const DragHandle = Extension.create({
           if (!dom || !dom.getBoundingClientRect) return;
           const rect = dom.getBoundingClientRect();
           const mid = rect.top + rect.height / 2;
-          if (clientY >= rect.top && clientY <= rect.bottom) {
+          if (clientY >= rect.top - 4 && clientY <= rect.bottom + 4) {
             result = { pos: offset, after: clientY > mid };
           } else if (clientY > rect.bottom) {
             result = { pos: offset, after: true };
@@ -118,6 +118,7 @@ export const DragHandle = Extension.create({
 
                 let insertPos = target.after ? target.pos + targetNode.nodeSize : target.pos;
 
+                // Don't drop onto self
                 if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
                   resetDragState();
                   return true;
@@ -152,10 +153,10 @@ export const DragHandle = Extension.create({
           handleEl = document.createElement('div');
           handleEl.className = 'block-drag-handle';
           handleEl.draggable = true;
-          handleEl.innerHTML = `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-            <circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/>
-            <circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/>
-            <circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/>
+          handleEl.innerHTML = `<svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor">
+            <circle cx="4" cy="3" r="1.6"/><circle cx="10" cy="3" r="1.6"/>
+            <circle cx="4" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/>
+            <circle cx="4" cy="17" r="1.6"/><circle cx="10" cy="17" r="1.6"/>
           </svg>`;
           handleEl.style.display = 'none';
 
@@ -176,9 +177,9 @@ export const DragHandle = Extension.create({
             const editorRect = editorView.dom.getBoundingClientRect();
             const blockRect = blockEl.getBoundingClientRect();
             const top = blockRect.top - scrollRect.top + scrollEl.scrollTop;
-            const left = editorRect.left - scrollRect.left - 28;
+            const left = editorRect.left - scrollRect.left - 36;
             handleEl.style.display = 'flex';
-            handleEl.style.top = `${top + 2}px`;
+            handleEl.style.top = `${top}px`;
             handleEl.style.left = `${Math.max(4, left)}px`;
           };
 
@@ -208,8 +209,8 @@ export const DragHandle = Extension.create({
               ghost.style.width = `${currentBlockDom.offsetWidth}px`;
               ghost.style.background = 'white';
               ghost.style.borderRadius = '8px';
-              ghost.style.padding = '6px 10px';
-              ghost.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+              ghost.style.padding = '8px 12px';
+              ghost.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
               ghost.style.transform = 'rotate(1deg)';
               document.body.appendChild(ghost);
               e.dataTransfer!.setDragImage(ghost, 0, 0);
@@ -267,7 +268,7 @@ export const DragHandle = Extension.create({
                 currentBlockDom = null;
                 currentBlockPos = null;
               }
-            }, 150);
+            }, 200);
           };
 
           editorView.dom.addEventListener('mousemove', onMouseMove);
@@ -277,11 +278,13 @@ export const DragHandle = Extension.create({
             if (isDragging) return;
             const related = e.relatedTarget as HTMLElement;
             if (related && editorView.dom.contains(related)) return;
-            if (handleEl) {
-              handleEl.style.display = 'none';
-              currentBlockDom = null;
-              currentBlockPos = null;
-            }
+            setTimeout(() => {
+              if (handleEl && !handleEl.matches(':hover') && !isDragging) {
+                handleEl.style.display = 'none';
+                currentBlockDom = null;
+                currentBlockPos = null;
+              }
+            }, 200);
           });
 
           return {

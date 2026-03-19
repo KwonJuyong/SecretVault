@@ -21,6 +21,7 @@ interface EditorProps {
   onCreateSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
   onSaveContent?: (html: string) => Promise<void>;
+  subPageTitles?: Record<string, string>;
 }
 
 const emojiCategories = [
@@ -54,6 +55,7 @@ export default function Editor({
   title, content, icon,
   onChangeTitle, onChangeContent, onChangeIcon,
   subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
+  subPageTitles,
 }: EditorProps) {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [activeCategory, setActiveCategory] = useState(0);
@@ -74,12 +76,12 @@ export default function Editor({
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Title area - centered with max-width */}
       <div className="w-full bg-white dark:bg-[#191919]">
-        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 pt-14 pb-2">
+        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3">
           {/* Icon picker */}
-          <div className="relative mb-3 inline-block">
+          <div className="relative mb-4 inline-block">
             <button
               onClick={() => setShowIconPicker(!showIconPicker)}
-              className="text-5xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2 transition"
+              className="text-6xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2.5 transition"
               title="Change icon"
             >
               {icon || '\u{1F4C4}'}
@@ -138,6 +140,7 @@ export default function Editor({
         onInsertSubPage={onCreateSubPage}
         onNavigateToPage={onNavigateToPage}
         onSaveContent={onSaveContent}
+        subPageTitles={subPageTitles}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}

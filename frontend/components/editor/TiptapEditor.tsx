@@ -30,9 +30,10 @@ interface TiptapEditorProps {
   onInsertSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
   onSaveContent?: (html: string) => Promise<void>;
+  subPageTitles?: Record<string, string>;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -168,6 +169,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
     },
   });
 
+  // Sync external content changes into editor (deferred to avoid flushSync warning)
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     let htmlContent = content;
@@ -176,11 +178,36 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
     }
     const currentHtml = editor.getHTML();
     if (htmlContent !== currentHtml) {
-      suppressUpdate.current = true;
-      editor.commands.setContent(htmlContent || '<p></p>');
-      suppressUpdate.current = false;
+      requestAnimationFrame(() => {
+        if (editor.isDestroyed) return;
+        suppressUpdate.current = true;
+        editor.commands.setContent(htmlContent || '<p></p>');
+        suppressUpdate.current = false;
+      });
     }
   }, [content, editor]);
+
+  // Keep sub-page link titles in sync with actual page titles
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !subPageTitles) return;
+    const { doc } = editor.state;
+    const { tr } = editor.state;
+    let modified = false;
+    doc.descendants((node, pos) => {
+      if (node.type.name === 'subPageLink') {
+        const liveTitle = subPageTitles[node.attrs.pageId];
+        if (liveTitle && liveTitle !== node.attrs.title) {
+          tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: liveTitle });
+          modified = true;
+        }
+      }
+    });
+    if (modified) {
+      suppressUpdate.current = true;
+      editor.view.dispatch(tr);
+      suppressUpdate.current = false;
+    }
+  }, [editor, subPageTitles]);
 
   const handleInsertImage = useCallback(() => {
     fileInputRef.current?.click();
@@ -267,7 +294,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
       {/* Table controls */}
       {isTableActive && editor && (
-        <div className="flex items-center gap-1.5 px-6 py-2 border-b border-neutral-100 dark:border-neutral-800/60 bg-[rgb(247,246,243)] dark:bg-[#2f3437] text-xs flex-wrap">
+        <div className="flex items-center gap-2 px-6 py-2.5 border-b border-neutral-100 dark:border-neutral-800/60 bg-[rgb(247,246,243)] dark:bg-[#2f3437] text-[13px] flex-wrap">
           <span className="text-neutral-400 mr-2 font-medium">Table</span>
           <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Col Before</button>
           <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Col After</button>

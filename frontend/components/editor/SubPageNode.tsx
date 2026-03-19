@@ -14,7 +14,7 @@ function SubPageView({ node }: any) {
       contentEditable={false}
     >
       <div className="subpage-block-icon">
-        <FileText size={18} strokeWidth={1.8} />
+        <FileText size={20} strokeWidth={1.7} />
       </div>
       <span className="subpage-block-title">{title}</span>
     </NodeViewWrapper>

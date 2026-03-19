@@ -82,12 +82,12 @@ export default function Sidebar({
     return (
       <div key={page.id}>
         <div
-          className={`group flex items-center gap-1 py-1 px-2 mx-1 rounded-lg cursor-pointer transition-colors duration-200 text-sm ${
+          className={`group flex items-center gap-2 py-[7px] px-3 mx-1.5 rounded-lg cursor-pointer transition-colors duration-200 text-[14px] ${
             isActive
-              ? 'bg-blue-50/70 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300'
-              : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800'
+              ? 'bg-blue-50/80 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+              : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
           }`}
-          style={{ paddingLeft: `${depth * 20 + 8}px` }}
+          style={{ paddingLeft: `${depth * 22 + 10}px` }}
           onClick={() => onSelectPage(page.id)}
           onMouseEnter={() => setHoveredId(page.id)}
           onMouseLeave={() => setHoveredId(null)}
@@ -97,28 +97,28 @@ export default function Sidebar({
               onClick={e => { e.stopPropagation(); toggleExpand(page.id); }}
               className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex-shrink-0"
             >
-              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
           ) : (
             <span className="w-5 flex-shrink-0" />
           )}
 
-          <span className="flex-shrink-0 text-base">{page.icon || ''}</span>
-          <span className="truncate flex-1 ml-1">{title}</span>
+          <span className="flex-shrink-0 text-lg leading-none">{page.icon || ''}</span>
+          <span className="truncate flex-1">{title}</span>
 
           {isHovered && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <button
                 onClick={e => { e.stopPropagation(); onDeletePage(page.id); }}
-                className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500"
+                className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition"
               >
-                <Trash2 size={13} />
+                <Trash2 size={15} />
               </button>
               <button
                 onClick={e => { e.stopPropagation(); onCreatePage(page.id); }}
-                className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-blue-500"
+                className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-blue-500 transition"
               >
-                <Plus size={13} />
+                <Plus size={15} />
               </button>
             </div>
           )}
@@ -130,9 +130,9 @@ export default function Sidebar({
   };
 
   return (
-    <div className="w-[260px] h-full flex flex-col bg-[#f8f8f7] dark:bg-[#1a1a1a] border-r border-neutral-200/70 dark:border-neutral-800 flex-shrink-0">
+    <div className="w-[280px] h-full flex flex-col bg-[#f8f8f7] dark:bg-[#1a1a1a] border-r border-neutral-200/60 dark:border-neutral-800 flex-shrink-0">
       {/* Workspace Switcher */}
-      <div className="p-3 border-b border-neutral-200/70 dark:border-neutral-800">
+      <div className="p-3.5 border-b border-neutral-200/60 dark:border-neutral-800">
         <WorkspaceSwitcher
           currentWorkspaceId={currentWorkspaceId}
           onSwitch={onSwitchWorkspace}
@@ -142,37 +142,37 @@ export default function Sidebar({
       </div>
 
       {/* Actions */}
-      <div className="p-2 space-y-0.5">
+      <div className="p-2.5 space-y-0.5">
         <button
           onClick={onOpenSearch}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors duration-200"
         >
-          <Search size={16} />
+          <Search size={18} />
           <span>Search</span>
-          <kbd className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-400 font-mono">Ctrl+K</kbd>
+          <kbd className="ml-auto text-[11px] px-1.5 py-0.5 rounded bg-neutral-200/80 dark:bg-neutral-700 text-neutral-400 font-mono">Ctrl+K</kbd>
         </button>
       </div>
 
       {/* Pages Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-1">
+      <div className="flex items-center justify-between px-4.5 pt-5 pb-2">
         <span className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Pages</span>
         <button
           onClick={() => onCreatePage()}
-          className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition"
+          className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition"
         >
-          <Plus size={15} />
+          <Plus size={16} />
         </button>
       </div>
 
       {/* Page Tree */}
       <div className="flex-1 overflow-y-auto py-1">
         {rootPages.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <FileText size={32} className="mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
-            <p className="text-sm text-neutral-400 dark:text-neutral-500">No pages yet</p>
+          <div className="px-5 py-10 text-center">
+            <FileText size={36} className="mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
+            <p className="text-[14px] text-neutral-400 dark:text-neutral-500">No pages yet</p>
             <button
               onClick={() => onCreatePage()}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-3 text-[14px] text-blue-600 hover:text-blue-700 font-medium"
             >
               Create your first page
             </button>
@@ -183,21 +183,21 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-neutral-200/70 dark:border-neutral-800 space-y-0.5">
-        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200">
-          <Trash2 size={16} /><span>Trash</span>
+      <div className="p-2.5 border-t border-neutral-200/60 dark:border-neutral-800 space-y-0.5">
+        <button onClick={onOpenTrash} className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors duration-200">
+          <Trash2 size={18} /><span>Trash</span>
         </button>
-        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200">
-          <HelpCircle size={16} /><span>Help & Guide</span>
+        <button onClick={onOpenTips} className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors duration-200">
+          <HelpCircle size={18} /><span>Help & Guide</span>
         </button>
 
         {/* User account - combined profile + logout */}
         <div className="relative">
           <button
             onClick={openUserMenu}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/70 dark:hover:bg-neutral-800 transition-colors duration-200"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors duration-200"
           >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
               {(displayName || email || '?').charAt(0).toUpperCase()}
             </div>
             <span className="truncate">{displayName || email}</span>
