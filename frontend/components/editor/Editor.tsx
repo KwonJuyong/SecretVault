@@ -20,6 +20,7 @@ interface EditorProps {
   subPages?: SubPageItem[];
   onCreateSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
+  onSaveContent?: (html: string) => Promise<void>;
 }
 
 const emojiCategories = [
@@ -52,7 +53,7 @@ const emojiCategories = [
 export default function Editor({
   title, content, icon,
   onChangeTitle, onChangeContent, onChangeIcon,
-  subPages = [], onCreateSubPage, onNavigateToPage,
+  subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
 }: EditorProps) {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [activeCategory, setActiveCategory] = useState(0);
@@ -73,7 +74,7 @@ export default function Editor({
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Title area - centered with max-width */}
       <div className="w-full bg-white dark:bg-[#191919]">
-        <div className="max-w-[720px] mx-auto px-6 sm:px-12 lg:px-16 pt-10 pb-1">
+        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 pt-14 pb-2">
           {/* Icon picker */}
           <div className="relative mb-3 inline-block">
             <button
@@ -136,6 +137,7 @@ export default function Editor({
         onChange={handleContentChange}
         onInsertSubPage={onCreateSubPage}
         onNavigateToPage={onNavigateToPage}
+        onSaveContent={onSaveContent}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}

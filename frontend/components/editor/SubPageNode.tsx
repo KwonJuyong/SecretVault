@@ -13,8 +13,10 @@ function SubPageView({ node }: any) {
       data-subpage-id={node.attrs.pageId}
       contentEditable={false}
     >
-      <FileText size={16} />
-      <span>{title}</span>
+      <div className="subpage-block-icon">
+        <FileText size={18} strokeWidth={1.8} />
+      </div>
+      <span className="subpage-block-title">{title}</span>
     </NodeViewWrapper>
   );
 }
@@ -27,8 +29,19 @@ export const SubPageNode = Node.create({
 
   addAttributes() {
     return {
-      pageId: { default: '' },
-      title: { default: 'Untitled' },
+      pageId: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-subpage-id') || '',
+        renderHTML: attributes => ({ 'data-subpage-id': attributes.pageId }),
+      },
+      title: {
+        default: 'Untitled',
+        parseHTML: element =>
+          element.getAttribute('data-subpage-title') ||
+          element.textContent?.trim() ||
+          'Untitled',
+        renderHTML: attributes => ({ 'data-subpage-title': attributes.title }),
+      },
     };
   },
 
@@ -37,11 +50,14 @@ export const SubPageNode = Node.create({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, {
-      'data-subpage-link': '',
-      'data-subpage-id': node.attrs.pageId,
-      class: 'subpage-block',
-    })];
+    return [
+      'div',
+      mergeAttributes(HTMLAttributes, {
+        'data-subpage-link': '',
+        class: 'subpage-block',
+      }),
+      node.attrs.title || 'Untitled',
+    ];
   },
 
   addNodeView() {

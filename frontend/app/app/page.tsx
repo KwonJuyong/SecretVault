@@ -213,20 +213,32 @@ export default function AppPage() {
     }
   }, [workspaceId, encKey, fetchPages, loadPage]);
 
-  // Create sub-page (child of current page) without navigating away
-  const createSubPage = useCallback(async (): Promise<{ id: string; title: string } | undefined> => {
-    if (!activePageId || !workspaceId) return undefined;
+  // Save content explicitly (used by editor before navigating to sub-page)
+  const saveContent = useCallback(async (html: string) => {
+    if (!activePageId || !workspaceId) return;
     try {
-      // Save current page first
       const encTitle = encrypt(editTitle || 'Untitled', encKey);
-      const encContent = encrypt(editContent, encKey);
+      const encContent = encrypt(html, encKey);
       await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, {
         title: encTitle,
         content: encContent,
         icon: editIcon,
       });
+      // Cancel any pending auto-save since we just saved
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    } catch (e) {
+      console.error('Failed to save content:', e);
+    }
+  }, [activePageId, workspaceId, editTitle, editIcon, encKey]);
 
-      // Create the sub-page
+  // Create sub-page (child of current page) without navigating away
+  const createSubPage = useCallback(async (): Promise<{ id: string; title: string } | undefined> => {
+    if (!activePageId || !workspaceId) return undefined;
+    try {
+      // Create the sub-page (parent page will be saved by the editor after inserting the link)
       const subEncTitle = encrypt('Untitled', encKey);
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
         title: subEncTitle,
@@ -244,7 +256,7 @@ export default function AppPage() {
       console.error('Failed to create sub-page:', e);
       return undefined;
     }
-  }, [activePageId, workspaceId, editTitle, editContent, editIcon, encKey, fetchPages]);
+  }, [activePageId, workspaceId, encKey, fetchPages]);
 
   // Delete page (soft)
   const deletePage = useCallback(async (pageId: string) => {
@@ -365,6 +377,7 @@ export default function AppPage() {
             subPages={subPages}
             onCreateSubPage={createSubPage}
             onNavigateToPage={loadPage}
+            onSaveContent={saveContent}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center">

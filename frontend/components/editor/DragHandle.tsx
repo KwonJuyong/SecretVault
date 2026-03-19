@@ -2,14 +2,12 @@
 
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { NodeSelection } from '@tiptap/pm/state';
 import { Node as PMNode } from '@tiptap/pm/model';
 
 export const DragHandle = Extension.create({
   name: 'dragHandle',
 
   addProseMirrorPlugins() {
-    // Shared drag state between plugin props and view
     let isDragging = false;
     let dragStartPos: number | null = null;
     let dragNode: PMNode | null = null;
@@ -17,7 +15,16 @@ export const DragHandle = Extension.create({
     let currentBlockDom: HTMLElement | null = null;
     let handleEl: HTMLDivElement | null = null;
     let dropLineEl: HTMLDivElement | null = null;
-    let wrapperEl: HTMLElement | null = null;
+    let scrollEl: HTMLElement | null = null;
+
+    const findScrollParent = (el: HTMLElement | null): HTMLElement => {
+      while (el) {
+        const overflow = getComputedStyle(el).overflowY;
+        if (overflow === 'auto' || overflow === 'scroll') return el;
+        el = el.parentElement;
+      }
+      return document.documentElement;
+    };
 
     const findDropTarget = (view: any, clientY: number): { pos: number; after: boolean } | null => {
       const doc = view.state.doc;
@@ -39,19 +46,19 @@ export const DragHandle = Extension.create({
     };
 
     const showDropLine = (view: any, target: { pos: number; after: boolean }) => {
-      if (!dropLineEl || !wrapperEl) return;
+      if (!dropLineEl || !scrollEl) return;
       try {
         const dom = view.nodeDOM(target.pos) as HTMLElement;
         if (!dom) return;
-        const wrapperRect = wrapperEl.getBoundingClientRect();
-        const editorRect = view.dom.getBoundingClientRect();
+        const scrollRect = scrollEl.getBoundingClientRect();
         const nodeRect = dom.getBoundingClientRect();
+        const editorRect = view.dom.getBoundingClientRect();
         const lineY = target.after
-          ? nodeRect.bottom - wrapperRect.top + wrapperEl.scrollTop
-          : nodeRect.top - wrapperRect.top + wrapperEl.scrollTop;
+          ? nodeRect.bottom - scrollRect.top + scrollEl.scrollTop
+          : nodeRect.top - scrollRect.top + scrollEl.scrollTop;
         dropLineEl.style.display = 'block';
         dropLineEl.style.top = `${lineY}px`;
-        dropLineEl.style.left = `${editorRect.left - wrapperRect.left}px`;
+        dropLineEl.style.left = `${editorRect.left - scrollRect.left}px`;
         dropLineEl.style.width = `${editorRect.width}px`;
       } catch {
         dropLineEl.style.display = 'none';
@@ -67,16 +74,18 @@ export const DragHandle = Extension.create({
       dragStartPos = null;
       dragNode = null;
       hideDropLine();
+      if (currentBlockDom) {
+        currentBlockDom.style.opacity = '';
+      }
     };
 
     return [
       new Plugin({
         key: new PluginKey('dragHandle'),
         props: {
-          // Handle drag events at ProseMirror level to avoid conflicts
           handleDOMEvents: {
             dragover(view, event) {
-              if (!isDragging || !wrapperEl) return false;
+              if (!isDragging) return false;
               event.preventDefault();
               event.dataTransfer!.dropEffect = 'move';
               const target = findDropTarget(view, event.clientY);
@@ -109,7 +118,6 @@ export const DragHandle = Extension.create({
 
                 let insertPos = target.after ? target.pos + targetNode.nodeSize : target.pos;
 
-                // Don't drop on itself
                 if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
                   resetDragState();
                   return true;
@@ -139,13 +147,15 @@ export const DragHandle = Extension.create({
           },
         },
         view(editorView) {
+          scrollEl = findScrollParent(editorView.dom);
+
           handleEl = document.createElement('div');
           handleEl.className = 'block-drag-handle';
           handleEl.draggable = true;
           handleEl.innerHTML = `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-            <circle cx="2" cy="2" r="1.2"/><circle cx="8" cy="2" r="1.2"/>
-            <circle cx="2" cy="7" r="1.2"/><circle cx="8" cy="7" r="1.2"/>
-            <circle cx="2" cy="12" r="1.2"/><circle cx="8" cy="12" r="1.2"/>
+            <circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/>
+            <circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/>
+            <circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/>
           </svg>`;
           handleEl.style.display = 'none';
 
@@ -153,58 +163,62 @@ export const DragHandle = Extension.create({
           dropLineEl.className = 'block-drop-indicator';
           dropLineEl.style.display = 'none';
 
-          wrapperEl = editorView.dom.parentElement;
-          if (wrapperEl) {
-            wrapperEl.style.position = 'relative';
-            wrapperEl.appendChild(handleEl);
-            wrapperEl.appendChild(dropLineEl);
+          if (scrollEl) {
+            const pos = getComputedStyle(scrollEl).position;
+            if (pos === 'static') scrollEl.style.position = 'relative';
+            scrollEl.appendChild(handleEl);
+            scrollEl.appendChild(dropLineEl);
           }
 
           const positionHandle = (blockEl: HTMLElement) => {
-            if (!wrapperEl || !handleEl) return;
-            const wrapperRect = wrapperEl.getBoundingClientRect();
+            if (!scrollEl || !handleEl) return;
+            const scrollRect = scrollEl.getBoundingClientRect();
             const editorRect = editorView.dom.getBoundingClientRect();
             const blockRect = blockEl.getBoundingClientRect();
+            const top = blockRect.top - scrollRect.top + scrollEl.scrollTop;
+            const left = editorRect.left - scrollRect.left - 28;
             handleEl.style.display = 'flex';
-            handleEl.style.top = `${blockRect.top - wrapperRect.top + wrapperEl.scrollTop + 2}px`;
-            handleEl.style.left = `${editorRect.left - wrapperRect.left - 26}px`;
+            handleEl.style.top = `${top + 2}px`;
+            handleEl.style.left = `${Math.max(4, left)}px`;
           };
 
-          // Mousedown: select block for drag
-          handleEl.addEventListener('mousedown', () => {
+          handleEl.addEventListener('mousedown', (e) => {
+            e.preventDefault();
             if (currentBlockPos === null) return;
             try {
               dragStartPos = currentBlockPos;
               dragNode = editorView.state.doc.nodeAt(currentBlockPos);
-              const tr = editorView.state.tr.setSelection(
-                NodeSelection.create(editorView.state.doc, currentBlockPos)
-              );
-              editorView.dispatch(tr);
             } catch { /* ignore */ }
           });
 
           handleEl.addEventListener('dragstart', (e) => {
             if (dragStartPos === null || !dragNode) return;
             isDragging = true;
-            handleEl!.style.display = 'none';
             e.dataTransfer!.effectAllowed = 'move';
+            e.dataTransfer!.setData('text/plain', '');
             e.dataTransfer!.setData('application/x-block-drag', 'true');
 
-            // Create drag ghost from the block being dragged
             if (currentBlockDom) {
+              currentBlockDom.style.opacity = '0.4';
               const ghost = currentBlockDom.cloneNode(true) as HTMLElement;
               ghost.style.position = 'absolute';
               ghost.style.top = '-9999px';
-              ghost.style.opacity = '0.7';
+              ghost.style.left = '-9999px';
+              ghost.style.opacity = '0.85';
               ghost.style.width = `${currentBlockDom.offsetWidth}px`;
               ghost.style.background = 'white';
-              ghost.style.borderRadius = '6px';
-              ghost.style.padding = '4px 8px';
-              ghost.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+              ghost.style.borderRadius = '8px';
+              ghost.style.padding = '6px 10px';
+              ghost.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+              ghost.style.transform = 'rotate(1deg)';
               document.body.appendChild(ghost);
               e.dataTransfer!.setDragImage(ghost, 0, 0);
-              requestAnimationFrame(() => ghost.remove());
+              setTimeout(() => ghost.remove(), 50);
             }
+
+            setTimeout(() => {
+              if (handleEl) handleEl.style.display = 'none';
+            }, 0);
           });
 
           handleEl.addEventListener('dragend', () => {
@@ -213,7 +227,6 @@ export const DragHandle = Extension.create({
             currentBlockPos = null;
           });
 
-          // Track which block the mouse is hovering over
           const onMouseMove = (e: MouseEvent) => {
             if (isDragging) return;
             const target = e.target as HTMLElement;
@@ -234,7 +247,6 @@ export const DragHandle = Extension.create({
               try {
                 const pos = editorView.posAtDOM(blockEl, 0);
                 const resolved = editorView.state.doc.resolve(pos);
-                // Always resolve to depth 1 (top-level block)
                 currentBlockPos = resolved.before(Math.max(1, Math.min(resolved.depth, 1)));
                 if (currentBlockPos < 0) currentBlockPos = 0;
                 positionHandle(blockEl);
@@ -255,7 +267,7 @@ export const DragHandle = Extension.create({
                 currentBlockDom = null;
                 currentBlockPos = null;
               }
-            }, 100);
+            }, 150);
           };
 
           editorView.dom.addEventListener('mousemove', onMouseMove);

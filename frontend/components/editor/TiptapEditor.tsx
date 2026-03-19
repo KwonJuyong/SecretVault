@@ -29,9 +29,10 @@ interface TiptapEditorProps {
   onChange: (html: string) => void;
   onInsertSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
+  onSaveContent?: (html: string) => Promise<void>;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -233,8 +234,12 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
             type: 'subPageLink',
             attrs: { pageId: created.id, title: created.title || 'Untitled' },
           }).run();
-          // Update content state so the pending save includes the link
-          onChange(editor.getHTML());
+          // Save parent page WITH the link before navigating away
+          const updatedHtml = editor.getHTML();
+          onChange(updatedHtml);
+          if (onSaveContent) {
+            await onSaveContent(updatedHtml);
+          }
           onNavigateToPage?.(created.id);
         }
         break;
@@ -243,7 +248,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
     setSlashOpen(false);
     slashStartRef.current = null;
-  }, [editor, onInsertSubPage, onChange]);
+  }, [editor, onInsertSubPage, onChange, onSaveContent]);
 
   const handleSlashClose = useCallback(() => {
     setSlashOpen(false);
@@ -262,20 +267,20 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
       {/* Table controls */}
       {isTableActive && editor && (
-        <div className="flex items-center gap-1 px-5 py-1.5 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-[rgb(247,246,243)] dark:bg-[#2f3437] text-xs flex-wrap">
-          <span className="text-neutral-400 mr-2">Table:</span>
-          <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col Before</button>
-          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Col After</button>
-          <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row Before</button>
-          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">+ Row After</button>
-          <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-          <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Header Row</button>
-          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Merge</button>
-          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">Split</button>
-          <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-700 mx-1" />
-          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Col</button>
-          <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">- Row</button>
-          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2 py-0.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">Delete</button>
+        <div className="flex items-center gap-1.5 px-6 py-2 border-b border-neutral-100 dark:border-neutral-800/60 bg-[rgb(247,246,243)] dark:bg-[#2f3437] text-xs flex-wrap">
+          <span className="text-neutral-400 mr-2 font-medium">Table</span>
+          <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Col Before</button>
+          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Col After</button>
+          <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Row Before</button>
+          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Row After</button>
+          <div className="w-px h-4 bg-neutral-200/60 dark:bg-neutral-700/50 mx-0.5" />
+          <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">Header Row</button>
+          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">Merge</button>
+          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2.5 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">Split</button>
+          <div className="w-px h-4 bg-neutral-200/60 dark:bg-neutral-700/50 mx-0.5" />
+          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2.5 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition">- Col</button>
+          <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-2.5 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition">- Row</button>
+          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2.5 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition">Delete</button>
         </div>
       )}
 
@@ -292,7 +297,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[720px] mx-auto px-6 sm:px-12 lg:px-16 py-6 pb-[50vh]">
+        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>
       </div>
