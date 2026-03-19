@@ -3,4 +3,4 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npm install --legacy-peer-deps && npm run dev"]
