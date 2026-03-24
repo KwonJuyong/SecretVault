@@ -1,4 +1,19 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: vault-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+
   db:
     image: postgres:15
     container_name: vault-db
@@ -25,9 +40,6 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "127.0.0.1:8001:8000"
-    networks:
-      - default
-      - web_gateway
 
   frontend:
     build:
@@ -45,15 +57,9 @@ services:
     command: sh -c "npm install --legacy-peer-deps 2>/dev/null; rm -rf .next && npm run dev"
     ports:
       - "127.0.0.1:3001:3000"
-    networks:
-      - default
-      - web_gateway
 
 volumes:
   postgres_data:
   frontend_node_modules:
-
-networks:
-  default:
-  web_gateway:
-    external: true
+  caddy_data:
+  caddy_config:
