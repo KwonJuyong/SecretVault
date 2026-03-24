@@ -28,21 +28,28 @@ export const DragHandle = Extension.create({
 
     const findDropTarget = (view: any, clientY: number): { pos: number; after: boolean } | null => {
       const doc = view.state.doc;
-      let result: { pos: number; after: boolean } | null = null;
+      let bestPos = -1;
+      let bestAfter = false;
+      let bestDist = Infinity;
+
       doc.forEach((node: PMNode, offset: number) => {
         try {
           const dom = view.nodeDOM(offset) as HTMLElement;
           if (!dom || !dom.getBoundingClientRect) return;
           const rect = dom.getBoundingClientRect();
           const mid = rect.top + rect.height / 2;
-          if (clientY >= rect.top - 4 && clientY <= rect.bottom + 4) {
-            result = { pos: offset, after: clientY > mid };
-          } else if (clientY > rect.bottom) {
-            result = { pos: offset, after: true };
+          const after = clientY > mid;
+          const dist = Math.abs(clientY - mid);
+
+          if (dist < bestDist) {
+            bestPos = offset;
+            bestAfter = after;
+            bestDist = dist;
           }
         } catch { /* skip */ }
       });
-      return result;
+
+      return bestPos >= 0 ? { pos: bestPos, after: bestAfter } : null;
     };
 
     const showDropLine = (view: any, target: { pos: number; after: boolean }) => {
@@ -87,7 +94,9 @@ export const DragHandle = Extension.create({
             dragover(view, event) {
               if (!isDragging) return false;
               event.preventDefault();
-              event.dataTransfer!.dropEffect = 'move';
+              if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'move';
+              }
               const target = findDropTarget(view, event.clientY);
               if (target) {
                 showDropLine(view, target);
@@ -125,18 +134,30 @@ export const DragHandle = Extension.create({
                 }
 
                 const tr = state.tr;
+                // When source is before target, delete first then insert (adjusted position)
+                // When source is after target, insert first then delete
                 if (dragStartPos < insertPos) {
-                  tr.insert(insertPos, node);
+                  // Adjust insertPos because after deleting the source, everything after shifts back
+                  const adjustedInsert = insertPos - nodeSize;
                   tr.delete(dragStartPos, dragStartPos + nodeSize);
+                  tr.insert(adjustedInsert, node);
                 } else {
-                  tr.delete(dragStartPos, dragStartPos + nodeSize);
+                  // Insert first (doesn't affect source position since it's after)
                   tr.insert(insertPos, node);
+                  // Source position shifted forward by nodeSize due to insert
+                  tr.delete(dragStartPos + nodeSize, dragStartPos + nodeSize + nodeSize);
                 }
                 view.dispatch(tr);
-              } catch { /* ignore */ }
+              } catch (e) {
+                console.error('Drag drop failed:', e);
+              }
 
               resetDragState();
               return true;
+            },
+            dragend() {
+              resetDragState();
+              return false;
             },
             dragleave(view, event) {
               if (!isDragging) return false;
@@ -153,6 +174,7 @@ export const DragHandle = Extension.create({
           handleEl = document.createElement('div');
           handleEl.className = 'block-drag-handle';
           handleEl.draggable = true;
+          handleEl.contentEditable = 'false';
           handleEl.innerHTML = `<svg width="14" height="20" viewBox="0 0 14 20" fill="currentColor">
             <circle cx="4" cy="3" r="1.6"/><circle cx="10" cy="3" r="1.6"/>
             <circle cx="4" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/>
@@ -183,8 +205,9 @@ export const DragHandle = Extension.create({
             handleEl.style.left = `${Math.max(4, left)}px`;
           };
 
+          // Do NOT call e.preventDefault() — it kills drag initiation in many browsers
           handleEl.addEventListener('mousedown', (e) => {
-            e.preventDefault();
+            e.stopPropagation();
             if (currentBlockPos === null) return;
             try {
               dragStartPos = currentBlockPos;
@@ -193,7 +216,10 @@ export const DragHandle = Extension.create({
           });
 
           handleEl.addEventListener('dragstart', (e) => {
-            if (dragStartPos === null || !dragNode) return;
+            if (dragStartPos === null || !dragNode) {
+              e.preventDefault();
+              return;
+            }
             isDragging = true;
             e.dataTransfer!.effectAllowed = 'move';
             e.dataTransfer!.setData('text/plain', '');
@@ -233,6 +259,7 @@ export const DragHandle = Extension.create({
             const target = e.target as HTMLElement;
             if (handleEl && handleEl.contains(target)) return;
 
+            // Find the top-level block element (direct child of editor DOM)
             let blockEl: HTMLElement | null = null;
             let el: HTMLElement | null = target;
             while (el && el !== editorView.dom) {
@@ -248,9 +275,21 @@ export const DragHandle = Extension.create({
               try {
                 const pos = editorView.posAtDOM(blockEl, 0);
                 const resolved = editorView.state.doc.resolve(pos);
-                currentBlockPos = resolved.before(Math.max(1, Math.min(resolved.depth, 1)));
+                if (resolved.depth >= 1) {
+                  currentBlockPos = resolved.before(1);
+                } else {
+                  currentBlockPos = 0;
+                }
                 if (currentBlockPos < 0) currentBlockPos = 0;
-                positionHandle(blockEl);
+
+                // Verify a node exists at this position
+                const nodeCheck = editorView.state.doc.nodeAt(currentBlockPos);
+                if (nodeCheck) {
+                  positionHandle(blockEl);
+                } else {
+                  if (handleEl) handleEl.style.display = 'none';
+                  currentBlockPos = null;
+                }
               } catch {
                 if (handleEl) handleEl.style.display = 'none';
                 currentBlockPos = null;

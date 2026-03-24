@@ -17,21 +17,21 @@ export interface SlashCommand {
 }
 
 const commands: SlashCommand[] = [
-  { type: 'h1', label: 'Heading 1', description: 'Big section heading', icon: <Heading1 size={20} />, keywords: ['h1', 'heading', 'title', 'big'] },
-  { type: 'h2', label: 'Heading 2', description: 'Medium section heading', icon: <Heading2 size={20} />, keywords: ['h2', 'heading', 'subtitle'] },
-  { type: 'h3', label: 'Heading 3', description: 'Small section heading', icon: <Heading3 size={20} />, keywords: ['h3', 'heading', 'small'] },
-  { type: 'paragraph', label: 'Text', description: 'Plain text paragraph', icon: <Type size={20} />, keywords: ['text', 'paragraph', 'plain'] },
-  { type: 'bullet', label: 'Bullet List', description: 'Unordered list item', icon: <List size={20} />, keywords: ['bullet', 'list', 'unordered', 'ul'] },
-  { type: 'numbered', label: 'Numbered List', description: 'Ordered list item', icon: <ListOrdered size={20} />, keywords: ['numbered', 'list', 'ordered', 'ol', 'number'] },
-  { type: 'todo', label: 'To-do', description: 'Task with checkbox', icon: <CheckSquare size={20} />, keywords: ['todo', 'task', 'checkbox', 'check'] },
-  { type: 'quote', label: 'Quote', description: 'Blockquote', icon: <Quote size={20} />, keywords: ['quote', 'blockquote'] },
-  { type: 'code', label: 'Code', description: 'Code block', icon: <Code2 size={20} />, keywords: ['code', 'snippet', 'programming'] },
-  { type: 'divider', label: 'Divider', description: 'Horizontal line separator', icon: <Minus size={20} />, keywords: ['divider', 'separator', 'line', 'hr'] },
-  { type: 'table', label: 'Table', description: 'Insert a table (3x3)', icon: <Table size={20} />, keywords: ['table', 'grid', 'spreadsheet'] },
-  { type: 'image', label: 'Image', description: 'Upload an image', icon: <Image size={20} />, keywords: ['image', 'photo', 'picture', 'img'] },
-  { type: 'mathInline', label: 'Inline Math', description: 'Inline LaTeX formula ($e^2$)', icon: <Sigma size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'inline', 'katex'] },
-  { type: 'mathBlock', label: 'Block Math', description: 'Display LaTeX equation ($$...$$)', icon: <Pi size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'block', 'display', 'katex'] },
-  { type: 'subpage', label: 'Sub-page', description: 'Create a nested page', icon: <FileText size={20} />, keywords: ['subpage', 'page', 'nested', 'child', 'sub'] },
+  { type: 'h1', label: 'Heading 1', description: 'Big section heading', icon: <Heading1 size={22} />, keywords: ['h1', 'heading', 'title', 'big'] },
+  { type: 'h2', label: 'Heading 2', description: 'Medium section heading', icon: <Heading2 size={22} />, keywords: ['h2', 'heading', 'subtitle'] },
+  { type: 'h3', label: 'Heading 3', description: 'Small section heading', icon: <Heading3 size={22} />, keywords: ['h3', 'heading', 'small'] },
+  { type: 'paragraph', label: 'Text', description: 'Plain text paragraph', icon: <Type size={22} />, keywords: ['text', 'paragraph', 'plain'] },
+  { type: 'bullet', label: 'Bullet List', description: 'Unordered list item', icon: <List size={22} />, keywords: ['bullet', 'list', 'unordered', 'ul'] },
+  { type: 'numbered', label: 'Numbered List', description: 'Ordered list item', icon: <ListOrdered size={22} />, keywords: ['numbered', 'list', 'ordered', 'ol', 'number'] },
+  { type: 'todo', label: 'To-do', description: 'Task with checkbox', icon: <CheckSquare size={22} />, keywords: ['todo', 'task', 'checkbox', 'check'] },
+  { type: 'quote', label: 'Quote', description: 'Blockquote', icon: <Quote size={22} />, keywords: ['quote', 'blockquote'] },
+  { type: 'code', label: 'Code', description: 'Code block', icon: <Code2 size={22} />, keywords: ['code', 'snippet', 'programming'] },
+  { type: 'divider', label: 'Divider', description: 'Horizontal line separator', icon: <Minus size={22} />, keywords: ['divider', 'separator', 'line', 'hr'] },
+  { type: 'table', label: 'Table', description: 'Insert a table (3x3)', icon: <Table size={22} />, keywords: ['table', 'grid', 'spreadsheet'] },
+  { type: 'image', label: 'Image', description: 'Upload an image', icon: <Image size={22} />, keywords: ['image', 'photo', 'picture', 'img'] },
+  { type: 'mathInline', label: 'Inline Math', description: 'Inline LaTeX formula ($e^2$)', icon: <Sigma size={22} />, keywords: ['math', 'latex', 'formula', 'equation', 'inline', 'katex'] },
+  { type: 'mathBlock', label: 'Block Math', description: 'Display LaTeX equation ($$...$$)', icon: <Pi size={22} />, keywords: ['math', 'latex', 'formula', 'equation', 'block', 'display', 'katex'] },
+  { type: 'subpage', label: 'Sub-page', description: 'Create a nested page', icon: <FileText size={22} />, keywords: ['subpage', 'page', 'nested', 'child', 'sub'] },
 ];
 
 interface SlashMenuProps {
@@ -93,8 +93,8 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
   // Adjust position to not overflow viewport
   const adjustedPosition = { ...position };
   if (typeof window !== 'undefined') {
-    const menuHeight = 400;
-    const menuWidth = 288;
+    const menuHeight = 420;
+    const menuWidth = 320;
     if (position.top + menuHeight > window.innerHeight) {
       adjustedPosition.top = Math.max(8, position.top - menuHeight - 8);
     }
@@ -106,10 +106,10 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
   if (filtered.length === 0) {
     return (
       <div
-        className="fixed z-50 w-72 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-3"
+        className="fixed z-50 w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-3.5"
         style={{ top: adjustedPosition.top, left: adjustedPosition.left }}
       >
-        <p className="text-sm text-neutral-400 text-center py-2">No matching commands</p>
+        <p className="text-[14px] text-neutral-400 text-center py-3">No matching commands</p>
       </div>
     );
   }
@@ -119,24 +119,24 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
         ref={containerRef}
-        className="fixed z-50 w-72 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+        className="fixed z-50 w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
         style={{ top: adjustedPosition.top, left: adjustedPosition.left }}
       >
-        <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
-          <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Blocks</p>
+        <div className="px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800">
+          <p className="text-[12px] font-semibold text-neutral-400 uppercase tracking-wider">Blocks</p>
         </div>
-        <div ref={menuRef} className="max-h-72 overflow-y-auto p-1">
+        <div ref={menuRef} className="max-h-80 overflow-y-auto p-1.5">
           {filtered.map((cmd, i) => (
             <button
               key={cmd.type}
               onClick={() => onSelect(cmd.type)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition ${
+              className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-left transition ${
                 i === selectedIndex
                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'
               }`}
             >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 i === selectedIndex
                   ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -144,8 +144,8 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
                 {cmd.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{cmd.label}</p>
-                <p className="text-[11px] text-neutral-400 truncate">{cmd.description}</p>
+                <p className="text-[14px] font-medium truncate">{cmd.label}</p>
+                <p className="text-[12px] text-neutral-400 truncate">{cmd.description}</p>
               </div>
             </button>
           ))}

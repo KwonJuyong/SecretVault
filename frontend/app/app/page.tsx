@@ -393,18 +393,18 @@ export default function AppPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center px-8">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-neutral-100 dark:bg-neutral-800 mb-7">
-                <FileText size={38} className="text-neutral-400" />
+              <div className="inline-flex items-center justify-center w-28 h-28 rounded-3xl bg-neutral-100 dark:bg-neutral-800 mb-8">
+                <FileText size={44} className="text-neutral-400" strokeWidth={1.5} />
               </div>
-              <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200 mb-3">
+              <h2 className="text-[26px] font-semibold text-neutral-800 dark:text-neutral-200 mb-3.5">
                 Select a page or create a new one
               </h2>
-              <p className="text-[15px] text-neutral-500 mb-7">Your notes are encrypted end-to-end</p>
+              <p className="text-[16px] text-neutral-500 mb-8">Your notes are encrypted end-to-end</p>
               <button
                 onClick={() => createPage()}
-                className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[15px] font-medium transition"
+                className="inline-flex items-center gap-3 px-7 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-[16px] font-medium transition"
               >
-                <Plus size={20} />
+                <Plus size={22} />
                 New Page
               </button>
             </div>

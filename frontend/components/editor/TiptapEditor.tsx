@@ -36,11 +36,15 @@ interface TiptapEditorProps {
 export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const subPageTitlesRef = useRef(subPageTitles);
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashPos, setSlashPos] = useState({ top: 0, left: 0 });
   const slashStartRef = useRef<number | null>(null);
+
+  // Keep ref in sync
+  useEffect(() => { subPageTitlesRef.current = subPageTitles; }, [subPageTitles]);
 
   const editor = useEditor({
     extensions: [
@@ -183,6 +187,28 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         suppressUpdate.current = true;
         editor.commands.setContent(htmlContent || '<p></p>');
         suppressUpdate.current = false;
+
+        // After setting content, sync sub-page link titles immediately
+        const titles = subPageTitlesRef.current;
+        if (titles) {
+          const { doc } = editor.state;
+          const { tr } = editor.state;
+          let modified = false;
+          doc.descendants((node, pos) => {
+            if (node.type.name === 'subPageLink') {
+              const liveTitle = titles[node.attrs.pageId];
+              if (liveTitle && liveTitle !== node.attrs.title) {
+                tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: liveTitle });
+                modified = true;
+              }
+            }
+          });
+          if (modified) {
+            suppressUpdate.current = true;
+            editor.view.dispatch(tr);
+            suppressUpdate.current = false;
+          }
+        }
       });
     }
   }, [content, editor]);
@@ -324,7 +350,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
+        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 py-10 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>
       </div>
