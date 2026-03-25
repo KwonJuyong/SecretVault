@@ -45,7 +45,7 @@ export default function SignupForm() {
   return (
     <div className="min-h-screen flex p-4 sm:p-6 lg:p-0 bg-neutral-100 dark:bg-neutral-900 lg:bg-white lg:dark:bg-neutral-950">
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-[#1a1f35] via-[#1e2a4a] to-[#1a1f35] flex-col justify-between text-white px-14 py-12">
+      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-[#1a1f35] via-[#1e2a4a] to-[#1a1f35] flex-col justify-between text-white px-16 py-14">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
@@ -54,7 +54,7 @@ export default function SignupForm() {
             <span className="text-xl font-bold tracking-tight">SecretVault</span>
           </div>
         </div>
-        <div className="pr-6">
+        <div className="pr-8">
           <h2 className="text-3xl font-bold leading-tight mb-5">
             Start collaborating<br />securely today.
           </h2>
