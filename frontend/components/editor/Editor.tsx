@@ -76,12 +76,12 @@ export default function Editor({
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Title area - centered with max-width */}
       <div className="w-full bg-white dark:bg-[#191919]">
-        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 pt-20 pb-4">
+        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3">
           {/* Icon picker */}
-          <div className="relative mb-5 inline-block">
+          <div className="relative mb-4 inline-block">
             <button
               onClick={() => setShowIconPicker(!showIconPicker)}
-              className="text-7xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-2xl p-3 transition"
+              className="text-6xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2.5 transition"
               title="Change icon"
             >
               {icon || '\u{1F4C4}'}
@@ -128,7 +128,7 @@ export default function Editor({
             value={title}
             onChange={e => onChangeTitle(e.target.value)}
             placeholder="Untitled"
-            className="w-full text-[44px] font-bold text-[rgb(55,53,47)] dark:text-[rgba(255,255,255,0.95)] bg-transparent border-none outline-none placeholder-[rgba(55,53,47,0.2)] dark:placeholder-[rgba(255,255,255,0.18)] leading-tight tracking-[-0.02em]"
+            className="w-full text-[40px] font-bold text-[rgb(55,53,47)] dark:text-[rgba(255,255,255,0.95)] bg-transparent border-none outline-none placeholder-[rgba(55,53,47,0.25)] dark:placeholder-[rgba(255,255,255,0.2)] leading-tight"
           />
         </div>
       </div>

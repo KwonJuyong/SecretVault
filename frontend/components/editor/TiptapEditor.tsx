@@ -350,7 +350,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 py-10 pb-[50vh]">
+        <div className="max-w-[720px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>
       </div>
