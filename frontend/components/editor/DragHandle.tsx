@@ -89,85 +89,6 @@ export const DragHandle = Extension.create({
     return [
       new Plugin({
         key: new PluginKey('dragHandle'),
-        props: {
-          handleDOMEvents: {
-            dragover(view, event) {
-              if (!isDragging) return false;
-              event.preventDefault();
-              if (event.dataTransfer) {
-                event.dataTransfer.dropEffect = 'move';
-              }
-              const target = findDropTarget(view, event.clientY);
-              if (target) {
-                showDropLine(view, target);
-              } else {
-                hideDropLine();
-              }
-              return true;
-            },
-            drop(view, event) {
-              if (!isDragging || dragStartPos === null || !dragNode) return false;
-              event.preventDefault();
-              event.stopPropagation();
-
-              const target = findDropTarget(view, event.clientY);
-              if (!target) {
-                resetDragState();
-                return true;
-              }
-
-              try {
-                const { state } = view;
-                const node = state.doc.nodeAt(dragStartPos);
-                if (!node) { resetDragState(); return true; }
-
-                const nodeSize = node.nodeSize;
-                const targetNode = state.doc.nodeAt(target.pos);
-                if (!targetNode) { resetDragState(); return true; }
-
-                let insertPos = target.after ? target.pos + targetNode.nodeSize : target.pos;
-
-                // Don't drop onto self
-                if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
-                  resetDragState();
-                  return true;
-                }
-
-                const tr = state.tr;
-                // When source is before target, delete first then insert (adjusted position)
-                // When source is after target, insert first then delete
-                if (dragStartPos < insertPos) {
-                  // Adjust insertPos because after deleting the source, everything after shifts back
-                  const adjustedInsert = insertPos - nodeSize;
-                  tr.delete(dragStartPos, dragStartPos + nodeSize);
-                  tr.insert(adjustedInsert, node);
-                } else {
-                  // Insert first (doesn't affect source position since it's after)
-                  tr.insert(insertPos, node);
-                  // Source position shifted forward by nodeSize due to insert
-                  tr.delete(dragStartPos + nodeSize, dragStartPos + nodeSize + nodeSize);
-                }
-                view.dispatch(tr);
-              } catch (e) {
-                console.error('Drag drop failed:', e);
-              }
-
-              resetDragState();
-              return true;
-            },
-            dragend() {
-              resetDragState();
-              return false;
-            },
-            dragleave(view, event) {
-              if (!isDragging) return false;
-              const related = (event as DragEvent).relatedTarget as HTMLElement;
-              if (related && view.dom.contains(related)) return false;
-              hideDropLine();
-              return false;
-            },
-          },
-        },
         view(editorView) {
           scrollEl = findScrollParent(editorView.dom);
 
@@ -205,7 +126,6 @@ export const DragHandle = Extension.create({
             handleEl.style.left = `${Math.max(4, left)}px`;
           };
 
-          // Do NOT call e.preventDefault() — it kills drag initiation in many browsers
           handleEl.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             if (currentBlockPos === null) return;
@@ -254,12 +174,85 @@ export const DragHandle = Extension.create({
             currentBlockPos = null;
           });
 
+          // Attach dragover/drop on scroll container directly
+          // so the entire area accepts drops (not just the editor DOM)
+          const onDragOver = (e: DragEvent) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            if (e.dataTransfer) {
+              e.dataTransfer.dropEffect = 'move';
+            }
+            const target = findDropTarget(editorView, e.clientY);
+            if (target) {
+              showDropLine(editorView, target);
+            } else {
+              hideDropLine();
+            }
+          };
+
+          const onDrop = (e: DragEvent) => {
+            if (!isDragging || dragStartPos === null || !dragNode) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const target = findDropTarget(editorView, e.clientY);
+            if (!target) {
+              resetDragState();
+              return;
+            }
+
+            try {
+              const { state } = editorView;
+              const node = state.doc.nodeAt(dragStartPos);
+              if (!node) { resetDragState(); return; }
+
+              const nodeSize = node.nodeSize;
+              const targetNode = state.doc.nodeAt(target.pos);
+              if (!targetNode) { resetDragState(); return; }
+
+              let insertPos = target.after ? target.pos + targetNode.nodeSize : target.pos;
+
+              // Don't drop onto self
+              if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
+                resetDragState();
+                return;
+              }
+
+              const tr = state.tr;
+              if (dragStartPos < insertPos) {
+                const adjustedInsert = insertPos - nodeSize;
+                tr.delete(dragStartPos, dragStartPos + nodeSize);
+                tr.insert(adjustedInsert, node);
+              } else {
+                tr.insert(insertPos, node);
+                tr.delete(dragStartPos + nodeSize, dragStartPos + nodeSize + nodeSize);
+              }
+              editorView.dispatch(tr);
+            } catch (err) {
+              console.error('Drag drop failed:', err);
+            }
+
+            resetDragState();
+          };
+
+          const onDragLeave = (e: DragEvent) => {
+            if (!isDragging) return;
+            const related = e.relatedTarget as HTMLElement;
+            if (related && scrollEl && scrollEl.contains(related)) return;
+            hideDropLine();
+          };
+
+          if (scrollEl) {
+            scrollEl.addEventListener('dragover', onDragOver);
+            scrollEl.addEventListener('drop', onDrop);
+            scrollEl.addEventListener('dragleave', onDragLeave);
+          }
+
           const onMouseMove = (e: MouseEvent) => {
             if (isDragging) return;
             const target = e.target as HTMLElement;
             if (handleEl && handleEl.contains(target)) return;
 
-            // Find the top-level block element (direct child of editor DOM)
             let blockEl: HTMLElement | null = null;
             let el: HTMLElement | null = target;
             while (el && el !== editorView.dom) {
@@ -282,7 +275,6 @@ export const DragHandle = Extension.create({
                 }
                 if (currentBlockPos < 0) currentBlockPos = 0;
 
-                // Verify a node exists at this position
                 const nodeCheck = editorView.state.doc.nodeAt(currentBlockPos);
                 if (nodeCheck) {
                   positionHandle(blockEl);
@@ -337,6 +329,11 @@ export const DragHandle = Extension.create({
               if (dropLineEl) dropLineEl.remove();
               editorView.dom.removeEventListener('mousemove', onMouseMove);
               editorView.dom.removeEventListener('mouseleave', onMouseLeave);
+              if (scrollEl) {
+                scrollEl.removeEventListener('dragover', onDragOver);
+                scrollEl.removeEventListener('drop', onDrop);
+                scrollEl.removeEventListener('dragleave', onDragLeave);
+              }
             },
           };
         },

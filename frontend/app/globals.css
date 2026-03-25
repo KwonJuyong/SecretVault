@@ -112,13 +112,13 @@ textarea {
 /* ============================= */
 .tiptap-content {
   font-size: 16px;
-  line-height: 1.7;
+  line-height: 1.55;
   color: rgb(55, 53, 47);
   min-height: 60vh;
 }
 
 .tiptap-content > * + * {
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 /* Placeholder */
