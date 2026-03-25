@@ -14,6 +14,8 @@ export default function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
 
+  const [redirecting, setRedirecting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
@@ -24,14 +26,27 @@ export default function LoginForm() {
     setLoading(true);
     try {
       await login(email, password);
+      setRedirecting(true);
       router.push('/app');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed.';
       setError(message === 'Unauthorized' ? 'Invalid email or password.' : message);
     } finally {
-      setLoading(false);
+      if (!redirecting) setLoading(false);
     }
   };
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-neutral-950 gap-4">
+        <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white">
+          <Shield size={22} />
+        </div>
+        <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-sm text-neutral-400">Loading workspace...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex p-4 sm:p-6 lg:p-0 bg-neutral-100 dark:bg-neutral-900 lg:bg-white lg:dark:bg-neutral-950">

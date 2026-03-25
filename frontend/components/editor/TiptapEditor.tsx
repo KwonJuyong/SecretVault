@@ -5,7 +5,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import Image from '@tiptap/extension-image';
+import { ResizableImage } from './ResizableImage';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
@@ -58,7 +58,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         showOnlyCurrent: true,
         showOnlyWhenEditable: true,
       }),
-      Image.configure({ inline: false, allowBase64: true }),
+      ResizableImage,
       Table.configure({ resizable: true }),
       TableRow,
       TableCell,
@@ -245,7 +245,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
     const reader = new FileReader();
     reader.onload = (ev) => {
       const base64 = ev.target?.result as string;
-      editor.chain().focus().setImage({ src: base64 }).run();
+      editor.chain().focus().insertContent({ type: 'image', attrs: { src: base64 } }).run();
     };
     reader.readAsDataURL(file);
     e.target.value = '';

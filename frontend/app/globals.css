@@ -521,6 +521,97 @@ textarea {
   }
 }
 
+/* ============================= */
+/* Resizable Image               */
+/* ============================= */
+.resizable-image-wrapper {
+  margin: 8px 0;
+}
+
+.resizable-image-container {
+  position: relative;
+  display: inline-block;
+  border-radius: 8px;
+  overflow: visible;
+  transition: box-shadow 0.15s;
+}
+
+.resizable-image-container img {
+  border-radius: 8px;
+  display: block;
+}
+
+.resizable-image-container.is-selected {
+  outline: 2px solid rgb(46, 170, 220);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.resize-handle {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.resizable-image-container:hover .resize-handle,
+.resizable-image-container.is-selected .resize-handle,
+.resizable-image-container.is-resizing .resize-handle {
+  opacity: 1;
+}
+
+.resize-handle-right {
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  background: transparent;
+}
+
+.resize-handle-right::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  border-radius: 3px;
+  background: rgb(46, 170, 220);
+  box-shadow: 0 0 4px rgba(46, 170, 220, 0.3);
+}
+
+.resize-handle-corner {
+  bottom: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: transparent;
+}
+
+.resize-handle-corner::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgb(46, 170, 220);
+  box-shadow: 0 0 4px rgba(46, 170, 220, 0.3);
+}
+
+.resizable-image-container.is-resizing {
+  user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .resizable-image-container.is-selected {
+    outline-color: rgb(46, 170, 220);
+  }
+}
+
 /* ProseMirror selected node outline */
 .ProseMirror .ProseMirror-selectednode {
   outline: 2px solid rgb(46, 170, 220);
