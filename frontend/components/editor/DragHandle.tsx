@@ -174,11 +174,11 @@ export const DragHandle = Extension.create({
             currentBlockPos = null;
           });
 
-          // Attach dragover/drop on scroll container directly
-          // so the entire area accepts drops (not just the editor DOM)
+          // Use CAPTURE phase so we intercept before ProseMirror handles it
           const onDragOver = (e: DragEvent) => {
             if (!isDragging) return;
             e.preventDefault();
+            e.stopPropagation();
             if (e.dataTransfer) {
               e.dataTransfer.dropEffect = 'move';
             }
@@ -210,7 +210,8 @@ export const DragHandle = Extension.create({
               const targetNode = state.doc.nodeAt(target.pos);
               if (!targetNode) { resetDragState(); return; }
 
-              let insertPos = target.after ? target.pos + targetNode.nodeSize : target.pos;
+              const targetEnd = target.pos + targetNode.nodeSize;
+              const insertPos = target.after ? targetEnd : target.pos;
 
               // Don't drop onto self
               if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
@@ -218,15 +219,24 @@ export const DragHandle = Extension.create({
                 return;
               }
 
-              const tr = state.tr;
+              // Use replaceWith approach: build new doc order
+              const { tr } = state;
+
               if (dragStartPos < insertPos) {
-                const adjustedInsert = insertPos - nodeSize;
+                // Moving down: insert copy first, then delete original
+                // After insert, original positions are unchanged (insert is after)
+                // After delete, positions after delete shift back
+                const copyNode = node.copy(node.content);
+                tr.insert(insertPos, copyNode);
                 tr.delete(dragStartPos, dragStartPos + nodeSize);
-                tr.insert(adjustedInsert, node);
               } else {
-                tr.insert(insertPos, node);
-                tr.delete(dragStartPos + nodeSize, dragStartPos + nodeSize + nodeSize);
+                // Moving up: delete original first, then insert
+                // After delete, positions after dragStartPos shift back by nodeSize
+                const copyNode = node.copy(node.content);
+                tr.delete(dragStartPos, dragStartPos + nodeSize);
+                tr.insert(insertPos, copyNode);
               }
+
               editorView.dispatch(tr);
             } catch (err) {
               console.error('Drag drop failed:', err);
@@ -242,10 +252,11 @@ export const DragHandle = Extension.create({
             hideDropLine();
           };
 
+          // capture: true — fires before ProseMirror's own handlers
           if (scrollEl) {
-            scrollEl.addEventListener('dragover', onDragOver);
-            scrollEl.addEventListener('drop', onDrop);
-            scrollEl.addEventListener('dragleave', onDragLeave);
+            scrollEl.addEventListener('dragover', onDragOver, true);
+            scrollEl.addEventListener('drop', onDrop, true);
+            scrollEl.addEventListener('dragleave', onDragLeave, true);
           }
 
           const onMouseMove = (e: MouseEvent) => {
@@ -330,9 +341,9 @@ export const DragHandle = Extension.create({
               editorView.dom.removeEventListener('mousemove', onMouseMove);
               editorView.dom.removeEventListener('mouseleave', onMouseLeave);
               if (scrollEl) {
-                scrollEl.removeEventListener('dragover', onDragOver);
-                scrollEl.removeEventListener('drop', onDrop);
-                scrollEl.removeEventListener('dragleave', onDragLeave);
+                scrollEl.removeEventListener('dragover', onDragOver, true);
+                scrollEl.removeEventListener('drop', onDrop, true);
+                scrollEl.removeEventListener('dragleave', onDragLeave, true);
               }
             },
           };
