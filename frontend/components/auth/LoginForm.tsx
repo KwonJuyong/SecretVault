@@ -78,7 +78,7 @@ export default function LoginForm() {
       <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-12 sm:px-16">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-10 lg:hidden">
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
               <Shield size={22} />
             </div>
@@ -96,12 +96,12 @@ export default function LoginForm() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                className="w-full h-12 px-3.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                 placeholder="Enter your email"
                 autoFocus
                 autoComplete="email"
@@ -109,13 +109,13 @@ export default function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full h-11 px-3.5 pr-10 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                  className="w-full h-12 px-3.5 pr-10 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   placeholder="Enter your password"
                   autoComplete="current-password"
                 />
@@ -124,7 +124,7 @@ export default function LoginForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-[#4f6df5] hover:bg-[#3b5ce4] text-white text-sm font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-[#4f6df5] hover:bg-[#3b5ce4] text-white text-sm font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -82,7 +82,7 @@ export default function WorkspaceSwitcher({
                       className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
                       title="Workspace settings"
                     >
-                      <Settings size={14} />
+                      <Settings size={16} />
                     </button>
                   )}
                 </div>

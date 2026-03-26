@@ -24,7 +24,7 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
       </button>
 
       {pageTitle && (
-        <span className="text-[14px] text-neutral-500 dark:text-neutral-500 truncate">
+        <span className="text-[15px] text-neutral-500 dark:text-neutral-500 truncate">
           {pageTitle}
         </span>
       )}
@@ -33,7 +33,7 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
 
       <div className="flex items-center gap-3">
         {/* Save status */}
-        <div className="flex items-center gap-2 text-[13px] text-neutral-400 mr-2">
+        <div className="flex items-center gap-2 text-sm text-neutral-400 mr-2">
           {saveStatus === 'saving' && (
             <>
               <Loader2 size={15} className="animate-spin" />

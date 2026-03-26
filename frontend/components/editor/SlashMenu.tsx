@@ -145,7 +145,7 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{cmd.label}</p>
-                <p className="text-[11px] text-neutral-400 truncate">{cmd.description}</p>
+                <p className="text-xs text-neutral-400 truncate">{cmd.description}</p>
               </div>
             </button>
           ))}

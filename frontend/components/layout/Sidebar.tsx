@@ -90,7 +90,7 @@ export default function Sidebar({
     return (
       <div key={page.id}>
         <div
-          className={`group flex items-center gap-2.5 py-[7px] px-3 mx-3 rounded-lg cursor-pointer transition-colors duration-200 text-[14px] ${
+          className={`group flex items-center gap-2.5 py-2 px-3 mx-3 rounded-lg cursor-pointer transition-colors duration-200 text-[14px] ${
             isActive
               ? 'bg-blue-50/80 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
               : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
@@ -103,7 +103,7 @@ export default function Sidebar({
           {children.length > 0 || page.has_children ? (
             <button
               onClick={e => { e.stopPropagation(); toggleExpand(page.id); }}
-              className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 flex-shrink-0"
+              className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 flex-shrink-0"
             >
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
@@ -118,13 +118,13 @@ export default function Sidebar({
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <button
                 onClick={e => { e.stopPropagation(); onDeletePage(page.id); }}
-                className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition"
+                className="p-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition"
               >
                 <Trash2 size={15} />
               </button>
               <button
                 onClick={e => { e.stopPropagation(); onCreatePage(page.id); }}
-                className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-blue-500 transition"
+                className="p-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-blue-500 transition"
               >
                 <Plus size={15} />
               </button>
@@ -197,15 +197,15 @@ export default function Sidebar({
                 onClick={() => setSharedExpanded(!sharedExpanded)}
                 className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider hover:text-neutral-600 dark:hover:text-neutral-300 transition"
               >
-                {sharedExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <Share2 size={12} />
+                {sharedExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                <Share2 size={13} />
                 Shared with me
               </button>
             </div>
             {sharedExpanded && sharedPages.map(sp => (
               <div key={sp.id}>
                 <div
-                  className={`group flex items-center gap-2.5 py-[7px] px-3 mx-3 rounded-lg cursor-pointer transition-colors duration-200 text-[14px] ${
+                  className={`group flex items-center gap-2.5 py-2 px-3 mx-3 rounded-lg cursor-pointer transition-colors duration-200 text-[14px] ${
                     activePageId === sp.id
                       ? 'bg-blue-50/80 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                       : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
@@ -245,7 +245,7 @@ export default function Sidebar({
             onClick={openUserMenu}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors duration-200"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
               {(displayName || email || '?').charAt(0).toUpperCase()}
             </div>
             <span className="truncate">{displayName || email}</span>
@@ -269,7 +269,7 @@ export default function Sidebar({
                       type="text"
                       value={editDisplayName}
                       onChange={e => setEditDisplayName(e.target.value)}
-                      className="flex-1 px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-800 dark:text-neutral-200 outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-800 dark:text-neutral-200 outline-none focus:border-blue-500"
                       placeholder="Display name"
                     />
                     <button

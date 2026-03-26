@@ -105,7 +105,7 @@ export default function Editor({
                       </button>
                     ))}
                   </div>
-                  <div className="p-2 grid grid-cols-8 gap-0.5 max-h-48 overflow-y-auto">
+                  <div className="p-2 grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                     {emojiCategories[activeCategory].emojis.map((emoji, i) => (
                       <button
                         key={i}

@@ -12,6 +12,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'SecretVault',
   description: 'End-to-end encrypted collaborative workspace',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
