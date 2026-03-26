@@ -1,40 +1,17 @@
 // ===========================
-// Legacy (CryptoJS) — kept for v1 page compat
+// Auth hash (for login/signup)
 // ===========================
 import CryptoJS from 'crypto-js';
 
-export function legacyDeriveKeys(password: string) {
+export function deriveKeys(password: string) {
   return {
     authHash: CryptoJS.SHA256(password + 'AUTH_SALT').toString(),
-    encKey: CryptoJS.SHA256(password + 'DATA_SALT').toString(),
+    encKey: '', // no longer used
   };
 }
 
-// Keep old names as aliases for backward compat during transition
-export const deriveKeys = legacyDeriveKeys;
-
-export function legacyEncrypt(plaintext: string, key: string): string {
-  if (!plaintext) return '';
-  return CryptoJS.AES.encrypt(plaintext, key).toString();
-}
-
-export function legacyDecrypt(ciphertext: string, key: string): string {
-  if (!ciphertext) return '';
-  try {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, key);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch {
-    return '';
-  }
-}
-
-// Keep old names
-export const encrypt = legacyEncrypt;
-export const decrypt = legacyDecrypt;
-
-
 // ===========================
-// New: Web Crypto API (v2)
+// Web Crypto API — E2E Encryption
 // ===========================
 
 function b64Encode(buf: ArrayBuffer): string {
@@ -48,7 +25,7 @@ function b64Decode(str: string): ArrayBuffer {
   return buf.buffer;
 }
 
-// --- Password → AES key (for encrypting the RSA private key) ---
+// --- Password → AES key (for encrypting RSA private key) ---
 
 export async function derivePasswordKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
   const enc = new TextEncoder();
@@ -140,30 +117,26 @@ export async function unwrapPageKey(wrappedBase64: string, privateKey: CryptoKey
 
 // --- Content Encryption (AES-GCM) ---
 
-export async function encryptV2(plaintext: string, pageKey: CryptoKey): Promise<string> {
+export async function encrypt(plaintext: string, pageKey: CryptoKey): Promise<string> {
   if (!plaintext) return '';
   const enc = new TextEncoder();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, pageKey, enc.encode(plaintext));
-  // Prepend IV to ciphertext
   const combined = new Uint8Array(iv.length + new Uint8Array(ciphertext).length);
   combined.set(iv, 0);
   combined.set(new Uint8Array(ciphertext), iv.length);
-  return 'v2:' + b64Encode(combined.buffer);
+  return b64Encode(combined.buffer);
 }
 
-export async function decryptV2(data: string, pageKey: CryptoKey): Promise<string> {
+export async function decrypt(data: string, pageKey: CryptoKey): Promise<string> {
   if (!data) return '';
-  const payload = data.startsWith('v2:') ? data.slice(3) : data;
-  const combined = new Uint8Array(b64Decode(payload));
-  const iv = combined.slice(0, 12);
-  const ciphertext = combined.slice(12);
-  const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, pageKey, ciphertext);
-  return new TextDecoder().decode(plainBuf);
-}
-
-// --- Detect encryption version ---
-
-export function isV2Encrypted(data: string): boolean {
-  return data.startsWith('v2:');
+  try {
+    const combined = new Uint8Array(b64Decode(data));
+    const iv = combined.slice(0, 12);
+    const ciphertext = combined.slice(12);
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, pageKey, ciphertext);
+    return new TextDecoder().decode(plainBuf);
+  } catch {
+    return '';
+  }
 }

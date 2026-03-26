@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { decrypt } from '@/lib/crypto';
 import { api } from '@/lib/api';
 import type { PageTreeItem, Workspace, SharedPageItem } from '@/lib/types';
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
@@ -26,15 +25,16 @@ interface SidebarProps {
   currentWorkspaceId: string;
   collapsed: boolean;
   onOpenSharedPage?: (pageId: string) => void;
+  decryptedTitles?: Record<string, string>;
 }
 
 export default function Sidebar({
   pages, activePageId, onSelectPage, onCreatePage,
   onDeletePage, onOpenSearch, onOpenTrash, onOpenTips, collapsed,
   onSwitchWorkspace, onOpenWorkspaceSettings, onCreateWorkspace,
-  currentWorkspaceId, onOpenSharedPage,
+  currentWorkspaceId, onOpenSharedPage, decryptedTitles = {},
 }: SidebarProps) {
-  const { email, displayName, logout, encKey } = useAuth();
+  const { email, displayName, logout } = useAuth();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -60,9 +60,8 @@ export default function Sidebar({
     });
   };
 
-  const decryptTitle = (encrypted: string) => {
-    const decrypted = decrypt(encrypted, encKey);
-    return decrypted || 'Untitled';
+  const decryptTitle = (pageId: string) => {
+    return decryptedTitles[pageId] || 'Untitled';
   };
 
   const rootPages = pages.filter(p => !p.parent_id);
@@ -86,7 +85,7 @@ export default function Sidebar({
     const isExpanded = expandedIds.has(page.id);
     const children = childrenOf(page.id);
     const isHovered = hoveredId === page.id;
-    const title = decryptTitle(page.title);
+    const title = decryptTitle(page.id);
 
     return (
       <div key={page.id}>
@@ -217,7 +216,7 @@ export default function Sidebar({
                   <span className="w-5 flex-shrink-0" />
                   <span className="flex-shrink-0 text-lg leading-none">{sp.icon || ''}</span>
                   <span className="truncate flex-1">
-                    {decrypt(sp.title, encKey) || 'Shared page'}
+                    {sp.shared_by_email ? `From ${sp.shared_by_email}` : 'Shared page'}
                   </span>
                   {sp.permission === 'view' ? (
                     <Eye size={13} className="text-neutral-400 flex-shrink-0" />
