@@ -295,7 +295,7 @@ export default function AppPage() {
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-[#191919]">
-        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -361,7 +361,7 @@ export default function AppPage() {
       </div>
 
       {activePageId && rightPanelOpen && (
-        <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} />
+        <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} pages={pages} decryptedTitles={subPageTitles} activePageId={activePageId} onSelectPage={loadPage} />
       )}
 
       {showSearch && <SearchModal pages={pages} decryptedTitles={subPageTitles} onSelect={loadPage} onClose={() => setShowSearch(false)} />}

@@ -75,7 +75,7 @@ export default function Sidebar({
         <div
           className={`group flex items-center gap-2 py-[7px] px-2.5 mx-2 rounded-lg cursor-pointer transition-colors text-[13.5px] ${
             isActive
-              ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+              ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300'
               : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
           }`}
           style={{ paddingLeft: `${depth * 18 + 8}px` }}
@@ -130,7 +130,7 @@ export default function Sidebar({
             <div className="px-5 py-6 text-center">
               <FileText size={28} className="mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
               <p className="text-[13px] text-neutral-400">No pages yet</p>
-              <button onClick={() => onCreatePage()} className="mt-2 text-[13px] text-violet-600 hover:text-violet-700 font-medium">Create your first page</button>
+              <button onClick={() => onCreatePage()} className="mt-2 text-[13px] text-violet-500 hover:text-violet-500 font-medium">Create your first page</button>
             </div>
           ) : (
             rootPages.map(page => renderPageItem(page))
@@ -153,7 +153,7 @@ export default function Sidebar({
             sharedPages.map(sp => (
               <div key={sp.id}
                 className={`flex items-center gap-2 py-[6px] px-2.5 mx-2 rounded-lg cursor-pointer transition-colors text-[13px] ${
-                  activePageId === sp.id ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
+                  activePageId === sp.id ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
                 }`}
                 onClick={() => onOpenSharedPage?.(sp.id)}
               >
@@ -196,8 +196,8 @@ export default function Sidebar({
                   <label className="text-[11px] text-neutral-400 uppercase tracking-wider block mb-1">Display Name</label>
                   <div className="flex gap-1.5">
                     <input type="text" value={editDisplayName} onChange={e => setEditDisplayName(e.target.value)}
-                      className="flex-1 px-3 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-800 dark:text-neutral-200 outline-none focus:border-violet-500" placeholder="Display name" />
-                    <button onClick={handleSaveProfile} disabled={saving} className="px-2 py-1 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition disabled:opacity-50"><Save size={12} /></button>
+                      className="flex-1 px-3 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-800 dark:text-neutral-200 outline-none focus:border-violet-400" placeholder="Display name" />
+                    <button onClick={handleSaveProfile} disabled={saving} className="px-2 py-1 rounded-md bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium transition disabled:opacity-50"><Save size={12} /></button>
                   </div>
                 </div>
                 <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">

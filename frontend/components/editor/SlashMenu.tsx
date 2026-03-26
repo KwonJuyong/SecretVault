@@ -132,13 +132,13 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
               onClick={() => onSelect(cmd.type)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition ${
                 i === selectedIndex
-                  ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                  ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'
               }`}
             >
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                 i === selectedIndex
-                  ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400'
+                  ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-500 dark:text-violet-400'
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
               }`}>
                 {cmd.icon}

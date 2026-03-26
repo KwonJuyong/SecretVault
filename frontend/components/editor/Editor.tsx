@@ -97,7 +97,7 @@ export default function Editor({
                         onClick={() => setActiveCategory(i)}
                         className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${
                           i === activeCategory
-                            ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                            ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-500 dark:text-violet-300'
                             : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                         }`}
                       >

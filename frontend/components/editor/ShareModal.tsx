@@ -129,7 +129,7 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Enter email to share"
-              className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/30"
+              className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
               onKeyDown={e => e.key === 'Enter' && handleShare()}
             />
             <select
@@ -142,7 +142,7 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
             </select>
             <button
               onClick={handleShare}
-              className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition flex items-center gap-1.5"
             >
               <UserPlus size={15} /> Share
             </button>

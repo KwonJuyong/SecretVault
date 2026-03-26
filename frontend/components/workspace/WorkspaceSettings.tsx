@@ -124,7 +124,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                 value={inviteUserId}
                 onChange={e => setInviteUserId(e.target.value)}
                 placeholder="Email"
-                className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/30"
+                className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
               />
               <select
@@ -137,7 +137,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
               </select>
               <button
                 onClick={handleInvite}
-                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition"
+                className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition"
               >
                 Invite
               </button>

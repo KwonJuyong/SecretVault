@@ -58,7 +58,7 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
         {onShare && (
           <button
             onClick={onShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-medium transition-colors duration-200"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition-colors duration-200"
           >
             <Share2 size={14} />
             Share

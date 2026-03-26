@@ -66,7 +66,7 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
                   onClick={() => setIcon(emoji)}
                   className={`text-xl p-2 rounded-lg transition ${
                     icon === emoji
-                      ? 'bg-violet-50 dark:bg-violet-900/30 ring-2 ring-violet-500'
+                      ? 'bg-violet-50 dark:bg-violet-900/30 ring-2 ring-violet-400'
                       : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
                   }`}
                 >
@@ -84,7 +84,7 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Research Lab"
-              className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/30"
+              className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -98,7 +98,7 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
               onChange={e => setDescription(e.target.value)}
               placeholder="What's this workspace for?"
               rows={2}
-              className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/30 resize-none"
+              className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30 resize-none"
             />
           </div>
 
@@ -107,7 +107,7 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-medium text-sm transition"
+            className="w-full py-2.5 rounded-lg bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white font-medium text-sm transition"
           >
             {loading ? 'Creating...' : 'Create Workspace'}
           </button>
