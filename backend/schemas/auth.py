@@ -7,6 +7,10 @@ class UserSignup(BaseModel):
     email: str
     password_hash: str
     username: Optional[str] = None
+    public_key: Optional[str] = None
+    encrypted_private_key: Optional[str] = None
+    private_key_iv: Optional[str] = None
+    private_key_salt: Optional[str] = None
 
     @field_validator('email')
     @classmethod
@@ -44,6 +48,10 @@ class Token(BaseModel):
     email: str
     display_name: Optional[str] = None
     workspace_id: str
+    public_key: Optional[str] = None
+    encrypted_private_key: Optional[str] = None
+    private_key_iv: Optional[str] = None
+    private_key_salt: Optional[str] = None
 
 
 class UserProfile(BaseModel):

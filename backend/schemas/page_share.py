@@ -6,6 +6,7 @@ from datetime import datetime
 class PageShareCreate(BaseModel):
     email: str
     permission: Optional[str] = "view"
+    encrypted_page_key: Optional[str] = None
 
 
 class PageShareUpdate(BaseModel):

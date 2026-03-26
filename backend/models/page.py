@@ -15,6 +15,7 @@ class Page(Base):
     content = Column(Text, default="")
     icon = Column(String(10), default="")
     position = Column(Float, default=0.0)
+    encryption_version = Column(Integer, default=1)
     is_deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -4,6 +4,10 @@ export interface LoginResponse {
   email: string;
   display_name: string | null;
   workspace_id: string;
+  public_key: string | null;
+  encrypted_private_key: string | null;
+  private_key_iv: string | null;
+  private_key_salt: string | null;
 }
 
 export interface UserProfile {
@@ -29,6 +33,8 @@ export interface PageTreeItem {
   parent_id: string | null;
   position: number;
   has_children: boolean;
+  encryption_version: number;
+  encrypted_page_key: string | null;
   updated_at: string | null;
 }
 
@@ -41,6 +47,8 @@ export interface PageData {
   icon: string;
   position: number;
   is_deleted: boolean;
+  encryption_version: number;
+  page_key_grant: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

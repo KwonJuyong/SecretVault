@@ -9,6 +9,8 @@ class PageCreate(BaseModel):
     parent_id: Optional[str] = None
     icon: Optional[str] = ""
     position: Optional[float] = None
+    encryption_version: Optional[int] = 1
+    encrypted_page_key: Optional[str] = None
 
 
 class PageUpdate(BaseModel):
@@ -16,6 +18,8 @@ class PageUpdate(BaseModel):
     content: Optional[str] = None
     icon: Optional[str] = None
     position: Optional[float] = None
+    encryption_version: Optional[int] = None
+    encrypted_page_key: Optional[str] = None
 
 
 class PageResponse(BaseModel):
@@ -27,6 +31,8 @@ class PageResponse(BaseModel):
     icon: Optional[str] = ""
     position: float
     is_deleted: bool
+    encryption_version: int = 1
+    page_key_grant: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -41,6 +47,8 @@ class PageTreeItem(BaseModel):
     parent_id: Optional[str] = None
     position: float
     has_children: bool = False
+    encryption_version: int = 1
+    encrypted_page_key: Optional[str] = None
     updated_at: Optional[datetime] = None
 
 

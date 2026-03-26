@@ -4,7 +4,12 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { encrypt, decrypt } from '@/lib/crypto';
+import {
+  encrypt, decrypt,
+  encryptV2, decryptV2,
+  generatePageKey, wrapPageKey, unwrapPageKey,
+  importPublicKey,
+} from '@/lib/crypto';
 import type { PageTreeItem, PageData, Workspace } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -20,7 +25,7 @@ import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import { FileText, Plus } from 'lucide-react';
 
 export default function AppPage() {
-  const { isAuthenticated, isLoading, workspaceId, encKey, switchWorkspace } = useAuth();
+  const { isAuthenticated, isLoading, workspaceId, encKey, privateKey, publicKey, hasKeyPair, switchWorkspace } = useAuth();
   const router = useRouter();
 
   const [pages, setPages] = useState<PageTreeItem[]>([]);
@@ -39,6 +44,8 @@ export default function AppPage() {
   const [showShare, setShowShare] = useState(false);
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pageKeyCache = useRef<Map<string, CryptoKey>>(new Map());
+  const [activeEncVersion, setActiveEncVersion] = useState<number>(1);
   const isFirstLoad = useRef(true);
   const wsRef = useRef<WebSocket | null>(null);
   const savePageRef = useRef<() => Promise<void>>(() => Promise.resolve());
@@ -138,9 +145,27 @@ export default function AppPage() {
 
     try {
       const data = await api.get<PageData>(`/workspaces/${workspaceId}/pages/${pageId}`);
-      const decryptedTitle = decrypt(data.title, encKey) || '';
-      const decryptedContent = decrypt(data.content, encKey) || '';
+      let decryptedTitle = '';
+      let decryptedContent = '';
+      const version = data.encryption_version || 1;
+
+      if (version === 2 && data.page_key_grant && privateKey) {
+        // V2: unwrap page key, decrypt with AES-GCM
+        let pageKey = pageKeyCache.current.get(pageId);
+        if (!pageKey) {
+          pageKey = await unwrapPageKey(data.page_key_grant, privateKey);
+          pageKeyCache.current.set(pageId, pageKey);
+        }
+        decryptedTitle = data.title ? await decryptV2(data.title, pageKey) : '';
+        decryptedContent = data.content ? await decryptV2(data.content, pageKey) : '';
+      } else {
+        // V1: legacy CryptoJS
+        decryptedTitle = decrypt(data.title, encKey) || '';
+        decryptedContent = decrypt(data.content, encKey) || '';
+      }
+
       setActivePageId(pageId);
+      setActiveEncVersion(version);
       setEditTitle(decryptedTitle);
       setEditContent(decryptedContent);
       setEditIcon(data.icon || '');
@@ -150,7 +175,7 @@ export default function AppPage() {
     } catch (e) {
       console.error('Failed to load page:', e);
     }
-  }, [workspaceId, encKey]);
+  }, [workspaceId, encKey, privateKey]);
 
   // Load a shared page (different workspace)
   const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
@@ -184,13 +209,22 @@ export default function AppPage() {
     if (!activePageId || !workspaceId) return;
     setSaveStatus('saving');
     try {
-      const encTitle = encrypt(editTitle || 'Untitled', encKey);
-      const encContent = encrypt(editContent, encKey);
-      await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, {
-        title: encTitle,
-        content: encContent,
-        icon: editIcon,
-      });
+      let encTitle: string;
+      let encContent: string;
+      const updatePayload: Record<string, any> = { icon: editIcon };
+
+      if (activeEncVersion === 2 && pageKeyCache.current.has(activePageId)) {
+        const pageKey = pageKeyCache.current.get(activePageId)!;
+        encTitle = await encryptV2(editTitle || 'Untitled', pageKey);
+        encContent = await encryptV2(editContent, pageKey);
+      } else {
+        encTitle = encrypt(editTitle || 'Untitled', encKey);
+        encContent = encrypt(editContent, encKey);
+      }
+      updatePayload.title = encTitle;
+      updatePayload.content = encContent;
+
+      await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, updatePayload);
       setSaveStatus('saved');
       fetchPages();
 
@@ -225,13 +259,22 @@ export default function AppPage() {
   const createPage = useCallback(async (parentId?: string) => {
     if (!workspaceId) return;
     try {
-      const encTitle = encrypt('', encKey);
-      const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
-        title: encTitle,
-        content: '',
-        parent_id: parentId || null,
-        icon: '',
-      });
+      let encTitle: string;
+      const payload: Record<string, any> = { content: '', parent_id: parentId || null, icon: '' };
+
+      if (hasKeyPair && publicKey) {
+        const pageKey = await generatePageKey();
+        encTitle = await encryptV2('', pageKey);
+        const wrappedKey = await wrapPageKey(pageKey, publicKey);
+        payload.title = encTitle;
+        payload.encryption_version = 2;
+        payload.encrypted_page_key = wrappedKey;
+      } else {
+        encTitle = encrypt('', encKey);
+        payload.title = encTitle;
+      }
+
+      const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, payload);
       await fetchPages();
       loadPage(data.id);
 
@@ -247,8 +290,18 @@ export default function AppPage() {
   const saveContent = useCallback(async (html: string) => {
     if (!activePageId || !workspaceId) return;
     try {
-      const encTitle = encrypt(editTitle || 'Untitled', encKey);
-      const encContent = encrypt(html, encKey);
+      let encTitle: string;
+      let encContent: string;
+
+      if (activeEncVersion === 2 && pageKeyCache.current.has(activePageId)) {
+        const pageKey = pageKeyCache.current.get(activePageId)!;
+        encTitle = await encryptV2(editTitle || 'Untitled', pageKey);
+        encContent = await encryptV2(html, pageKey);
+      } else {
+        encTitle = encrypt(editTitle || 'Untitled', encKey);
+        encContent = encrypt(html, encKey);
+      }
+
       await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, {
         title: encTitle,
         content: encContent,
@@ -268,14 +321,22 @@ export default function AppPage() {
   const createSubPage = useCallback(async (): Promise<{ id: string; title: string } | undefined> => {
     if (!activePageId || !workspaceId) return undefined;
     try {
-      // Create the sub-page (parent page will be saved by the editor after inserting the link)
-      const subEncTitle = encrypt('Untitled', encKey);
-      const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
-        title: subEncTitle,
-        content: '',
-        parent_id: activePageId,
-        icon: '',
-      });
+      let subEncTitle: string;
+      const payload: Record<string, any> = { content: '', parent_id: activePageId, icon: '' };
+
+      if (hasKeyPair && publicKey) {
+        const pageKey = await generatePageKey();
+        subEncTitle = await encryptV2('Untitled', pageKey);
+        const wrappedKey = await wrapPageKey(pageKey, publicKey);
+        payload.title = subEncTitle;
+        payload.encryption_version = 2;
+        payload.encrypted_page_key = wrappedKey;
+      } else {
+        subEncTitle = encrypt('Untitled', encKey);
+        payload.title = subEncTitle;
+      }
+
+      const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, payload);
       await fetchPages();
 
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -322,14 +383,32 @@ export default function AppPage() {
   }, [pages, activePageId, encKey]);
 
   // Map of all page IDs to their decrypted titles (for sub-page link sync)
-  const subPageTitles = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const p of pages) {
-      const t = decrypt(p.title, encKey);
-      map[p.id] = t || 'Untitled';
-    }
-    return map;
-  }, [pages, encKey]);
+  const [subPageTitles, setSubPageTitles] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const decryptTitles = async () => {
+      const map: Record<string, string> = {};
+      for (const p of pages) {
+        if ((p.encryption_version || 1) === 2 && p.encrypted_page_key && privateKey) {
+          try {
+            let pageKey = pageKeyCache.current.get(p.id);
+            if (!pageKey) {
+              pageKey = await unwrapPageKey(p.encrypted_page_key, privateKey);
+              pageKeyCache.current.set(p.id, pageKey);
+            }
+            map[p.id] = p.title ? await decryptV2(p.title, pageKey) : 'Untitled';
+          } catch {
+            map[p.id] = 'Untitled';
+          }
+        } else {
+          const t = decrypt(p.title, encKey);
+          map[p.id] = t || 'Untitled';
+        }
+      }
+      setSubPageTitles(map);
+    };
+    decryptTitles();
+  }, [pages, encKey, privateKey]);
 
   // Workspace switching
   const handleSwitchWorkspace = useCallback((workspace: Workspace) => {

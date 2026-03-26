@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrapPageKey, wrapPageKey, importPublicKey } from '@/lib/crypto';
 import { X, UserPlus, Trash2, Globe, Eye, Edit3 } from 'lucide-react';
 
 interface PageShareItem {
@@ -22,6 +24,7 @@ interface ShareModalProps {
 }
 
 export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: ShareModalProps) {
+  const { privateKey } = useAuth();
   const [shares, setShares] = useState<PageShareItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -49,10 +52,26 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
     setError('');
     setSuccess('');
     try {
-      await api.post(`/workspaces/${workspaceId}/pages/${pageId}/shares`, {
-        email: email.trim(),
-        permission,
-      });
+      const sharePayload: Record<string, any> = { email: email.trim(), permission };
+
+      // Try to wrap page key for recipient
+      try {
+        const pubKeyRes = await api.get<{ public_key: string }>(`/users/${encodeURIComponent(email.trim())}/public-key`);
+        if (pubKeyRes.public_key && privateKey) {
+          // Get this page's key grant
+          const pageData = await api.get<{ page_key_grant: string | null }>(`/workspaces/${workspaceId}/pages/${pageId}`);
+          if (pageData.page_key_grant) {
+            const pageKey = await unwrapPageKey(pageData.page_key_grant, privateKey);
+            const recipientPubKey = await importPublicKey(pubKeyRes.public_key);
+            const wrappedForRecipient = await wrapPageKey(pageKey, recipientPubKey);
+            sharePayload.encrypted_page_key = wrappedForRecipient;
+          }
+        }
+      } catch {
+        // Key wrapping failed — share without key grant (v1 pages or no keys)
+      }
+
+      await api.post(`/workspaces/${workspaceId}/pages/${pageId}/shares`, sharePayload);
       setSuccess(`Shared with ${email}`);
       setEmail('');
       fetchShares();

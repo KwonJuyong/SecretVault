@@ -9,6 +9,7 @@ from database import get_db
 from models.user import User
 from models.workspace import WorkspaceMember
 from models.page import Page
+from models.page_key_grant import PageKeyGrant
 from schemas.page import PageCreate, PageUpdate, PageResponse, PageTreeItem, PageMove
 from services.auth import get_current_user
 
@@ -41,11 +42,22 @@ def list_pages(
         .all()
     )
 
-    # Check which pages have children
     parent_ids = set()
     for p in pages:
         if p.parent_id:
             parent_ids.add(p.parent_id)
+
+    # Batch load key grants for current user
+    page_ids = [p.id for p in pages]
+    grants = {}
+    if page_ids:
+        grant_rows = (
+            db.query(PageKeyGrant)
+            .filter(PageKeyGrant.page_id.in_(page_ids), PageKeyGrant.user_id == current_user.id)
+            .all()
+        )
+        for g in grant_rows:
+            grants[g.page_id] = g.encrypted_page_key
 
     return [
         PageTreeItem(
@@ -55,6 +67,8 @@ def list_pages(
             parent_id=str(p.parent_id) if p.parent_id else None,
             position=p.position,
             has_children=p.id in parent_ids,
+            encryption_version=p.encryption_version or 1,
+            encrypted_page_key=grants.get(p.id),
             updated_at=p.updated_at,
         )
         for p in pages
@@ -70,7 +84,6 @@ def create_page(
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
 
-    # Calculate position
     if data.position is not None:
         position = data.position
     else:
@@ -96,12 +109,24 @@ def create_page(
         content=data.content or "",
         icon=data.icon or "",
         position=position,
+        encryption_version=data.encryption_version or 1,
     )
     db.add(page)
+    db.flush()
+
+    # Store page key grant if provided
+    if data.encrypted_page_key:
+        grant = PageKeyGrant(
+            page_id=page.id,
+            user_id=current_user.id,
+            encrypted_page_key=data.encrypted_page_key,
+        )
+        db.add(grant)
+
     db.commit()
     db.refresh(page)
 
-    return _page_to_response(page)
+    return _page_to_response(page, data.encrypted_page_key)
 
 
 @router.get("/workspaces/{workspace_id}/pages/{page_id}", response_model=PageResponse)
@@ -119,7 +144,14 @@ def get_page(
     )
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
-    return _page_to_response(page)
+
+    grant = (
+        db.query(PageKeyGrant)
+        .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == current_user.id)
+        .first()
+    )
+
+    return _page_to_response(page, grant.encrypted_page_key if grant else None)
 
 
 @router.put("/workspaces/{workspace_id}/pages/{page_id}", response_model=PageResponse)
@@ -147,10 +179,34 @@ def update_page(
         page.icon = data.icon
     if data.position is not None:
         page.position = data.position
+    if data.encryption_version is not None:
+        page.encryption_version = data.encryption_version
+
+    # Update or create key grant during migration
+    if data.encrypted_page_key:
+        grant = (
+            db.query(PageKeyGrant)
+            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == current_user.id)
+            .first()
+        )
+        if grant:
+            grant.encrypted_page_key = data.encrypted_page_key
+        else:
+            db.add(PageKeyGrant(
+                page_id=page.id,
+                user_id=current_user.id,
+                encrypted_page_key=data.encrypted_page_key,
+            ))
 
     db.commit()
     db.refresh(page)
-    return _page_to_response(page)
+
+    grant = (
+        db.query(PageKeyGrant)
+        .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == current_user.id)
+        .first()
+    )
+    return _page_to_response(page, grant.encrypted_page_key if grant else None)
 
 
 @router.delete("/workspaces/{workspace_id}/pages/{page_id}")
@@ -171,13 +227,10 @@ def delete_page(
         raise HTTPException(status_code=404, detail="Page not found")
 
     if permanent:
-        # Permanently delete page and all children
         _delete_page_tree(db, page.id, ws_uuid)
     else:
-        # Soft delete
         page.is_deleted = True
         page.deleted_at = datetime.now(timezone.utc)
-        # Also soft-delete children
         _soft_delete_children(db, page.id, ws_uuid)
         db.commit()
 
@@ -202,7 +255,6 @@ def restore_page(
 
     page.is_deleted = False
     page.deleted_at = None
-    # Move to root if parent is deleted
     if page.parent_id:
         parent = db.query(Page).filter(Page.id == page.parent_id).first()
         if parent and parent.is_deleted:
@@ -232,6 +284,7 @@ def list_trash(
             parent_id=str(p.parent_id) if p.parent_id else None,
             position=p.position,
             has_children=False,
+            encryption_version=p.encryption_version or 1,
             updated_at=p.updated_at,
         )
         for p in pages
@@ -264,7 +317,44 @@ def move_page(
     return {"status": "moved"}
 
 
-def _page_to_response(page: Page) -> PageResponse:
+# Batch key grant endpoint for migration
+@router.post("/workspaces/{workspace_id}/pages/{page_id}/key-grants")
+def batch_key_grants(
+    workspace_id: str,
+    page_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page = (
+        db.query(Page)
+        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid)
+        .first()
+    )
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    grants = data.get("grants", [])
+    for g in grants:
+        existing = (
+            db.query(PageKeyGrant)
+            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == g["user_id"])
+            .first()
+        )
+        if existing:
+            existing.encrypted_page_key = g["encrypted_page_key"]
+        else:
+            db.add(PageKeyGrant(
+                page_id=page.id,
+                user_id=g["user_id"],
+                encrypted_page_key=g["encrypted_page_key"],
+            ))
+    db.commit()
+    return {"message": f"{len(grants)} key grants stored"}
+
+
+def _page_to_response(page: Page, page_key_grant: Optional[str] = None) -> PageResponse:
     return PageResponse(
         id=str(page.id),
         workspace_id=str(page.workspace_id),
@@ -274,6 +364,8 @@ def _page_to_response(page: Page) -> PageResponse:
         icon=page.icon or "",
         position=page.position,
         is_deleted=page.is_deleted,
+        encryption_version=page.encryption_version or 1,
+        page_key_grant=page_key_grant,
         created_at=page.created_at,
         updated_at=page.updated_at,
     )
@@ -296,5 +388,6 @@ def _delete_page_tree(db: Session, page_id: uuid.UUID, workspace_id: uuid.UUID):
     ).all()
     for child in children:
         _delete_page_tree(db, child.id, workspace_id)
+    db.query(PageKeyGrant).filter(PageKeyGrant.page_id == page_id).delete()
     db.query(Page).filter(Page.id == page_id).delete()
     db.commit()

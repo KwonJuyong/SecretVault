@@ -8,6 +8,7 @@ from models.user import User
 from models.workspace import Workspace, WorkspaceMember
 from models.page import Page
 from models.page_share import PageShare
+from models.page_key_grant import PageKeyGrant
 from schemas.page_share import PageShareCreate, PageShareUpdate, PageShareResponse, SharedPageItem
 from services.auth import get_current_user
 
@@ -99,6 +100,21 @@ def share_page(
         shared_by=current_user.id,
     )
     db.add(share)
+
+    # Store key grant if provided
+    if data.encrypted_page_key:
+        existing_grant = (
+            db.query(PageKeyGrant)
+            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == target_user.id)
+            .first()
+        )
+        if not existing_grant:
+            db.add(PageKeyGrant(
+                page_id=page.id,
+                user_id=target_user.id,
+                encrypted_page_key=data.encrypted_page_key,
+            ))
+
     db.commit()
     return {"message": "Page shared successfully"}
 
@@ -200,6 +216,12 @@ def get_shared_page(
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
 
+    grant = (
+        db.query(PageKeyGrant)
+        .filter(PageKeyGrant.page_id == page_uuid, PageKeyGrant.user_id == current_user.id)
+        .first()
+    )
+
     return {
         "id": str(page.id),
         "workspace_id": str(page.workspace_id),
@@ -209,7 +231,9 @@ def get_shared_page(
         "icon": page.icon or "",
         "position": page.position,
         "is_deleted": page.is_deleted,
+        "encryption_version": page.encryption_version or 1,
         "permission": share.permission,
+        "page_key_grant": grant.encrypted_page_key if grant else None,
         "created_at": page.created_at,
         "updated_at": page.updated_at,
     }
