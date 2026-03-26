@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from database import engine, Base
 from models import User, Workspace, WorkspaceMember, Page
-from routers import auth, workspaces, pages, ws
+from routers import auth, workspaces, pages, page_shares, ws
 
 
 def wait_for_db(max_retries=10, delay=2):
@@ -50,6 +50,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(workspaces.router)
 app.include_router(pages.router)
+app.include_router(page_shares.router)
 app.include_router(ws.router)
 
 

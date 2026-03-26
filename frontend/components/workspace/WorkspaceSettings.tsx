@@ -45,7 +45,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
     setInviteSuccess('');
     try {
       await api.post(`/workspaces/${workspace.id}/members`, {
-        user_id: inviteUserId.trim(),
+        email: inviteUserId.trim(),
         role: inviteRole,
       });
       setInviteSuccess(`${inviteUserId} has been invited!`);
@@ -61,7 +61,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
     if (!confirm(`Remove ${memberUserId} from this workspace?`)) return;
     try {
       await api.post(`/workspaces/${workspace.id}/members/remove`, {
-        user_id: memberUserId,
+        email: memberUserId,
       });
       fetchMembers();
       onUpdated();
@@ -73,7 +73,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
   const handleUpdateRole = async (memberUserId: string, newRole: string) => {
     try {
       await api.put(`/workspaces/${workspace.id}/members/role`, {
-        user_id: memberUserId,
+        email: memberUserId,
         role: newRole,
       });
       fetchMembers();

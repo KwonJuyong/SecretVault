@@ -15,6 +15,7 @@ import TrashPanel from '@/components/layout/TrashPanel';
 import WorkspaceSettings from '@/components/workspace/WorkspaceSettings';
 import CreateWorkspaceModal from '@/components/workspace/CreateWorkspaceModal';
 import TipsModal from '@/components/ui/TipsModal';
+import ShareModal from '@/components/editor/ShareModal';
 import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import { FileText, Plus } from 'lucide-react';
 
@@ -35,6 +36,7 @@ export default function AppPage() {
   const [settingsWorkspace, setSettingsWorkspace] = useState<Workspace | null>(null);
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
   const [showTips, setShowTips] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstLoad = useRef(true);
@@ -374,6 +376,7 @@ export default function AppPage() {
           pageTitle={activePageId ? decryptedTitle : undefined}
           rightPanelOpen={rightPanelOpen}
           onToggleRightPanel={activePageId ? () => setRightPanelOpen(!rightPanelOpen) : undefined}
+          onShare={activePageId ? () => setShowShare(true) : undefined}
         />
 
         {activePageId ? (
@@ -452,6 +455,14 @@ export default function AppPage() {
         />
       )}
       {showTips && <TipsModal onClose={() => setShowTips(false)} />}
+      {showShare && activePageId && (
+        <ShareModal
+          workspaceId={workspaceId}
+          pageId={activePageId}
+          pageTitle={editTitle || 'Untitled'}
+          onClose={() => setShowShare(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, CheckCircle, Loader2, AlertCircle, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react';
+import { Menu, CheckCircle, Loader2, AlertCircle, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Share2 } from 'lucide-react';
 
 interface TopbarProps {
   sidebarOpen: boolean;
@@ -9,9 +9,10 @@ interface TopbarProps {
   pageTitle?: string;
   rightPanelOpen?: boolean;
   onToggleRightPanel?: () => void;
+  onShare?: () => void;
 }
 
-export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageTitle, rightPanelOpen, onToggleRightPanel }: TopbarProps) {
+export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageTitle, rightPanelOpen, onToggleRightPanel, onShare }: TopbarProps) {
   return (
     <div className="h-12 flex items-center px-6 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#202020] flex-shrink-0">
       <button
@@ -52,6 +53,17 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
             </>
           )}
         </div>
+
+        {/* Share button */}
+        {onShare && (
+          <button
+            onClick={onShare}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-medium transition-colors duration-200"
+          >
+            <Share2 size={14} />
+            Share
+          </button>
+        )}
 
         {/* Right panel toggle */}
         {onToggleRightPanel && (
