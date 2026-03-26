@@ -178,3 +178,73 @@ def list_shared_pages(
             updated_at=page.updated_at,
         ))
     return result
+
+
+@router.get("/shared-pages/{page_id}")
+def get_shared_page(
+    page_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Load a page that has been shared with the current user."""
+    page_uuid = uuid.UUID(page_id)
+    share = (
+        db.query(PageShare)
+        .filter(PageShare.page_id == page_uuid, PageShare.user_id == current_user.id)
+        .first()
+    )
+    if not share:
+        raise HTTPException(status_code=403, detail="This page has not been shared with you")
+
+    page = db.query(Page).filter(Page.id == page_uuid, Page.is_deleted == False).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    return {
+        "id": str(page.id),
+        "workspace_id": str(page.workspace_id),
+        "parent_id": str(page.parent_id) if page.parent_id else None,
+        "title": page.title,
+        "content": page.content or "",
+        "icon": page.icon or "",
+        "position": page.position,
+        "is_deleted": page.is_deleted,
+        "permission": share.permission,
+        "created_at": page.created_at,
+        "updated_at": page.updated_at,
+    }
+
+
+@router.put("/shared-pages/{page_id}")
+def update_shared_page(
+    page_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update a page that has been shared with edit permission."""
+    page_uuid = uuid.UUID(page_id)
+    share = (
+        db.query(PageShare)
+        .filter(PageShare.page_id == page_uuid, PageShare.user_id == current_user.id)
+        .first()
+    )
+    if not share:
+        raise HTTPException(status_code=403, detail="This page has not been shared with you")
+    if share.permission != "edit":
+        raise HTTPException(status_code=403, detail="You only have view permission")
+
+    page = db.query(Page).filter(Page.id == page_uuid, Page.is_deleted == False).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    if "title" in data:
+        page.title = data["title"]
+    if "content" in data:
+        page.content = data["content"]
+    if "icon" in data:
+        page.icon = data["icon"]
+
+    db.commit()
+    db.refresh(page)
+    return {"status": "updated"}

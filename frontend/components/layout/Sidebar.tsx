@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { decrypt } from '@/lib/crypto';
 import { api } from '@/lib/api';
-import type { PageTreeItem, Workspace } from '@/lib/types';
+import type { PageTreeItem, Workspace, SharedPageItem } from '@/lib/types';
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
 import {
   Plus, Search, FileText, ChevronRight, ChevronDown,
-  Trash2, LogOut, HelpCircle, Save,
+  Trash2, LogOut, HelpCircle, Save, Share2, Eye, Edit3,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,13 +25,14 @@ interface SidebarProps {
   onCreateWorkspace: () => void;
   currentWorkspaceId: string;
   collapsed: boolean;
+  onOpenSharedPage?: (pageId: string) => void;
 }
 
 export default function Sidebar({
   pages, activePageId, onSelectPage, onCreatePage,
   onDeletePage, onOpenSearch, onOpenTrash, onOpenTips, collapsed,
   onSwitchWorkspace, onOpenWorkspaceSettings, onCreateWorkspace,
-  currentWorkspaceId,
+  currentWorkspaceId, onOpenSharedPage,
 }: SidebarProps) {
   const { email, displayName, logout, encKey } = useAuth();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -39,6 +40,14 @@ export default function Sidebar({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [sharedPages, setSharedPages] = useState<SharedPageItem[]>([]);
+  const [sharedExpanded, setSharedExpanded] = useState(true);
+
+  useEffect(() => {
+    api.get<SharedPageItem[]>('/shared-pages')
+      .then(setSharedPages)
+      .catch(() => {});
+  }, [currentWorkspaceId]);
 
   if (collapsed) return null;
 
@@ -179,6 +188,46 @@ export default function Sidebar({
           </div>
         ) : (
           rootPages.map(page => renderPageItem(page))
+        )}
+
+        {/* Shared with me */}
+        {sharedPages.length > 0 && (
+          <>
+            <div className="flex items-center justify-between px-6 pt-5 pb-2">
+              <button
+                onClick={() => setSharedExpanded(!sharedExpanded)}
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider hover:text-neutral-600 dark:hover:text-neutral-300 transition"
+              >
+                {sharedExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <Share2 size={12} />
+                Shared with me
+              </button>
+            </div>
+            {sharedExpanded && sharedPages.map(sp => (
+              <div key={sp.id}>
+                <div
+                  className={`group flex items-center gap-2.5 py-[7px] px-3 mx-3 rounded-lg cursor-pointer transition-colors duration-200 text-[14px] ${
+                    activePageId === sp.id
+                      ? 'bg-blue-50/80 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                      : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
+                  }`}
+                  style={{ paddingLeft: '10px' }}
+                  onClick={() => onOpenSharedPage?.(sp.id)}
+                >
+                  <span className="w-5 flex-shrink-0" />
+                  <span className="flex-shrink-0 text-lg leading-none">{sp.icon || ''}</span>
+                  <span className="truncate flex-1">
+                    {decrypt(sp.title, encKey) || 'Shared page'}
+                  </span>
+                  {sp.permission === 'view' ? (
+                    <Eye size={13} className="text-neutral-400 flex-shrink-0" />
+                  ) : (
+                    <Edit3 size={13} className="text-neutral-400 flex-shrink-0" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </>
         )}
       </div>
 

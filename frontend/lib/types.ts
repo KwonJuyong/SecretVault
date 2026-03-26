@@ -45,6 +45,17 @@ export interface PageData {
   updated_at: string | null;
 }
 
+export interface SharedPageItem {
+  id: string;
+  title: string;
+  icon: string;
+  workspace_id: string;
+  workspace_name: string;
+  permission: string;
+  shared_by_email: string | null;
+  updated_at: string | null;
+}
+
 export interface WorkspaceMember {
   email: string;
   display_name: string | null;

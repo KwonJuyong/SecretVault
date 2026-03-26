@@ -144,12 +144,40 @@ export default function AppPage() {
       setEditTitle(decryptedTitle);
       setEditContent(decryptedContent);
       setEditIcon(data.icon || '');
+      setSharedPagePermission(null);
       setSaveStatus('idle');
       isFirstLoad.current = true;
     } catch (e) {
       console.error('Failed to load page:', e);
     }
   }, [workspaceId, encKey]);
+
+  // Load a shared page (different workspace)
+  const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
+
+  const loadSharedPage = useCallback(async (pageId: string) => {
+    // Flush any pending auto-save
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      try { await savePageRef.current(); } catch { /* ignore */ }
+    }
+
+    try {
+      const data = await api.get<PageData & { permission: string }>(`/shared-pages/${pageId}`);
+      const decryptedTitle = decrypt(data.title, encKey) || '';
+      const decryptedContent = decrypt(data.content, encKey) || '';
+      setActivePageId(pageId);
+      setEditTitle(decryptedTitle);
+      setEditContent(decryptedContent);
+      setEditIcon(data.icon || '');
+      setSharedPagePermission(data.permission);
+      setSaveStatus('idle');
+      isFirstLoad.current = true;
+    } catch (e) {
+      console.error('Failed to load shared page:', e);
+    }
+  }, [encKey]);
 
   // Auto-save with WebSocket broadcast
   const savePage = useCallback(async () => {
@@ -365,6 +393,7 @@ export default function AppPage() {
         onCreateWorkspace={() => setShowCreateWorkspace(true)}
         currentWorkspaceId={workspaceId}
         collapsed={!sidebarOpen}
+        onOpenSharedPage={loadSharedPage}
       />
 
       {/* Main Content */}
