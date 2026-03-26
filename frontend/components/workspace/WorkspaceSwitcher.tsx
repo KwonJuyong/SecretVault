@@ -39,7 +39,7 @@ export default function WorkspaceSwitcher({
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
       >
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-sm flex-shrink-0">
           {current?.icon || '\u{1F4BC}'}
         </div>
         <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 truncate flex-1 text-left">
@@ -61,7 +61,7 @@ export default function WorkspaceSwitcher({
                   key={ws.id}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition group ${
                     ws.id === currentWorkspaceId
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      ? 'bg-violet-50 dark:bg-violet-900/20'
                       : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
                   }`}
                 >
@@ -74,7 +74,7 @@ export default function WorkspaceSwitcher({
                       <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">{ws.name}</p>
                       <p className="text-[11px] text-neutral-400 capitalize">{ws.role}</p>
                     </div>
-                    {ws.id === currentWorkspaceId && <Check size={14} className="text-blue-500 flex-shrink-0" />}
+                    {ws.id === currentWorkspaceId && <Check size={14} className="text-violet-500 flex-shrink-0" />}
                   </button>
                   {(ws.role === 'owner' || ws.role === 'admin') && (
                     <button

@@ -39,10 +39,10 @@ export default function LoginForm() {
   if (redirecting) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-neutral-950 gap-4">
-        <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white">
+        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white">
           <Shield size={22} />
         </div>
-        <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
         <p className="text-sm text-neutral-400">Loading workspace...</p>
       </div>
     );
@@ -51,10 +51,10 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen flex p-4 sm:p-6 lg:p-0 bg-neutral-100 dark:bg-neutral-900 lg:bg-white lg:dark:bg-neutral-950">
       {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-[#1a1f35] via-[#1e2a4a] to-[#1a1f35] flex-col justify-between text-white px-16 py-14">
+      <div className="hidden lg:flex lg:w-[480px] bg-gradient-to-br from-[#1c1826] via-[#241e33] to-[#1c1826] flex-col justify-between text-white px-16 py-14">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
               <Shield size={22} />
             </div>
             <span className="text-xl font-bold tracking-tight">SecretVault</span>
@@ -64,12 +64,12 @@ export default function LoginForm() {
           <h2 className="text-3xl font-bold leading-tight mb-5">
             Secure workspace<br />for your team.
           </h2>
-          <p className="text-blue-200/70 text-sm leading-relaxed max-w-[340px]">
+          <p className="text-violet-200/60 text-sm leading-relaxed max-w-[340px]">
             End-to-end encrypted collaboration platform.
             Your notes, documents, and research — protected with zero-knowledge encryption.
           </p>
         </div>
-        <div className="text-xs text-blue-300/40">
+        <div className="text-xs text-neutral-500">
           &copy; {new Date().getFullYear()} SecretVault. All rights reserved.
         </div>
       </div>
@@ -79,7 +79,7 @@ export default function LoginForm() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white">
               <Shield size={22} />
             </div>
             <span className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">SecretVault</span>
@@ -101,7 +101,7 @@ export default function LoginForm() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full h-12 px-3.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                className="w-full h-12 px-3.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors duration-200"
                 placeholder="Enter your email"
                 autoFocus
                 autoComplete="email"
@@ -115,7 +115,7 @@ export default function LoginForm() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full h-12 px-3.5 pr-10 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                  className="w-full h-12 px-3.5 pr-10 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors duration-200"
                   placeholder="Enter your password"
                   autoComplete="current-password"
                 />
@@ -132,7 +132,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-[#4f6df5] hover:bg-[#3b5ce4] text-white text-sm font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -149,7 +149,7 @@ export default function LoginForm() {
             Don&apos;t have an account?{' '}
             <button
               onClick={() => router.push('/signup')}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold"
+              className="text-violet-600 hover:text-violet-700 dark:text-violet-400 font-semibold"
             >
               Create one
             </button>

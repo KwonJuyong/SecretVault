@@ -85,8 +85,8 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
 
   const roleIcon = (role: string) => {
     switch (role) {
-      case 'owner': return <Crown size={14} className="text-amber-500" />;
-      case 'admin': return <ShieldCheck size={14} className="text-blue-500" />;
+      case 'owner': return <Crown size={14} className="text-neutral-500" />;
+      case 'admin': return <ShieldCheck size={14} className="text-neutral-500" />;
       default: return <Shield size={14} className="text-neutral-400" />;
     }
   };
@@ -124,7 +124,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                 value={inviteUserId}
                 onChange={e => setInviteUserId(e.target.value)}
                 placeholder="Email"
-                className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/30"
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
               />
               <select
@@ -137,7 +137,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
               </select>
               <button
                 onClick={handleInvite}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition"
+                className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition"
               >
                 Invite
               </button>
@@ -161,7 +161,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                   key={member.email}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 group"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-neutral-400 dark:bg-neutral-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     {(member.display_name || member.email).charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">

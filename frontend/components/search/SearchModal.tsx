@@ -54,7 +54,7 @@ export default function SearchModal({ pages, decryptedTitles, onSelect, onClose 
             filtered.map((page, i) => (
               <button key={page.id} onClick={() => { onSelect(page.id); onClose(); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ${
-                  i === selectedIndex ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                  i === selectedIndex ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
                 }`}>
                 <span className="text-base flex-shrink-0">{page.icon || ''}</span>
                 <FileText size={15} className="flex-shrink-0 opacity-40" />

@@ -42,13 +42,13 @@ body {
 
 /* Focus styles */
 :focus-visible {
-  outline: 2px solid rgba(46, 170, 220, 0.6);
+  outline: 2px solid rgba(139, 92, 246, 0.5);
   outline-offset: 2px;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(46, 170, 220, 0.18);
+  background: rgba(139, 92, 246, 0.15);
 }
 
 /* Dark mode base */
@@ -67,7 +67,7 @@ body {
   }
 
   ::selection {
-    background: rgba(46, 170, 220, 0.28);
+    background: rgba(139, 92, 246, 0.22);
   }
 }
 
@@ -83,7 +83,7 @@ pre::-webkit-scrollbar-thumb {
 
 /* Checkbox styling */
 input[type="checkbox"] {
-  accent-color: rgb(46, 170, 220);
+  accent-color: rgb(139, 92, 246);
 }
 
 /* Auto-resize textarea */
@@ -202,7 +202,7 @@ textarea {
 .tiptap-content a { color: rgb(55, 53, 47); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(55, 53, 47, 0.35); }
 .tiptap-content a:hover { text-decoration-color: rgb(55, 53, 47); }
 .tiptap-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
-.tiptap-content img.ProseMirror-selectednode { outline: 2px solid rgb(46, 170, 220); outline-offset: 3px; }
+.tiptap-content img.ProseMirror-selectednode { outline: 2px solid rgb(139, 92, 246); outline-offset: 3px; }
 
 /* ============================= */
 /* Code Block (Lowlight)         */
@@ -277,7 +277,7 @@ textarea {
 .tiptap-content th { background: rgb(247, 246, 243); font-weight: 600; font-size: 0.9em; }
 .tiptap-content td { background: white; }
 .tiptap-content tr:hover td { background: rgb(247, 246, 243); }
-.tiptap-content .selectedCell { background: rgba(46, 170, 220, 0.12) !important; }
+.tiptap-content .selectedCell { background: rgba(139, 92, 246, 0.10) !important; }
 
 .tiptap-content .column-resize-handle {
   position: absolute;
@@ -285,7 +285,7 @@ textarea {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: rgb(46, 170, 220);
+  background: rgb(139, 92, 246);
   cursor: col-resize;
   z-index: 10;
 }
@@ -326,7 +326,7 @@ textarea {
 }
 
 .math-inline-rendered:hover { background: rgba(55, 53, 47, 0.06); }
-.math-inline-rendered.math-selected { background: rgba(46, 170, 220, 0.15); outline: 2px solid rgb(46, 170, 220); outline-offset: 1px; }
+.math-inline-rendered.math-selected { background: rgba(139, 92, 246, 0.12); outline: 2px solid rgb(139, 92, 246); outline-offset: 1px; }
 
 .math-inline-input {
   background: rgb(247, 246, 243);
@@ -340,7 +340,7 @@ textarea {
   min-width: 80px;
 }
 
-.math-inline-input:focus { border-color: rgb(46, 170, 220); box-shadow: 0 0 0 2px rgba(46, 170, 220, 0.18); }
+.math-inline-input:focus { border-color: rgb(139, 92, 246); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15); }
 
 .math-block-wrapper {
   margin: 8px 0;
@@ -354,7 +354,7 @@ textarea {
 
 .math-block-wrapper:hover { background: rgba(55, 53, 47, 0.06); }
 .math-block-wrapper.math-editing { text-align: left; cursor: default; }
-.math-block-wrapper.math-selected { outline: 2px solid rgb(46, 170, 220); outline-offset: 2px; }
+.math-block-wrapper.math-selected { outline: 2px solid rgb(139, 92, 246); outline-offset: 2px; }
 
 .math-block-label {
   font-size: 0.75em;
@@ -379,7 +379,7 @@ textarea {
   min-height: 60px;
 }
 
-.math-block-input:focus { border-color: rgb(46, 170, 220); box-shadow: 0 0 0 2px rgba(46, 170, 220, 0.18); }
+.math-block-input:focus { border-color: rgb(139, 92, 246); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15); }
 .math-block-rendered .katex-display { margin: 0; }
 
 /* ============================= */
@@ -406,7 +406,7 @@ textarea {
   .tiptap-content th { background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.85); }
   .tiptap-content td { background: transparent; }
   .tiptap-content tr:hover td { background: rgba(255, 255, 255, 0.03); }
-  .tiptap-content .selectedCell { background: rgba(46, 170, 220, 0.12) !important; }
+  .tiptap-content .selectedCell { background: rgba(139, 92, 246, 0.10) !important; }
 
   /* Sub-page links */
   .tiptap-content .subpage-link, .tiptap-content [data-subpage-id] { color: rgba(255, 255, 255, 0.9); }
@@ -414,7 +414,7 @@ textarea {
 
   /* Math */
   .math-inline-rendered:hover { background: rgba(255, 255, 255, 0.06); }
-  .math-inline-rendered.math-selected { background: rgba(46, 170, 220, 0.2); }
+  .math-inline-rendered.math-selected { background: rgba(139, 92, 246, 0.18); }
   .math-inline-input { background: #2f3437; border-color: rgba(255, 255, 255, 0.09); color: rgba(255, 255, 255, 0.9); }
   .math-block-wrapper { background: rgba(255, 255, 255, 0.03); }
   .math-block-wrapper:hover { background: rgba(255, 255, 255, 0.06); }
@@ -448,17 +448,17 @@ textarea {
 .block-drop-indicator {
   position: absolute;
   height: 3px;
-  background: rgb(46, 170, 220);
+  background: rgb(139, 92, 246);
   border-radius: 2px;
   pointer-events: none;
   z-index: 20;
-  box-shadow: 0 0 8px rgba(46, 170, 220, 0.35);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.30);
 }
 
 @media (prefers-color-scheme: dark) {
   .block-drag-handle { color: rgba(255, 255, 255, 0.18); }
   .block-drag-handle:hover { color: rgba(255, 255, 255, 0.45); background: rgba(255, 255, 255, 0.06); }
-  .block-drop-indicator { background: rgb(46, 170, 220); }
+  .block-drop-indicator { background: rgb(139, 92, 246); }
 }
 
 /* ============================= */
@@ -542,7 +542,7 @@ textarea {
 }
 
 .resizable-image-container.is-selected {
-  outline: 2px solid rgb(46, 170, 220);
+  outline: 2px solid rgb(139, 92, 246);
   outline-offset: 3px;
   border-radius: 8px;
 }
@@ -577,8 +577,8 @@ textarea {
   width: 4px;
   height: 40px;
   border-radius: 3px;
-  background: rgb(46, 170, 220);
-  box-shadow: 0 0 4px rgba(46, 170, 220, 0.3);
+  background: rgb(139, 92, 246);
+  box-shadow: 0 0 4px rgba(139, 92, 246, 0.25);
 }
 
 .resize-handle-corner {
@@ -598,8 +598,8 @@ textarea {
   width: 10px;
   height: 10px;
   border-radius: 3px;
-  background: rgb(46, 170, 220);
-  box-shadow: 0 0 4px rgba(46, 170, 220, 0.3);
+  background: rgb(139, 92, 246);
+  box-shadow: 0 0 4px rgba(139, 92, 246, 0.25);
 }
 
 .resizable-image-container.is-resizing {
@@ -608,7 +608,7 @@ textarea {
 
 @media (prefers-color-scheme: dark) {
   .resizable-image-container.is-selected {
-    outline-color: rgb(46, 170, 220);
+    outline-color: rgb(139, 92, 246);
   }
 }
 
@@ -646,9 +646,9 @@ textarea {
 }
 
 .tree-node-active {
-  background: rgba(46, 170, 220, 0.06) !important;
-  border-color: rgba(46, 170, 220, 0.25) !important;
-  color: rgb(46, 130, 200);
+  background: rgba(139, 92, 246, 0.05) !important;
+  border-color: rgba(139, 92, 246, 0.20) !important;
+  color: rgb(124, 82, 220);
 }
 
 .tree-children {
@@ -683,8 +683,8 @@ textarea {
     border-color: rgba(255, 255, 255, 0.1);
   }
   .tree-node-active {
-    background: rgba(46, 170, 220, 0.08) !important;
-    border-color: rgba(46, 170, 220, 0.3) !important;
+    background: rgba(139, 92, 246, 0.07) !important;
+    border-color: rgba(139, 92, 246, 0.25) !important;
   }
   .tree-children {
     border-left-color: rgba(255, 255, 255, 0.06);
@@ -696,7 +696,7 @@ textarea {
 
 /* ProseMirror selected node outline */
 .ProseMirror .ProseMirror-selectednode {
-  outline: 2px solid rgb(46, 170, 220);
+  outline: 2px solid rgb(139, 92, 246);
   outline-offset: 3px;
   border-radius: 6px;
 }

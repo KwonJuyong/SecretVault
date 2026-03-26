@@ -26,7 +26,7 @@ export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarPr
       title={title}
       className={`p-2.5 rounded-lg transition-colors duration-150 ${
         active
-          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300'
+          ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300'
           : 'text-neutral-500 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200'
       }`}
     >

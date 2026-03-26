@@ -102,7 +102,7 @@ function TreeNodeCard({
               onChange={e => setEditValue(e.target.value)}
               onBlur={handleRenameSubmit}
               onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setEditing(false); }}
-              className="flex-1 min-w-0 bg-white dark:bg-neutral-800 border border-blue-400 rounded px-1.5 py-0.5 text-sm outline-none"
+              className="flex-1 min-w-0 bg-white dark:bg-neutral-800 border border-violet-400 rounded px-1.5 py-0.5 text-sm outline-none"
               onClick={e => e.stopPropagation()}
             />
           ) : (
@@ -150,8 +150,8 @@ export default function PageTreeView({ pages, decryptedTitles, activePageId, onS
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200/50 dark:border-neutral-800">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-            <FileText size={16} className="text-blue-600 dark:text-blue-400" />
+          <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+            <FileText size={16} className="text-violet-600 dark:text-violet-400" />
           </div>
           <div>
             <h2 className="text-[15px] font-semibold text-neutral-800 dark:text-neutral-200">Page Overview</h2>
@@ -160,7 +160,7 @@ export default function PageTreeView({ pages, decryptedTitles, activePageId, onS
         </div>
         <button
           onClick={() => onCreatePage()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-medium transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-medium transition"
         >
           <Plus size={14} /> New Page
         </button>
@@ -175,7 +175,7 @@ export default function PageTreeView({ pages, decryptedTitles, activePageId, onS
             </div>
             <p className="text-[15px] text-neutral-500 mb-2">No pages yet</p>
             <p className="text-[13px] text-neutral-400 mb-4">Create your first page to get started</p>
-            <button onClick={() => onCreatePage()} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-medium transition">
+            <button onClick={() => onCreatePage()} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-medium transition">
               <Plus size={14} /> Create Page
             </button>
           </div>
