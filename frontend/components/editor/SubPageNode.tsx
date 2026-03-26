@@ -12,6 +12,8 @@ function SubPageView({ node }: any) {
       className="subpage-block"
       data-subpage-id={node.attrs.pageId}
       contentEditable={false}
+      draggable={true}
+      data-drag-handle=""
     >
       <div className="subpage-block-icon">
         <FileText size={20} strokeWidth={1.7} />
