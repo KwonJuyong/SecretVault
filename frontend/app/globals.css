@@ -612,6 +612,88 @@ textarea {
   }
 }
 
+/* ============================= */
+/* Page Tree View (Dashboard)    */
+/* ============================= */
+.tree-root {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tree-branch {
+  position: relative;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: rgb(55, 53, 47);
+  background: white;
+  border: 1px solid rgba(55, 53, 47, 0.06);
+  margin-bottom: 2px;
+}
+
+.tree-node:hover {
+  background: rgba(55, 53, 47, 0.03);
+  border-color: rgba(55, 53, 47, 0.12);
+}
+
+.tree-node-active {
+  background: rgba(46, 170, 220, 0.06) !important;
+  border-color: rgba(46, 170, 220, 0.25) !important;
+  color: rgb(46, 130, 200);
+}
+
+.tree-children {
+  position: relative;
+  margin-left: 24px;
+  padding-left: 16px;
+  border-left: 1.5px solid rgba(55, 53, 47, 0.08);
+}
+
+.tree-children .tree-branch {
+  position: relative;
+}
+
+.tree-children .tree-branch::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 18px;
+  width: 12px;
+  height: 0;
+  border-top: 1.5px solid rgba(55, 53, 47, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tree-node {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .tree-node:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .tree-node-active {
+    background: rgba(46, 170, 220, 0.08) !important;
+    border-color: rgba(46, 170, 220, 0.3) !important;
+  }
+  .tree-children {
+    border-left-color: rgba(255, 255, 255, 0.06);
+  }
+  .tree-children .tree-branch::before {
+    border-top-color: rgba(255, 255, 255, 0.06);
+  }
+}
+
 /* ProseMirror selected node outline */
 .ProseMirror .ProseMirror-selectednode {
   outline: 2px solid rgb(46, 170, 220);

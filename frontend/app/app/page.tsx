@@ -20,6 +20,7 @@ import CreateWorkspaceModal from '@/components/workspace/CreateWorkspaceModal';
 import TipsModal from '@/components/ui/TipsModal';
 import ShareModal from '@/components/editor/ShareModal';
 import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
+import PageTreeView from '@/components/dashboard/PageTreeView';
 import { FileText, Plus } from 'lucide-react';
 
 export default function AppPage() {
@@ -349,18 +350,13 @@ export default function AppPage() {
             subPageTitles={subPageTitles}
           />
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center px-8">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-neutral-100 dark:bg-neutral-800 mb-7">
-                <FileText size={38} className="text-neutral-400" />
-              </div>
-              <h2 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-200 mb-3">Select a page or create a new one</h2>
-              <p className="text-[15px] text-neutral-500 mb-7">Your notes are encrypted end-to-end</p>
-              <button onClick={() => createPage()} className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[15px] font-medium transition">
-                <Plus size={20} /> New Page
-              </button>
-            </div>
-          </div>
+          <PageTreeView
+            pages={pages}
+            decryptedTitles={subPageTitles}
+            activePageId={activePageId}
+            onSelectPage={loadPage}
+            onCreatePage={createPage}
+          />
         )}
       </div>
 
