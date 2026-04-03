@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Workspace } from '@/lib/types';
 import { ChevronDown, Plus, Settings, Check } from 'lucide-react';
 
@@ -15,6 +16,7 @@ interface WorkspaceSwitcherProps {
 export default function WorkspaceSwitcher({
   currentWorkspaceId, onSwitch, onOpenSettings, onCreateWorkspace,
 }: WorkspaceSwitcherProps) {
+  const { t } = useLanguage();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -53,7 +55,7 @@ export default function WorkspaceSwitcher({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-full mt-1 w-72 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
             <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-700">
-              <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Workspaces</p>
+              <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t.workspaces}</p>
             </div>
             <div className="max-h-64 overflow-y-auto p-1.5">
               {workspaces.map(ws => (
@@ -80,7 +82,7 @@ export default function WorkspaceSwitcher({
                     <button
                       onClick={(e) => { e.stopPropagation(); onOpenSettings(ws); setOpen(false); }}
                       className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 opacity-0 group-hover:opacity-100 transition flex-shrink-0"
-                      title="Workspace settings"
+                      title={t.workspaceSettings}
                     >
                       <Settings size={16} />
                     </button>
@@ -94,7 +96,7 @@ export default function WorkspaceSwitcher({
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition"
               >
                 <Plus size={16} />
-                <span>Create Workspace</span>
+                <span>{t.createWorkspace}</span>
               </button>
             </div>
           </div>

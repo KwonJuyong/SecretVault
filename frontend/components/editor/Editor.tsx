@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import TiptapEditor from './TiptapEditor';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText, Plus, ChevronRight } from 'lucide-react';
 
 interface SubPageItem {
@@ -58,13 +59,14 @@ export default function Editor({
   subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
   subPageTitles, subPageIcons,
 }: EditorProps) {
+  const { t } = useLanguage();
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [activeCategory, setActiveCategory] = useState(0);
   const titleRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus title when loading an empty/new page
   useEffect(() => {
-    if (title === '' || title === 'Untitled') {
+    if (title === '' || title === 'Untitled' || title === t.untitled) {
       setTimeout(() => titleRef.current?.focus(), 100);
     }
   }, [title]);
@@ -83,7 +85,7 @@ export default function Editor({
             <button
               onClick={() => setShowIconPicker(!showIconPicker)}
               className="text-6xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2.5 transition"
-              title="Change icon"
+              title={t.changeIcon}
             >
               {icon || '\u{1F4C4}'}
             </button>
@@ -128,7 +130,7 @@ export default function Editor({
             type="text"
             value={title}
             onChange={e => onChangeTitle(e.target.value)}
-            placeholder="Untitled"
+            placeholder={t.untitled}
             className="w-full text-[40px] font-bold text-[rgb(55,53,47)] dark:text-[rgba(255,255,255,0.95)] bg-transparent border-none outline-none placeholder-[rgba(55,53,47,0.25)] dark:placeholder-[rgba(255,255,255,0.2)] leading-tight"
           />
         </div>

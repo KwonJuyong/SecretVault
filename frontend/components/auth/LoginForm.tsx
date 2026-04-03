@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Shield, ArrowRight, Eye, EyeOff, Globe } from 'lucide-react';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -12,14 +13,17 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { lang, setLang, t } = useLanguage();
   const router = useRouter();
 
   const [redirecting, setRedirecting] = useState(false);
 
+  const toggleLang = () => setLang(lang === 'en' ? 'ko' : 'en');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      setError('Please enter your email and password.');
+      setError(t.enterEmailAndPassword);
       return;
     }
     setError('');
@@ -29,8 +33,8 @@ export default function LoginForm() {
       setRedirecting(true);
       router.push('/app');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login failed.';
-      setError(message === 'Unauthorized' ? 'Invalid email or password.' : message);
+      const message = err instanceof Error ? err.message : t.loginFailed;
+      setError(message === 'Unauthorized' ? t.invalidCredentials : message);
     } finally {
       if (!redirecting) setLoading(false);
     }
@@ -43,7 +47,7 @@ export default function LoginForm() {
           <Shield size={24} />
         </div>
         <div className="w-6 h-6 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
-        <p className="text-sm text-neutral-400">Loading workspace...</p>
+        <p className="text-sm text-neutral-400">{t.loadingWorkspace}</p>
       </div>
     );
   }
@@ -61,21 +65,30 @@ export default function LoginForm() {
           </div>
         </div>
         <div className="pr-8">
-          <h2 className="text-[34px] font-bold leading-tight mb-5">
-            Secure workspace<br />for your team.
+          <h2 className="text-[34px] font-bold leading-tight mb-5 whitespace-pre-line">
+            {t.secureWorkspace}
           </h2>
           <p className="text-violet-200/60 text-[15px] leading-relaxed max-w-[360px]">
-            End-to-end encrypted collaboration platform.
-            Your notes, documents, and research — protected with zero-knowledge encryption.
+            {t.secureWorkspaceDesc}
           </p>
         </div>
         <div className="text-xs text-neutral-500">
-          &copy; {new Date().getFullYear()} SecretVault. All rights reserved.
+          &copy; {new Date().getFullYear()} SecretVault. {t.allRightsReserved}
         </div>
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-16">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-16 relative">
+        {/* Language toggle */}
+        <button
+          onClick={toggleLang}
+          className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[13px] font-medium transition-colors duration-200"
+          title={t.language}
+        >
+          <Globe size={15} />
+          <span>{lang === 'en' ? 'EN' : 'KO'}</span>
+        </button>
+
         <div className="w-full max-w-[420px]">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
@@ -85,8 +98,8 @@ export default function LoginForm() {
             <span className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">SecretVault</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Welcome back</h1>
-          <p className="text-base text-neutral-500 dark:text-neutral-400 mb-10">Sign in to your workspace</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{t.welcomeBack}</h1>
+          <p className="text-base text-neutral-500 dark:text-neutral-400 mb-10">{t.signInToWorkspace}</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -96,27 +109,27 @@ export default function LoginForm() {
             )}
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">Email</label>
+              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">{t.email}</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full h-[52px] px-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-[15px] placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors duration-200"
-                placeholder="Enter your email"
+                placeholder={t.enterEmail}
                 autoFocus
                 autoComplete="email"
               />
             </div>
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">Password</label>
+              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">{t.password}</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className="w-full h-[52px] px-4 pr-11 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-[15px] placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors duration-200"
-                  placeholder="Enter your password"
+                  placeholder={t.enterPassword}
                   autoComplete="current-password"
                 />
                 <button
@@ -138,7 +151,7 @@ export default function LoginForm() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Sign In
+                  {t.signIn}
                   <ArrowRight size={18} />
                 </>
               )}
@@ -146,12 +159,12 @@ export default function LoginForm() {
           </form>
 
           <p className="mt-10 text-center text-[15px] text-neutral-500 dark:text-neutral-400">
-            Don&apos;t have an account?{' '}
+            {t.noAccount}{' '}
             <button
               onClick={() => router.push('/signup')}
               className="text-violet-500 hover:text-violet-600 dark:text-violet-400 font-semibold"
             >
-              Create one
+              {t.createOne}
             </button>
           </p>
         </div>

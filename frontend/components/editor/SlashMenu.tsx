@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare,
   Quote, Code2, Minus, Table, Type, Image, FileText, Sigma, Pi,
@@ -16,24 +17,6 @@ export interface SlashCommand {
   keywords: string[];
 }
 
-const commands: SlashCommand[] = [
-  { type: 'h1', label: 'Heading 1', description: 'Big section heading', icon: <Heading1 size={20} />, keywords: ['h1', 'heading', 'title', 'big'] },
-  { type: 'h2', label: 'Heading 2', description: 'Medium section heading', icon: <Heading2 size={20} />, keywords: ['h2', 'heading', 'subtitle'] },
-  { type: 'h3', label: 'Heading 3', description: 'Small section heading', icon: <Heading3 size={20} />, keywords: ['h3', 'heading', 'small'] },
-  { type: 'paragraph', label: 'Text', description: 'Plain text paragraph', icon: <Type size={20} />, keywords: ['text', 'paragraph', 'plain'] },
-  { type: 'bullet', label: 'Bullet List', description: 'Unordered list item', icon: <List size={20} />, keywords: ['bullet', 'list', 'unordered', 'ul'] },
-  { type: 'numbered', label: 'Numbered List', description: 'Ordered list item', icon: <ListOrdered size={20} />, keywords: ['numbered', 'list', 'ordered', 'ol', 'number'] },
-  { type: 'todo', label: 'To-do', description: 'Task with checkbox', icon: <CheckSquare size={20} />, keywords: ['todo', 'task', 'checkbox', 'check'] },
-  { type: 'quote', label: 'Quote', description: 'Blockquote', icon: <Quote size={20} />, keywords: ['quote', 'blockquote'] },
-  { type: 'code', label: 'Code', description: 'Code block', icon: <Code2 size={20} />, keywords: ['code', 'snippet', 'programming'] },
-  { type: 'divider', label: 'Divider', description: 'Horizontal line separator', icon: <Minus size={20} />, keywords: ['divider', 'separator', 'line', 'hr'] },
-  { type: 'table', label: 'Table', description: 'Insert a table (3x3)', icon: <Table size={20} />, keywords: ['table', 'grid', 'spreadsheet'] },
-  { type: 'image', label: 'Image', description: 'Upload an image', icon: <Image size={20} />, keywords: ['image', 'photo', 'picture', 'img'] },
-  { type: 'mathInline', label: 'Inline Math', description: 'Inline LaTeX formula ($e^2$)', icon: <Sigma size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'inline', 'katex'] },
-  { type: 'mathBlock', label: 'Block Math', description: 'Display LaTeX equation ($$...$$)', icon: <Pi size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'block', 'display', 'katex'] },
-  { type: 'subpage', label: 'Sub-page', description: 'Create a nested page', icon: <FileText size={20} />, keywords: ['subpage', 'page', 'nested', 'child', 'sub'] },
-];
-
 interface SlashMenuProps {
   filter: string;
   position: { top: number; left: number };
@@ -42,9 +25,28 @@ interface SlashMenuProps {
 }
 
 export default function SlashMenu({ filter, position, onSelect, onClose }: SlashMenuProps) {
+  const { t } = useLanguage();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const commands: SlashCommand[] = [
+    { type: 'h1', label: t.h1Label, description: t.h1Desc, icon: <Heading1 size={20} />, keywords: ['h1', 'heading', 'title', 'big', '제목'] },
+    { type: 'h2', label: t.h2Label, description: t.h2Desc, icon: <Heading2 size={20} />, keywords: ['h2', 'heading', 'subtitle', '제목'] },
+    { type: 'h3', label: t.h3Label, description: t.h3Desc, icon: <Heading3 size={20} />, keywords: ['h3', 'heading', 'small', '제목'] },
+    { type: 'paragraph', label: t.textLabel, description: t.textDesc, icon: <Type size={20} />, keywords: ['text', 'paragraph', 'plain', '텍스트'] },
+    { type: 'bullet', label: t.bulletLabel, description: t.bulletDesc, icon: <List size={20} />, keywords: ['bullet', 'list', 'unordered', 'ul', '목록'] },
+    { type: 'numbered', label: t.numberedLabel, description: t.numberedDesc, icon: <ListOrdered size={20} />, keywords: ['numbered', 'list', 'ordered', 'ol', 'number', '번호'] },
+    { type: 'todo', label: t.todoLabel, description: t.todoDesc, icon: <CheckSquare size={20} />, keywords: ['todo', 'task', 'checkbox', 'check', '할일'] },
+    { type: 'quote', label: t.quoteLabel, description: t.quoteDesc, icon: <Quote size={20} />, keywords: ['quote', 'blockquote', '인용'] },
+    { type: 'code', label: t.codeLabel, description: t.codeDesc, icon: <Code2 size={20} />, keywords: ['code', 'snippet', 'programming', '코드'] },
+    { type: 'divider', label: t.dividerLabel, description: t.dividerDesc, icon: <Minus size={20} />, keywords: ['divider', 'separator', 'line', 'hr', '구분선'] },
+    { type: 'table', label: t.tableLabel, description: t.tableDesc, icon: <Table size={20} />, keywords: ['table', 'grid', 'spreadsheet', '표'] },
+    { type: 'image', label: t.imageLabel, description: t.imageDesc, icon: <Image size={20} />, keywords: ['image', 'photo', 'picture', 'img', '이미지'] },
+    { type: 'mathInline', label: t.mathInlineLabel, description: t.mathInlineDesc, icon: <Sigma size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'inline', 'katex', '수식'] },
+    { type: 'mathBlock', label: t.mathBlockLabel, description: t.mathBlockDesc, icon: <Pi size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'block', 'display', 'katex', '수식'] },
+    { type: 'subpage', label: t.subpageLabel, description: t.subpageDesc, icon: <FileText size={20} />, keywords: ['subpage', 'page', 'nested', 'child', 'sub', '하위페이지'] },
+  ];
 
   const filtered = commands.filter(cmd => {
     if (!filter) return true;
@@ -109,7 +111,7 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
         className="fixed z-50 w-72 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-3"
         style={{ top: adjustedPosition.top, left: adjustedPosition.left }}
       >
-        <p className="text-sm text-neutral-400 text-center py-2">No matching commands</p>
+        <p className="text-sm text-neutral-400 text-center py-2">{t.noMatchingCommands}</p>
       </div>
     );
   }
@@ -123,7 +125,7 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
         style={{ top: adjustedPosition.top, left: adjustedPosition.left }}
       >
         <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
-          <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Blocks</p>
+          <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t.blocks}</p>
         </div>
         <div ref={menuRef} className="max-h-72 overflow-y-auto p-1">
           {filtered.map((cmd, i) => (

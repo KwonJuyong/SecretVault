@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import {
   X, UserPlus, Shield, ShieldCheck, Crown, UserMinus, Users,
@@ -16,6 +17,7 @@ interface WorkspaceSettingsProps {
 
 export default function WorkspaceSettings({ workspace, onClose, onUpdated }: WorkspaceSettingsProps) {
   const { email: currentEmail } = useAuth();
+  const { t } = useLanguage();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteUserId, setInviteUserId] = useState('');
@@ -48,17 +50,17 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
         email: inviteUserId.trim(),
         role: inviteRole,
       });
-      setInviteSuccess(`${inviteUserId} has been invited!`);
+      setInviteSuccess(t.invitedSuccess.replace('{email}', inviteUserId));
       setInviteUserId('');
       fetchMembers();
       onUpdated();
     } catch (e: unknown) {
-      setInviteError(e instanceof Error ? e.message : 'Failed to invite member');
+      setInviteError(e instanceof Error ? e.message : t.failedToInvite);
     }
   };
 
   const handleRemoveMember = async (memberUserId: string) => {
-    if (!confirm(`Remove ${memberUserId} from this workspace?`)) return;
+    if (!confirm(t.removeFromWorkspace.replace('{email}', memberUserId))) return;
     try {
       await api.post(`/workspaces/${workspace.id}/members/remove`, {
         email: memberUserId,
@@ -104,7 +106,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
             <span className="text-2xl">{workspace.icon || '\u{1F4BC}'}</span>
             <div>
               <h2 className="text-base font-semibold text-neutral-800 dark:text-white">{workspace.name}</h2>
-              <p className="text-xs text-neutral-400">Workspace Settings</p>
+              <p className="text-xs text-neutral-400">{t.workspaceSettingsTitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400">
@@ -116,14 +118,14 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
         {isAdmin && (
           <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
             <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-              <UserPlus size={16} /> Invite Member
+              <UserPlus size={16} /> {t.inviteMember}
             </h3>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={inviteUserId}
                 onChange={e => setInviteUserId(e.target.value)}
-                placeholder="Email"
+                placeholder={t.emailPlaceholder}
                 className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
               />
@@ -132,14 +134,14 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                 onChange={e => setInviteRole(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none"
               >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
+                <option value="member">{t.member}</option>
+                <option value="admin">{t.admin}</option>
               </select>
               <button
                 onClick={handleInvite}
                 className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition"
               >
-                Invite
+                {t.invite}
               </button>
             </div>
             {inviteError && <p className="text-xs text-red-500 mt-2">{inviteError}</p>}
@@ -150,11 +152,11 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
         {/* Members List */}
         <div className="px-5 py-4">
           <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
-            <Users size={16} /> Members ({members.length})
+            <Users size={16} /> {t.members} ({members.length})
           </h3>
           <div className="max-h-64 overflow-y-auto space-y-1">
             {loading ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">Loading...</p>
+              <p className="text-sm text-neutral-400 py-4 text-center">{t.loading}</p>
             ) : (
               members.map(member => (
                 <div
@@ -168,7 +170,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                     <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
                       {member.display_name || member.email}
                       {member.email === currentEmail && (
-                        <span className="ml-1.5 text-[10px] text-neutral-400 font-normal">(you)</span>
+                        <span className="ml-1.5 text-[10px] text-neutral-400 font-normal">{t.you}</span>
                       )}
                     </p>
                     <p className="text-[11px] text-neutral-400">@{member.email}</p>
@@ -182,13 +184,13 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                           onChange={e => handleUpdateRole(member.email, e.target.value)}
                           className="text-xs px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 opacity-0 group-hover:opacity-100 transition outline-none"
                         >
-                          <option value="member">Member</option>
-                          <option value="admin">Admin</option>
+                          <option value="member">{t.member}</option>
+                          <option value="admin">{t.admin}</option>
                         </select>
                         <button
                           onClick={() => handleRemoveMember(member.email)}
                           className="p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
-                          title="Remove member"
+                          title={t.removeMember}
                         >
                           <UserMinus size={14} />
                         </button>

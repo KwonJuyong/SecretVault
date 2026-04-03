@@ -1,111 +1,114 @@
 'use client';
 
 import { X, Keyboard, Type, Table, Image, Users, FolderTree, Search, Trash2, Shield, Sigma, GripVertical, Code2 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TipsModalProps { onClose: () => void; }
 
 export default function TipsModal({ onClose }: TipsModalProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh] pb-[5vh]" onClick={onClose}>
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-t-2xl z-10">
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">User Guide</h2>
+          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">{t.userGuide}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400"><X size={18} /></button>
         </div>
         <div className="px-5 py-4 space-y-6 text-sm text-neutral-700 dark:text-neutral-300">
-          <Section icon={<Type size={16} className="text-neutral-500" />} title="Slash Commands">
-            <p className="text-neutral-500 dark:text-neutral-400 mb-2">Type <kbd className="sc-kbd">/</kbd> at the start of an empty line:</p>
-            <SC keys="/heading 1~3" desc="Headings (H1, H2, H3)" />
-            <SC keys="/bullet" desc="Bullet list" />
-            <SC keys="/numbered" desc="Numbered list" />
-            <SC keys="/todo" desc="Task list with checkboxes" />
-            <SC keys="/quote" desc="Blockquote" />
-            <SC keys="/code" desc="Code block (with syntax highlighting)" />
-            <SC keys="/table" desc="Insert 3x3 table" />
-            <SC keys="/image" desc="Upload an image" />
-            <SC keys="/divider" desc="Horizontal divider" />
-            <SC keys="/math" desc="Inline or Block LaTeX equation" />
-            <SC keys="/sub-page" desc="Create & link a sub-page" />
+          <Section icon={<Type size={16} className="text-neutral-500" />} title={t.guideSlashCommands}>
+            <p className="text-neutral-500 dark:text-neutral-400 mb-2">{t.guideSlashIntro}</p>
+            <SC keys="/heading 1~3" desc={t.guideSlashHeading} />
+            <SC keys="/bullet" desc={t.guideSlashBullet} />
+            <SC keys="/numbered" desc={t.guideSlashNumbered} />
+            <SC keys="/todo" desc={t.guideSlashTodo} />
+            <SC keys="/quote" desc={t.guideSlashQuote} />
+            <SC keys="/code" desc={t.guideSlashCode} />
+            <SC keys="/table" desc={t.guideSlashTable} />
+            <SC keys="/image" desc={t.guideSlashImage} />
+            <SC keys="/divider" desc={t.guideSlashDivider} />
+            <SC keys="/math" desc={t.guideSlashMath} />
+            <SC keys="/sub-page" desc={t.guideSlashSubpage} />
           </Section>
 
-          <Section icon={<Keyboard size={16} className="text-neutral-500" />} title="Keyboard Shortcuts">
-            <SC keys="Ctrl + B" desc="Bold" />
-            <SC keys="Ctrl + I" desc="Italic" />
-            <SC keys="Ctrl + U" desc="Underline" />
-            <SC keys="Ctrl + Shift + X" desc="Strikethrough" />
-            <SC keys="Ctrl + E" desc="Inline code" />
-            <SC keys="Ctrl + Z" desc="Undo" />
-            <SC keys="Ctrl + Shift + Z" desc="Redo" />
-            <SC keys="Ctrl + K" desc="Search pages" />
+          <Section icon={<Keyboard size={16} className="text-neutral-500" />} title={t.guideKeyboardShortcuts}>
+            <SC keys="Ctrl + B" desc={t.guideBold} />
+            <SC keys="Ctrl + I" desc={t.guideItalic} />
+            <SC keys="Ctrl + U" desc={t.guideUnderline} />
+            <SC keys="Ctrl + Shift + X" desc={t.guideStrikethrough} />
+            <SC keys="Ctrl + E" desc={t.guideInlineCode} />
+            <SC keys="Ctrl + Z" desc={t.guideUndo} />
+            <SC keys="Ctrl + Shift + Z" desc={t.guideRedo} />
+            <SC keys="Ctrl + K" desc={t.guideSearch} />
           </Section>
 
-          <Section icon={<Type size={16} className="text-neutral-500" />} title="Markdown Shortcuts">
-            <p className="text-neutral-500 dark:text-neutral-400 mb-2">Type at start of line + Space:</p>
-            <SC keys="#" desc="Heading 1" />
-            <SC keys="##" desc="Heading 2" />
-            <SC keys="###" desc="Heading 3" />
-            <SC keys="-" desc="Bullet list" />
-            <SC keys="1." desc="Numbered list" />
-            <SC keys="[]" desc="Task list" />
-            <SC keys=">" desc="Blockquote" />
-            <SC keys="```" desc="Code block" />
-            <SC keys="---" desc="Divider" />
-            <p className="text-neutral-500 dark:text-neutral-400 mt-2">Inline formatting:</p>
-            <SC keys="**text**" desc="Bold" />
-            <SC keys="*text*" desc="Italic" />
-            <SC keys="~~text~~" desc="Strikethrough" />
-            <SC keys="`code`" desc="Inline code" />
+          <Section icon={<Type size={16} className="text-neutral-500" />} title={t.guideMarkdownShortcuts}>
+            <p className="text-neutral-500 dark:text-neutral-400 mb-2">{t.guideMarkdownIntro}</p>
+            <SC keys="#" desc={t.guideH1} />
+            <SC keys="##" desc={t.guideH2} />
+            <SC keys="###" desc={t.guideH3} />
+            <SC keys="-" desc={t.guideBulletList} />
+            <SC keys="1." desc={t.guideNumberedList} />
+            <SC keys="[]" desc={t.guideTaskList} />
+            <SC keys=">" desc={t.guideBlockquote} />
+            <SC keys="```" desc={t.guideCodeBlock} />
+            <SC keys="---" desc={t.guideDivider} />
+            <p className="text-neutral-500 dark:text-neutral-400 mt-2">{t.guideInlineFormatting}</p>
+            <SC keys="**text**" desc={t.guideBoldMd} />
+            <SC keys="*text*" desc={t.guideItalicMd} />
+            <SC keys="~~text~~" desc={t.guideStrikethroughMd} />
+            <SC keys="`code`" desc={t.guideInlineCodeMd} />
           </Section>
 
-          <Section icon={<Sigma size={16} className="text-neutral-500" />} title="LaTeX Math">
-            <p className="text-neutral-500 dark:text-neutral-400 mb-2">Type math between dollar signs:</p>
-            <SC keys="$e^2$" desc="Inline math (renders next to text)" />
-            <SC keys="$$\frac{1}{2}$$" desc="Block math (centered display)" />
-            <p className="text-neutral-500 dark:text-neutral-400 mt-2">Or use <kbd className="sc-kbd">/math</kbd> from the slash menu. Click any math to edit it.</p>
+          <Section icon={<Sigma size={16} className="text-neutral-500" />} title={t.guideLatexMath}>
+            <p className="text-neutral-500 dark:text-neutral-400 mb-2">{t.guideLatexIntro}</p>
+            <SC keys="$e^2$" desc={t.guideInlineMath} />
+            <SC keys="$$\frac{1}{2}$$" desc={t.guideBlockMath} />
+            <p className="text-neutral-500 dark:text-neutral-400 mt-2">{t.guideLatexTip}</p>
           </Section>
 
-          <Section icon={<Code2 size={16} className="text-neutral-500" />} title="Code Blocks">
-            <p>Type <kbd className="sc-kbd">/code</kbd> or <kbd className="sc-kbd">```</kbd> to insert. A language selector appears in the toolbar when editing a code block. Supports syntax highlighting for 25+ languages.</p>
+          <Section icon={<Code2 size={16} className="text-neutral-500" />} title={t.guideCodeBlocks}>
+            <p>{t.guideCodeBlocksDesc}</p>
           </Section>
 
-          <Section icon={<Table size={16} className="text-neutral-500" />} title="Tables">
-            <p>Type <kbd className="sc-kbd">/table</kbd> to insert. Controls appear in the toolbar:</p>
+          <Section icon={<Table size={16} className="text-neutral-500" />} title={t.guideTables}>
+            <p>{t.guideTablesDesc}</p>
             <ul className="list-disc pl-5 mt-1 space-y-0.5 text-neutral-500 dark:text-neutral-400">
-              <li>Add/remove rows and columns</li>
-              <li>Toggle header row</li>
-              <li>Merge and split cells</li>
-              <li>Drag column borders to resize</li>
+              <li>{t.guideTablesAdd}</li>
+              <li>{t.guideTablesHeader}</li>
+              <li>{t.guideTablesMerge}</li>
+              <li>{t.guideTablesResize}</li>
             </ul>
-            <p className="mt-1">Use <strong>Tab</strong> / <strong>Shift+Tab</strong> to navigate cells.</p>
+            <p className="mt-1">{t.guideTablesNav}</p>
           </Section>
 
-          <Section icon={<GripVertical size={16} className="text-neutral-500" />} title="Block Reordering">
-            <p>Hover over any block (paragraph, heading, code, etc.) to see <strong>&#9650; &#9660;</strong> buttons on the left. Click to move the block up or down.</p>
+          <Section icon={<GripVertical size={16} className="text-neutral-500" />} title={t.guideBlockReorder}>
+            <p>{t.guideBlockReorderDesc}</p>
           </Section>
 
-          <Section icon={<Image size={16} className="text-neutral-500" />} title="Images">
-            <p><strong>Paste</strong> (Ctrl+V), <strong>drag & drop</strong>, or use <kbd className="sc-kbd">/image</kbd>. Images are encrypted with your content.</p>
+          <Section icon={<Image size={16} className="text-neutral-500" />} title={t.guideImages}>
+            <p>{t.guideImagesDesc}</p>
           </Section>
 
-          <Section icon={<FolderTree size={16} className="text-neutral-500" />} title="Pages & Sub-pages">
-            <p>Click <strong>+</strong> in sidebar to create pages. Use <kbd className="sc-kbd">/sub-page</kbd> to create a linked sub-page at cursor position and navigate to it directly. Sub-pages appear as clickable links in the document. Expand/collapse in sidebar.</p>
+          <Section icon={<FolderTree size={16} className="text-neutral-500" />} title={t.guidePagesSubpages}>
+            <p>{t.guidePagesSubpagesDesc}</p>
           </Section>
 
-          <Section icon={<Search size={16} className="text-neutral-500" />} title="Search">
-            <p>Press <strong>Ctrl+K</strong> to search. Arrow keys navigate, Enter selects.</p>
+          <Section icon={<Search size={16} className="text-neutral-500" />} title={t.guideSearchTitle}>
+            <p>{t.guideSearchDesc}</p>
           </Section>
 
-          <Section icon={<Trash2 size={16} className="text-neutral-500" />} title="Trash">
-            <p>Deleted pages go to Trash. Restore or permanently delete from the sidebar.</p>
+          <Section icon={<Trash2 size={16} className="text-neutral-500" />} title={t.guideTrash}>
+            <p>{t.guideTrashDesc}</p>
           </Section>
 
-          <Section icon={<Users size={16} className="text-neutral-500" />} title="Workspace & Profile">
-            <p>Each user gets a personal workspace. Owners/admins can invite members via Workspace Settings. Click your name at the bottom of the sidebar to edit your display name or sign out.</p>
+          <Section icon={<Users size={16} className="text-neutral-500" />} title={t.guideWorkspaceProfile}>
+            <p>{t.guideWorkspaceProfileDesc}</p>
           </Section>
 
-          <Section icon={<Shield size={16} className="text-neutral-500" />} title="Security">
-            <p><strong>Zero-knowledge encryption</strong>: all content is encrypted in your browser before being sent to the server. The server cannot read your data. If you forget your password, data cannot be recovered.</p>
+          <Section icon={<Shield size={16} className="text-neutral-500" />} title={t.guideSecurity}>
+            <p>{t.guideSecurityDesc}</p>
           </Section>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Editor } from '@tiptap/react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Bold, Italic, Underline, Strikethrough, Code,
   Heading1, Heading2, Heading3,
@@ -15,6 +16,8 @@ interface EditorToolbarProps {
 }
 
 export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
+  const { t } = useLanguage();
+
   if (!editor) return null;
 
   const Btn = ({ active, onClick, children, title }: {
@@ -38,29 +41,29 @@ export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarPr
 
   return (
     <div className="flex items-center gap-0.5 px-8 py-2.5 border-b border-neutral-100 dark:border-neutral-800/60 bg-white dark:bg-[#202020] flex-wrap flex-shrink-0">
-      <Btn onClick={() => editor.chain().focus().undo().run()} title="Undo"><Undo2 size={19} /></Btn>
-      <Btn onClick={() => editor.chain().focus().redo().run()} title="Redo"><Redo2 size={19} /></Btn>
+      <Btn onClick={() => editor.chain().focus().undo().run()} title={t.undo}><Undo2 size={19} /></Btn>
+      <Btn onClick={() => editor.chain().focus().redo().run()} title={t.redo}><Redo2 size={19} /></Btn>
       <Sep />
-      <Btn active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold (Ctrl+B)"><Bold size={19} /></Btn>
-      <Btn active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic (Ctrl+I)"><Italic size={19} /></Btn>
-      <Btn active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline (Ctrl+U)"><Underline size={19} /></Btn>
-      <Btn active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough"><Strikethrough size={19} /></Btn>
-      <Btn active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline Code"><Code size={19} /></Btn>
+      <Btn active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title={t.bold}><Bold size={19} /></Btn>
+      <Btn active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title={t.italic}><Italic size={19} /></Btn>
+      <Btn active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title={t.underline}><Underline size={19} /></Btn>
+      <Btn active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title={t.strikethrough}><Strikethrough size={19} /></Btn>
+      <Btn active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title={t.inlineCode}><Code size={19} /></Btn>
       <Sep />
-      <Btn active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="Heading 1"><Heading1 size={19} /></Btn>
-      <Btn active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2"><Heading2 size={19} /></Btn>
-      <Btn active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Heading 3"><Heading3 size={19} /></Btn>
+      <Btn active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title={t.heading1}><Heading1 size={19} /></Btn>
+      <Btn active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title={t.heading2}><Heading2 size={19} /></Btn>
+      <Btn active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title={t.heading3}><Heading3 size={19} /></Btn>
       <Sep />
-      <Btn active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List"><List size={19} /></Btn>
-      <Btn active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbered List"><ListOrdered size={19} /></Btn>
-      <Btn active={editor.isActive('taskList')} onClick={() => editor.chain().focus().toggleTaskList().run()} title="Task List"><CheckSquare size={19} /></Btn>
+      <Btn active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title={t.bulletList}><List size={19} /></Btn>
+      <Btn active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title={t.numberedList}><ListOrdered size={19} /></Btn>
+      <Btn active={editor.isActive('taskList')} onClick={() => editor.chain().focus().toggleTaskList().run()} title={t.taskList}><CheckSquare size={19} /></Btn>
       <Sep />
-      <Btn active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote"><Quote size={19} /></Btn>
-      <Btn active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block"><CodeSquare size={19} /></Btn>
-      <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Divider"><Minus size={19} /></Btn>
+      <Btn active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title={t.quote}><Quote size={19} /></Btn>
+      <Btn active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title={t.codeBlock}><CodeSquare size={19} /></Btn>
+      <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()} title={t.divider}><Minus size={19} /></Btn>
       <Sep />
-      <Btn onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="Insert Table"><Table size={19} /></Btn>
-      <Btn onClick={onInsertImage} title="Insert Image"><Image size={19} /></Btn>
+      <Btn onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title={t.insertTable}><Table size={19} /></Btn>
+      <Btn onClick={onInsertImage} title={t.insertImage}><Image size={19} /></Btn>
     </div>
   );
 }

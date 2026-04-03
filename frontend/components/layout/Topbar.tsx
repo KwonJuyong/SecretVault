@@ -1,6 +1,8 @@
 'use client';
 
-import { Menu, CheckCircle, Loader2, AlertCircle, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Share2 } from 'lucide-react';
+import { Menu, CheckCircle, Loader2, AlertCircle, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Share2, Globe } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import type { Language } from '@/contexts/LanguageContext';
 
 interface TopbarProps {
   sidebarOpen: boolean;
@@ -13,12 +15,18 @@ interface TopbarProps {
 }
 
 export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageTitle, rightPanelOpen, onToggleRightPanel, onShare }: TopbarProps) {
+  const { lang, setLang, t } = useLanguage();
+
+  const toggleLang = () => {
+    setLang(lang === 'en' ? 'ko' : 'en');
+  };
+
   return (
     <div className="h-12 flex items-center px-6 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#202020] flex-shrink-0">
       <button
         onClick={onToggleSidebar}
         className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200 mr-3"
-        title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+        title={sidebarOpen ? t.closeSidebar : t.openSidebar}
       >
         {sidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeft size={20} />}
       </button>
@@ -37,22 +45,32 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
           {saveStatus === 'saving' && (
             <>
               <Loader2 size={15} className="animate-spin" />
-              <span>Saving...</span>
+              <span>{t.saving}</span>
             </>
           )}
           {saveStatus === 'saved' && (
             <>
               <CheckCircle size={15} className="text-emerald-500" />
-              <span className="text-emerald-600 dark:text-emerald-400">Saved</span>
+              <span className="text-emerald-600 dark:text-emerald-400">{t.saved}</span>
             </>
           )}
           {saveStatus === 'error' && (
             <>
               <AlertCircle size={15} className="text-red-500" />
-              <span className="text-red-500">Save failed</span>
+              <span className="text-red-500">{t.saveFailed}</span>
             </>
           )}
         </div>
+
+        {/* Language toggle */}
+        <button
+          onClick={toggleLang}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[13px] font-medium transition-colors duration-200"
+          title={t.language}
+        >
+          <Globe size={15} />
+          <span>{lang === 'en' ? 'EN' : 'KO'}</span>
+        </button>
 
         {/* Share button */}
         {onShare && (
@@ -61,7 +79,7 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition-colors duration-200"
           >
             <Share2 size={14} />
-            Share
+            {t.share}
           </button>
         )}
 
@@ -70,7 +88,7 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
           <button
             onClick={onToggleRightPanel}
             className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200"
-            title={rightPanelOpen ? 'Close panel' : 'Open panel'}
+            title={rightPanelOpen ? t.closePanel : t.openPanel}
           >
             {rightPanelOpen ? <PanelRightClose size={20} /> : <PanelRight size={20} />}
           </button>

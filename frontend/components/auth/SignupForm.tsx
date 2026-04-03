@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, UserPlus, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Shield, UserPlus, ArrowLeft, Eye, EyeOff, Globe } from 'lucide-react';
 
 export default function SignupForm() {
   const [email, setEmail] = useState('');
@@ -14,20 +15,23 @@ export default function SignupForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
+  const { lang, setLang, t } = useLanguage();
   const router = useRouter();
+
+  const toggleLang = () => setLang(lang === 'en' ? 'ko' : 'en');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !username.trim() || !password.trim()) {
-      setError('Please fill in all required fields.');
+      setError(t.fillAllFields);
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t.passwordsNoMatch);
       return;
     }
     if (password.length < 4) {
-      setError('Password must be at least 4 characters.');
+      setError(t.passwordTooShort);
       return;
     }
     setError('');
@@ -36,7 +40,7 @@ export default function SignupForm() {
       await signup(email, password, username);
       router.push('/login');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Signup failed.');
+      setError(err instanceof Error ? err.message : t.signupFailed);
     } finally {
       setLoading(false);
     }
@@ -57,21 +61,30 @@ export default function SignupForm() {
           </div>
         </div>
         <div className="pr-8">
-          <h2 className="text-[34px] font-bold leading-tight mb-5">
-            Start collaborating<br />securely today.
+          <h2 className="text-[34px] font-bold leading-tight mb-5 whitespace-pre-line">
+            {t.startCollaborating}
           </h2>
           <p className="text-violet-200/60 text-[15px] leading-relaxed max-w-[360px]">
-            Create your free account and set up your encrypted workspace in seconds.
-            Invite your team members and start working together.
+            {t.startCollaboratingDesc}
           </p>
         </div>
         <div className="text-xs text-neutral-500">
-          &copy; {new Date().getFullYear()} SecretVault. All rights reserved.
+          &copy; {new Date().getFullYear()} SecretVault. {t.allRightsReserved}
         </div>
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-16">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-16 relative">
+        {/* Language toggle */}
+        <button
+          onClick={toggleLang}
+          className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[13px] font-medium transition-colors duration-200"
+          title={t.language}
+        >
+          <Globe size={15} />
+          <span>{lang === 'en' ? 'EN' : 'KO'}</span>
+        </button>
+
         <div className="w-full max-w-[420px]">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
@@ -81,8 +94,8 @@ export default function SignupForm() {
             <span className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">SecretVault</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">Create account</h1>
-          <p className="text-base text-neutral-500 dark:text-neutral-400 mb-10">Set up your encrypted workspace</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{t.createAccount}</h1>
+          <p className="text-base text-neutral-500 dark:text-neutral-400 mb-10">{t.setupWorkspace}</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
@@ -93,14 +106,14 @@ export default function SignupForm() {
 
             <div>
               <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
-                Email <span className="text-red-500">*</span>
+                {t.email} <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className={inputClass}
-                placeholder="Enter your email"
+                placeholder={t.enterEmail}
                 autoFocus
                 autoComplete="email"
               />
@@ -108,21 +121,21 @@ export default function SignupForm() {
 
             <div>
               <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
-                Username <span className="text-red-500">*</span>
+                {t.username} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 className={inputClass}
-                placeholder="Choose a display name"
+                placeholder={t.chooseDisplayName}
                 autoComplete="name"
               />
             </div>
 
             <div>
               <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
-                Password <span className="text-red-500">*</span>
+                {t.password} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -130,7 +143,7 @@ export default function SignupForm() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className={`${inputClass} pr-11`}
-                  placeholder="Create a password"
+                  placeholder={t.createPassword}
                   autoComplete="new-password"
                 />
                 <button
@@ -145,14 +158,14 @@ export default function SignupForm() {
 
             <div>
               <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
-                Confirm Password <span className="text-red-500">*</span>
+                {t.confirmPassword} <span className="text-red-500">*</span>
               </label>
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 className={inputClass}
-                placeholder="Confirm your password"
+                placeholder={t.confirmYourPassword}
                 autoComplete="new-password"
               />
             </div>
@@ -167,20 +180,20 @@ export default function SignupForm() {
               ) : (
                 <>
                   <UserPlus size={18} />
-                  Create Account
+                  {t.createAccount}
                 </>
               )}
             </button>
           </form>
 
           <p className="mt-10 text-center text-[15px] text-neutral-500 dark:text-neutral-400">
-            Already have an account?{' '}
+            {t.haveAccount}{' '}
             <button
               onClick={() => router.push('/login')}
               className="text-violet-500 hover:text-violet-600 dark:text-violet-400 font-semibold inline-flex items-center gap-1"
             >
               <ArrowLeft size={15} />
-              Sign in
+              {t.signIn}
             </button>
           </p>
         </div>

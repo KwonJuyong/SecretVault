@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, FileText, X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { PageTreeItem } from '@/lib/types';
 
 interface SearchModalProps {
@@ -12,13 +13,14 @@ interface SearchModalProps {
 }
 
 export default function SearchModal({ pages, decryptedTitles, onSelect, onClose }: SearchModalProps) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const decryptedPages = pages.map(p => ({
     ...p,
-    decryptedTitle: decryptedTitles[p.id] || 'Untitled',
+    decryptedTitle: decryptedTitles[p.id] || t.untitled,
   }));
 
   const filtered = query.trim()
@@ -44,12 +46,12 @@ export default function SearchModal({ pages, decryptedTitles, onSelect, onClose 
         <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-100 dark:border-neutral-800">
           <Search size={18} className="text-neutral-400 flex-shrink-0" />
           <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown}
-            placeholder="Search pages..." className="flex-1 bg-transparent text-neutral-800 dark:text-white text-sm outline-none placeholder-neutral-400" />
+            placeholder={t.searchPages} className="flex-1 bg-transparent text-neutral-800 dark:text-white text-sm outline-none placeholder-neutral-400" />
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400"><X size={16} /></button>
         </div>
         <div className="max-h-80 overflow-y-auto p-2">
           {filtered.length === 0 ? (
-            <div className="py-8 text-center text-neutral-400 text-sm">{query ? 'No pages found.' : 'No pages yet.'}</div>
+            <div className="py-8 text-center text-neutral-400 text-sm">{query ? t.noPagesFound : t.noPagesYetSearch}</div>
           ) : (
             filtered.map((page, i) => (
               <button key={page.id} onClick={() => { onSelect(page.id); onClose(); }}

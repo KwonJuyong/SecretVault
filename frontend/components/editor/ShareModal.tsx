@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { unwrapPageKey, wrapPageKey, importPublicKey } from '@/lib/crypto';
 import { X, UserPlus, Trash2, Globe, Eye, Edit3 } from 'lucide-react';
 
@@ -25,6 +26,7 @@ interface ShareModalProps {
 
 export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: ShareModalProps) {
   const { privateKey } = useAuth();
+  const { t } = useLanguage();
   const [shares, setShares] = useState<PageShareItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -54,11 +56,9 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
     try {
       const sharePayload: Record<string, any> = { email: email.trim(), permission };
 
-      // Try to wrap page key for recipient
       try {
         const pubKeyRes = await api.get<{ public_key: string }>(`/users/${encodeURIComponent(email.trim())}/public-key`);
         if (pubKeyRes.public_key && privateKey) {
-          // Get this page's key grant
           const pageData = await api.get<{ page_key_grant: string | null }>(`/workspaces/${workspaceId}/pages/${pageId}`);
           if (pageData.page_key_grant) {
             const pageKey = await unwrapPageKey(pageData.page_key_grant, privateKey);
@@ -68,15 +68,15 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
           }
         }
       } catch {
-        // Key wrapping failed — share without key grant (v1 pages or no keys)
+        // Key wrapping failed — share without key grant
       }
 
       await api.post(`/workspaces/${workspaceId}/pages/${pageId}/shares`, sharePayload);
-      setSuccess(`Shared with ${email}`);
+      setSuccess(t.sharedWithEmail.replace('{email}', email));
       setEmail('');
       fetchShares();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to share');
+      setError(e instanceof Error ? e.message : t.failedToShare);
     }
   };
 
@@ -92,7 +92,7 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
   };
 
   const handleRemoveShare = async (shareId: number, memberEmail: string) => {
-    if (!confirm(`Remove ${memberEmail}'s access?`)) return;
+    if (!confirm(t.removeAccess.replace('{email}', memberEmail))) return;
     try {
       await api.delete(`/workspaces/${workspaceId}/pages/${pageId}/shares/${shareId}`);
       fetchShares();
@@ -112,9 +112,9 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
           <div>
             <h2 className="text-base font-semibold text-neutral-800 dark:text-white flex items-center gap-2">
-              <Globe size={18} /> Share Page
+              <Globe size={18} /> {t.sharePage}
             </h2>
-            <p className="text-xs text-neutral-400 mt-0.5 truncate max-w-[280px]">{pageTitle || 'Untitled'}</p>
+            <p className="text-xs text-neutral-400 mt-0.5 truncate max-w-[280px]">{pageTitle || t.untitled}</p>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400">
             <X size={18} />
@@ -128,7 +128,7 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="Enter email to share"
+              placeholder={t.enterEmailToShare}
               className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
               onKeyDown={e => e.key === 'Enter' && handleShare()}
             />
@@ -137,14 +137,14 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
               onChange={e => setPermission(e.target.value)}
               className="px-2 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none"
             >
-              <option value="view">View</option>
-              <option value="edit">Edit</option>
+              <option value="view">{t.view}</option>
+              <option value="edit">{t.edit}</option>
             </select>
             <button
               onClick={handleShare}
               className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition flex items-center gap-1.5"
             >
-              <UserPlus size={15} /> Share
+              <UserPlus size={15} /> {t.share}
             </button>
           </div>
           {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
@@ -154,13 +154,13 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
         {/* Shared with */}
         <div className="px-5 py-4">
           <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            Shared with ({shares.length})
+            {t.sharedWith} ({shares.length})
           </h3>
           <div className="max-h-56 overflow-y-auto space-y-1">
             {loading ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">Loading...</p>
+              <p className="text-sm text-neutral-400 py-4 text-center">{t.loading}</p>
             ) : shares.length === 0 ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">Not shared with anyone yet</p>
+              <p className="text-sm text-neutral-400 py-4 text-center">{t.notSharedYet}</p>
             ) : (
               shares.map(share => (
                 <div
@@ -182,8 +182,8 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
                       onChange={e => handleUpdatePermission(share.id, e.target.value)}
                       className="text-xs px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 outline-none"
                     >
-                      <option value="view">View</option>
-                      <option value="edit">Edit</option>
+                      <option value="view">{t.view}</option>
+                      <option value="edit">{t.edit}</option>
                     </select>
                     <button
                       onClick={() => handleRemoveShare(share.id, share.email)}
