@@ -50,6 +50,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
   useEffect(() => { subPageIconsRef.current = subPageIcons; }, [subPageIcons]);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
@@ -224,6 +225,8 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
   // Keep sub-page link titles and icons in sync with actual page data
   useEffect(() => {
     if (!editor || editor.isDestroyed || (!subPageTitles && !subPageIcons)) return;
+    // Skip sync while a block drag is in progress to avoid stale positions
+    if (editor.view.dom.hasAttribute('data-dragging')) return;
     try {
       const { doc } = editor.state;
       const { tr } = editor.state;

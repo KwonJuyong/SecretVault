@@ -13,8 +13,6 @@ function SubPageView({ node }: any) {
       className="subpage-block"
       data-subpage-id={node.attrs.pageId}
       contentEditable={false}
-      draggable={true}
-      data-drag-handle=""
     >
       <div className="subpage-block-icon">
         {icon ? <span className="text-[18px] leading-none">{icon}</span> : <FileText size={20} strokeWidth={1.7} />}
@@ -28,7 +26,7 @@ export const SubPageNode = Node.create({
   name: 'subPageLink',
   group: 'block',
   atom: true,
-  draggable: true,
+  draggable: false,
 
   addAttributes() {
     return {

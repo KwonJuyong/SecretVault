@@ -76,7 +76,7 @@ export const DragHandle = Extension.create({
       if (dropLineEl) dropLineEl.style.display = 'none';
     };
 
-    const resetDragState = () => {
+    const resetDragState = (view?: any) => {
       isDragging = false;
       dragStartPos = null;
       dragNode = null;
@@ -84,6 +84,7 @@ export const DragHandle = Extension.create({
       if (currentBlockDom) {
         currentBlockDom.style.opacity = '';
       }
+      if (view?.dom) view.dom.removeAttribute('data-dragging');
     };
 
     return [
@@ -129,8 +130,9 @@ export const DragHandle = Extension.create({
           handleEl.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             if (currentBlockPos === null) return;
+            dragStartPos = currentBlockPos;
+            dragNode = null;
             try {
-              dragStartPos = currentBlockPos;
               dragNode = editorView.state.doc.nodeAt(currentBlockPos);
             } catch { /* ignore */ }
           });
@@ -141,6 +143,7 @@ export const DragHandle = Extension.create({
               return;
             }
             isDragging = true;
+            editorView.dom.setAttribute('data-dragging', 'true');
             e.dataTransfer!.effectAllowed = 'move';
             e.dataTransfer!.setData('text/plain', '');
             e.dataTransfer!.setData('application/x-block-drag', 'true');
@@ -169,7 +172,7 @@ export const DragHandle = Extension.create({
           });
 
           handleEl.addEventListener('dragend', () => {
-            resetDragState();
+            resetDragState(editorView);
             currentBlockDom = null;
             currentBlockPos = null;
           });
@@ -197,43 +200,54 @@ export const DragHandle = Extension.create({
 
             const target = findDropTarget(editorView, e.clientY);
             if (!target) {
-              resetDragState();
+              resetDragState(editorView);
               return;
             }
 
             try {
               const { state } = editorView;
-              const node = state.doc.nodeAt(dragStartPos);
-              if (!node) { resetDragState(); return; }
 
+              // Verify the dragged node is still at the expected position;
+              // if a concurrent transaction shifted it, search the document.
+              let actualDragPos = dragStartPos;
+              const nodeAtOriginal = state.doc.nodeAt(dragStartPos);
+              if (!nodeAtOriginal || !nodeAtOriginal.eq(dragNode!)) {
+                let found = false;
+                state.doc.forEach((n: PMNode, offset: number) => {
+                  if (!found && dragNode && n.eq(dragNode)) {
+                    actualDragPos = offset;
+                    found = true;
+                  }
+                });
+                if (!found) { resetDragState(editorView); return; }
+              }
+
+              const node = state.doc.nodeAt(actualDragPos)!;
               const nodeSize = node.nodeSize;
               const targetNode = state.doc.nodeAt(target.pos);
-              if (!targetNode) { resetDragState(); return; }
+              if (!targetNode) { resetDragState(editorView); return; }
 
               const targetEnd = target.pos + targetNode.nodeSize;
               const insertPos = target.after ? targetEnd : target.pos;
 
               // Don't drop onto self
-              if (insertPos >= dragStartPos && insertPos <= dragStartPos + nodeSize) {
-                resetDragState();
+              if (insertPos >= actualDragPos && insertPos <= actualDragPos + nodeSize) {
+                resetDragState(editorView);
                 return;
               }
 
               // Use replaceWith approach: build new doc order
               const { tr } = state;
 
-              if (dragStartPos < insertPos) {
+              if (actualDragPos < insertPos) {
                 // Moving down: insert copy first, then delete original
-                // After insert, original positions are unchanged (insert is after)
-                // After delete, positions after delete shift back
                 const copyNode = node.copy(node.content);
                 tr.insert(insertPos, copyNode);
-                tr.delete(dragStartPos, dragStartPos + nodeSize);
+                tr.delete(actualDragPos, actualDragPos + nodeSize);
               } else {
                 // Moving up: delete original first, then insert
-                // After delete, positions after dragStartPos shift back by nodeSize
                 const copyNode = node.copy(node.content);
-                tr.delete(dragStartPos, dragStartPos + nodeSize);
+                tr.delete(actualDragPos, actualDragPos + nodeSize);
                 tr.insert(insertPos, copyNode);
               }
 
@@ -242,7 +256,7 @@ export const DragHandle = Extension.create({
               console.error('Drag drop failed:', err);
             }
 
-            resetDragState();
+            resetDragState(editorView);
           };
 
           const onDragLeave = (e: DragEvent) => {
