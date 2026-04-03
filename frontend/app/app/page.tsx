@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -274,6 +274,13 @@ export default function AppPage() {
     .filter(([id]) => pages.find(p => p.id === id && p.parent_id === activePageId))
     .map(([id, title]) => ({ id, title: title || 'Untitled', icon: pages.find(p => p.id === id)?.icon || '' }));
 
+  // Build icon map for all pages (used to sync sub-page link icons in editor)
+  const subPageIcons = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of pages) { map[p.id] = p.icon || ''; }
+    return map;
+  }, [pages]);
+
   // Workspace switching
   const handleSwitchWorkspace = useCallback((workspace: Workspace) => { switchWorkspace(workspace.id); }, [switchWorkspace]);
   const handleWorkspaceCreated = useCallback((workspace: Workspace) => { switchWorkspace(workspace.id); }, [switchWorkspace]);
@@ -348,6 +355,7 @@ export default function AppPage() {
             onNavigateToPage={loadPage}
             onSaveContent={saveContent}
             subPageTitles={subPageTitles}
+            subPageIcons={subPageIcons}
           />
         ) : (
           <PageTreeView

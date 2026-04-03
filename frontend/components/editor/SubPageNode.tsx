@@ -6,6 +6,7 @@ import { FileText } from 'lucide-react';
 
 function SubPageView({ node }: any) {
   const title = node.attrs.title || 'Untitled';
+  const icon = node.attrs.icon;
 
   return (
     <NodeViewWrapper
@@ -16,7 +17,7 @@ function SubPageView({ node }: any) {
       data-drag-handle=""
     >
       <div className="subpage-block-icon">
-        <FileText size={20} strokeWidth={1.7} />
+        {icon ? <span className="text-[18px] leading-none">{icon}</span> : <FileText size={20} strokeWidth={1.7} />}
       </div>
       <span className="subpage-block-title">{title}</span>
     </NodeViewWrapper>
@@ -43,6 +44,11 @@ export const SubPageNode = Node.create({
           element.textContent?.trim() ||
           'Untitled',
         renderHTML: attributes => ({ 'data-subpage-title': attributes.title }),
+      },
+      icon: {
+        default: '',
+        parseHTML: element => element.getAttribute('data-subpage-icon') || '',
+        renderHTML: attributes => ({ 'data-subpage-icon': attributes.icon }),
       },
     };
   },

@@ -22,6 +22,7 @@ interface EditorProps {
   onNavigateToPage?: (pageId: string) => void;
   onSaveContent?: (html: string) => Promise<void>;
   subPageTitles?: Record<string, string>;
+  subPageIcons?: Record<string, string>;
 }
 
 const emojiCategories = [
@@ -55,7 +56,7 @@ export default function Editor({
   title, content, icon,
   onChangeTitle, onChangeContent, onChangeIcon,
   subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
-  subPageTitles,
+  subPageTitles, subPageIcons,
 }: EditorProps) {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [activeCategory, setActiveCategory] = useState(0);
@@ -141,6 +142,7 @@ export default function Editor({
         onNavigateToPage={onNavigateToPage}
         onSaveContent={onSaveContent}
         subPageTitles={subPageTitles}
+        subPageIcons={subPageIcons}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}

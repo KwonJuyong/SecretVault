@@ -31,20 +31,23 @@ interface TiptapEditorProps {
   onNavigateToPage?: (pageId: string) => void;
   onSaveContent?: (html: string) => Promise<void>;
   subPageTitles?: Record<string, string>;
+  subPageIcons?: Record<string, string>;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subPageTitlesRef = useRef(subPageTitles);
+  const subPageIconsRef = useRef(subPageIcons);
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashPos, setSlashPos] = useState({ top: 0, left: 0 });
   const slashStartRef = useRef<number | null>(null);
 
-  // Keep ref in sync
+  // Keep refs in sync
   useEffect(() => { subPageTitlesRef.current = subPageTitles; }, [subPageTitles]);
+  useEffect(() => { subPageIconsRef.current = subPageIcons; }, [subPageIcons]);
 
   const editor = useEditor({
     extensions: [
@@ -188,52 +191,61 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         editor.commands.setContent(htmlContent || '<p></p>');
         suppressUpdate.current = false;
 
-        // After setting content, sync sub-page link titles immediately
-        const titles = subPageTitlesRef.current;
-        if (titles) {
-          const { doc } = editor.state;
-          const { tr } = editor.state;
-          let modified = false;
-          doc.descendants((node, pos) => {
-            if (node.type.name === 'subPageLink') {
-              const liveTitle = titles[node.attrs.pageId];
-              if (liveTitle && liveTitle !== node.attrs.title) {
-                tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: liveTitle });
-                modified = true;
+        // After setting content, sync sub-page link titles and icons immediately
+        try {
+          const titles = subPageTitlesRef.current;
+          const icons = subPageIconsRef.current;
+          if (titles || icons) {
+            const { doc } = editor.state;
+            const { tr } = editor.state;
+            let modified = false;
+            doc.descendants((node, pos) => {
+              if (node.type.name === 'subPageLink') {
+                const newAttrs = { ...node.attrs };
+                let changed = false;
+                const liveTitle = titles?.[node.attrs.pageId];
+                const liveIcon = icons?.[node.attrs.pageId];
+                if (liveTitle && liveTitle !== node.attrs.title) { newAttrs.title = liveTitle; changed = true; }
+                if (liveIcon !== undefined && liveIcon !== node.attrs.icon) { newAttrs.icon = liveIcon; changed = true; }
+                if (changed) { tr.setNodeMarkup(pos, undefined, newAttrs); modified = true; }
               }
+            });
+            if (modified) {
+              suppressUpdate.current = true;
+              editor.view.dispatch(tr);
+              suppressUpdate.current = false;
             }
-          });
-          if (modified) {
-            suppressUpdate.current = true;
-            editor.view.dispatch(tr);
-            suppressUpdate.current = false;
           }
-        }
+        } catch { /* ignore stale transaction errors during navigation */ }
       });
     }
   }, [content, editor]);
 
-  // Keep sub-page link titles in sync with actual page titles
+  // Keep sub-page link titles and icons in sync with actual page data
   useEffect(() => {
-    if (!editor || editor.isDestroyed || !subPageTitles) return;
-    const { doc } = editor.state;
-    const { tr } = editor.state;
-    let modified = false;
-    doc.descendants((node, pos) => {
-      if (node.type.name === 'subPageLink') {
-        const liveTitle = subPageTitles[node.attrs.pageId];
-        if (liveTitle && liveTitle !== node.attrs.title) {
-          tr.setNodeMarkup(pos, undefined, { ...node.attrs, title: liveTitle });
-          modified = true;
+    if (!editor || editor.isDestroyed || (!subPageTitles && !subPageIcons)) return;
+    try {
+      const { doc } = editor.state;
+      const { tr } = editor.state;
+      let modified = false;
+      doc.descendants((node, pos) => {
+        if (node.type.name === 'subPageLink') {
+          const newAttrs = { ...node.attrs };
+          let changed = false;
+          const liveTitle = subPageTitles?.[node.attrs.pageId];
+          const liveIcon = subPageIcons?.[node.attrs.pageId];
+          if (liveTitle && liveTitle !== node.attrs.title) { newAttrs.title = liveTitle; changed = true; }
+          if (liveIcon !== undefined && liveIcon !== node.attrs.icon) { newAttrs.icon = liveIcon; changed = true; }
+          if (changed) { tr.setNodeMarkup(pos, undefined, newAttrs); modified = true; }
         }
+      });
+      if (modified) {
+        suppressUpdate.current = true;
+        editor.view.dispatch(tr);
+        suppressUpdate.current = false;
       }
-    });
-    if (modified) {
-      suppressUpdate.current = true;
-      editor.view.dispatch(tr);
-      suppressUpdate.current = false;
-    }
-  }, [editor, subPageTitles]);
+    } catch { /* ignore stale transaction errors during navigation */ }
+  }, [editor, subPageTitles, subPageIcons]);
 
   const handleInsertImage = useCallback(() => {
     fileInputRef.current?.click();
