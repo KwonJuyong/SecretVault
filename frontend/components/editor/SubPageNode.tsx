@@ -27,6 +27,7 @@ export const SubPageNode = Node.create({
   group: 'block',
   atom: true,
   draggable: true,
+  selectable: true,
 
   addAttributes() {
     return {

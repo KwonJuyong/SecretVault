@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { TextSelection, NodeSelection } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -85,6 +86,21 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       scrollThreshold: 100,
       scrollMargin: 80,
       handleKeyDown: (view, event) => {
+        // If a subpage atom block is NodeSelected, prevent printable keys and
+        // Backspace/Delete from replacing or deleting it. Instead, nudge the
+        // cursor to just after the block so the user can keep typing normally.
+        const { selection } = view.state;
+        if (selection instanceof NodeSelection && selection.node.type.name === 'subPageLink') {
+          const isPrintable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+          if (isPrintable || event.key === 'Backspace' || event.key === 'Delete') {
+            const afterPos = selection.$to.pos;
+            const resolved = view.state.doc.resolve(afterPos);
+            const newSel = TextSelection.near(resolved);
+            view.dispatch(view.state.tr.setSelection(newSel));
+            return true;
+          }
+        }
+
         if (event.key === '/' && !slashOpen) {
           const { $from } = view.state.selection;
           const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
@@ -198,6 +214,9 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       suppressUpdate.current = true;
       editor.commands.setContent(htmlContent || '<p></p>');
       suppressUpdate.current = false;
+      // Move cursor to the end so typing doesn't land on (and overwrite) an atom block
+      // such as a subpage link that sits at the top of the document.
+      editor.commands.focus('end');
 
       // After setting content, sync sub-page link titles and icons immediately
       try {
