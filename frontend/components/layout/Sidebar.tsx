@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
+import { unwrapPageKey, decrypt } from '@/lib/crypto';
 import type { PageTreeItem, Workspace, SharedPageItem } from '@/lib/types';
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
 import {
   Plus, Search, FileText, ChevronRight, ChevronDown,
-  Trash2, LogOut, HelpCircle, Save, Share2, Eye, Edit3, Users,
+  Trash2, LogOut, HelpCircle, Save, Share2, Users,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,7 +36,7 @@ export default function Sidebar({
   onSwitchWorkspace, onOpenWorkspaceSettings, onCreateWorkspace,
   currentWorkspaceId, onOpenSharedPage, decryptedTitles = {},
 }: SidebarProps) {
-  const { email, displayName, logout } = useAuth();
+  const { email, displayName, logout, privateKey } = useAuth();
   const { t } = useLanguage();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -43,10 +44,23 @@ export default function Sidebar({
   const [editDisplayName, setEditDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
   const [sharedPages, setSharedPages] = useState<SharedPageItem[]>([]);
+  const [sharedTitles, setSharedTitles] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    api.get<SharedPageItem[]>('/shared-pages').then(setSharedPages).catch(() => {});
-  }, [currentWorkspaceId]);
+    api.get<SharedPageItem[]>('/shared-pages').then(async (pages) => {
+      setSharedPages(pages);
+      if (!privateKey) return;
+      const titles: Record<string, string> = {};
+      await Promise.allSettled(pages.map(async (sp) => {
+        if (!sp.page_key_grant) return;
+        try {
+          const pageKey = await unwrapPageKey(sp.page_key_grant, privateKey);
+          titles[sp.id] = sp.title ? await decrypt(sp.title, pageKey) : '';
+        } catch { /* leave as empty */ }
+      }));
+      setSharedTitles(titles);
+    }).catch(() => {});
+  }, [currentWorkspaceId, privateKey]);
 
   if (collapsed) return null;
 
@@ -159,14 +173,13 @@ export default function Sidebar({
                 }`}
                 onClick={() => onOpenSharedPage?.(sp.id)}
               >
-                <span className="flex-shrink-0 text-base leading-none">{sp.icon || '\u{1F4C4}'}</span>
+                <span className="flex-shrink-0 text-base leading-none">{sp.icon || '📄'}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-[13px] font-medium">{sp.title || t.untitled}</p>
+                  <p className="truncate text-[13px] font-medium">{sharedTitles[sp.id] || t.untitled}</p>
                   {sp.shared_by_email && (
                     <p className="truncate text-[11px] text-neutral-400">{sp.shared_by_email}</p>
                   )}
                 </div>
-                {sp.permission === 'view' ? <Eye size={12} className="text-neutral-400 flex-shrink-0" /> : <Edit3 size={12} className="text-neutral-400 flex-shrink-0" />}
               </div>
             ))
           )}

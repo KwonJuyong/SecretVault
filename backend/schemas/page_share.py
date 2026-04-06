@@ -32,3 +32,4 @@ class SharedPageItem(BaseModel):
     permission: str
     shared_by_email: Optional[str] = None
     updated_at: Optional[datetime] = None
+    page_key_grant: Optional[str] = None

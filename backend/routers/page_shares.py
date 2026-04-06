@@ -183,6 +183,11 @@ def list_shared_pages(
     result = []
     for share, page, ws in shares:
         shared_by = db.query(User).filter(User.id == share.shared_by).first()
+        grant = (
+            db.query(PageKeyGrant)
+            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == current_user.id)
+            .first()
+        )
         result.append(SharedPageItem(
             id=str(page.id),
             title=page.title,
@@ -192,6 +197,7 @@ def list_shared_pages(
             permission=share.permission,
             shared_by_email=shared_by.email if shared_by else None,
             updated_at=page.updated_at,
+            page_key_grant=grant.encrypted_page_key if grant else None,
         ))
     return result
 

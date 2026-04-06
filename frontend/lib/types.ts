@@ -62,6 +62,7 @@ export interface SharedPageItem {
   permission: string;
   shared_by_email: string | null;
   updated_at: string | null;
+  page_key_grant: string | null;
 }
 
 export interface WorkspaceMember {
