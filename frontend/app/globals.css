@@ -467,15 +467,15 @@ textarea {
 .subpage-block {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  margin: 8px 0;
-  border-radius: 10px;
+  gap: 16px;
+  padding: 14px 20px;
+  margin: 10px 0;
+  border-radius: 12px;
   background: rgba(55, 53, 47, 0.024);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
   font-weight: 500;
-  font-size: 1em;
+  font-size: 1.05em;
   color: rgb(55, 53, 47);
   border: 1px solid rgba(55, 53, 47, 0.06);
 }
@@ -489,9 +489,9 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
   background: rgba(55, 53, 47, 0.055);
   color: rgba(55, 53, 47, 0.5);
   flex-shrink: 0;

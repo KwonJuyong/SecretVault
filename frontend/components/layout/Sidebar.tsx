@@ -75,7 +75,7 @@ export default function Sidebar({
     return (
       <div key={page.id}>
         <div
-          className={`group flex items-center gap-2 py-[7px] px-2.5 mx-2 rounded-lg cursor-pointer transition-colors text-[13.5px] ${
+          className={`group flex items-center gap-2 py-[9px] px-2.5 mx-2 rounded-lg cursor-pointer transition-colors text-[14px] ${
             isActive
               ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300'
               : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
@@ -86,16 +86,16 @@ export default function Sidebar({
           onMouseLeave={() => setHoveredId(null)}
         >
           {children.length > 0 || page.has_children ? (
-            <button onClick={e => { e.stopPropagation(); toggleExpand(page.id); }} className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex-shrink-0">
-              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            <button onClick={e => { e.stopPropagation(); toggleExpand(page.id); }} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex-shrink-0">
+              {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
             </button>
-          ) : (<span className="w-4 flex-shrink-0" />)}
+          ) : (<span className="w-5 flex-shrink-0" />)}
           <span className="flex-shrink-0 text-base leading-none">{page.icon || ''}</span>
           <span className="truncate flex-1">{title}</span>
           {isHovered && (
             <div className="flex items-center gap-0 flex-shrink-0">
-              <button onClick={e => { e.stopPropagation(); onDeletePage(page.id); }} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition"><Trash2 size={13} /></button>
-              <button onClick={e => { e.stopPropagation(); onCreatePage(page.id); }} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 transition"><Plus size={13} /></button>
+              <button onClick={e => { e.stopPropagation(); onDeletePage(page.id); }} className="p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition"><Trash2 size={14} /></button>
+              <button onClick={e => { e.stopPropagation(); onCreatePage(page.id); }} className="p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 transition"><Plus size={14} /></button>
             </div>
           )}
         </div>
@@ -113,18 +113,18 @@ export default function Sidebar({
 
       {/* Search */}
       <div className="px-3 py-2">
-        <button onClick={onOpenSearch} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-          <Search size={16} /><span>{t.search}</span>
-          <kbd className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-neutral-200/80 dark:bg-neutral-700 text-neutral-400 font-mono">Ctrl+K</kbd>
+        <button onClick={onOpenSearch} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
+          <Search size={17} /><span>{t.search}</span>
+          <kbd className="ml-auto text-[11px] px-1.5 py-0.5 rounded bg-neutral-200/80 dark:bg-neutral-700 text-neutral-400 font-mono">Ctrl+K</kbd>
         </button>
       </div>
 
       {/* ═══ TOP: My Pages ═══ */}
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex items-center justify-between px-5 pt-3 pb-1.5">
-          <span className="text-[10.5px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{t.myPages}</span>
-          <button onClick={() => onCreatePage()} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition">
-            <Plus size={14} />
+          <span className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{t.myPages}</span>
+          <button onClick={() => onCreatePage()} className="p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition">
+            <Plus size={16} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto pb-1">
@@ -172,16 +172,16 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="px-3 py-2 border-t border-neutral-200/50 dark:border-neutral-800 space-y-0.5">
-        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-          <Trash2 size={16} /><span>{t.trash}</span>
+        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
+          <Trash2 size={17} /><span>{t.trash}</span>
         </button>
-        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-          <HelpCircle size={16} /><span>{t.help}</span>
+        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
+          <HelpCircle size={17} /><span>{t.help}</span>
         </button>
 
         <div className="relative">
-          <button onClick={openUserMenu} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-            <div className="w-6 h-6 rounded-full bg-neutral-400 dark:bg-neutral-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+          <button onClick={openUserMenu} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
+            <div className="w-7 h-7 rounded-full bg-neutral-400 dark:bg-neutral-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
               {(displayName || email || '?').charAt(0).toUpperCase()}
             </div>
             <span className="truncate">{displayName || email}</span>

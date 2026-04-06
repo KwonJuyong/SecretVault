@@ -22,13 +22,13 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
   };
 
   return (
-    <div className="h-12 flex items-center px-6 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#202020] flex-shrink-0">
+    <div className="h-14 flex items-center px-6 border-b border-[rgba(55,53,47,0.06)] dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#202020] flex-shrink-0">
       <button
         onClick={onToggleSidebar}
-        className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200 mr-3"
+        className="p-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200 mr-3"
         title={sidebarOpen ? t.closeSidebar : t.openSidebar}
       >
-        {sidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeft size={20} />}
+        {sidebarOpen ? <PanelLeftClose size={22} /> : <PanelLeft size={22} />}
       </button>
 
       {pageTitle && (
@@ -44,19 +44,19 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
         <div className="flex items-center gap-2 text-sm text-neutral-400 mr-2">
           {saveStatus === 'saving' && (
             <>
-              <Loader2 size={15} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin" />
               <span>{t.saving}</span>
             </>
           )}
           {saveStatus === 'saved' && (
             <>
-              <CheckCircle size={15} className="text-emerald-500" />
+              <CheckCircle size={16} className="text-emerald-500" />
               <span className="text-emerald-600 dark:text-emerald-400">{t.saved}</span>
             </>
           )}
           {saveStatus === 'error' && (
             <>
-              <AlertCircle size={15} className="text-red-500" />
+              <AlertCircle size={16} className="text-red-500" />
               <span className="text-red-500">{t.saveFailed}</span>
             </>
           )}
@@ -65,10 +65,10 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
         {/* Language toggle */}
         <button
           onClick={toggleLang}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[13px] font-medium transition-colors duration-200"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[14px] font-medium transition-colors duration-200"
           title={t.language}
         >
-          <Globe size={15} />
+          <Globe size={17} />
           <span>{lang === 'en' ? 'EN' : 'KO'}</span>
         </button>
 
@@ -76,9 +76,9 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
         {onShare && (
           <button
             onClick={onShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition-colors duration-200"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[14px] font-medium transition-colors duration-200"
           >
-            <Share2 size={14} />
+            <Share2 size={16} />
             {t.share}
           </button>
         )}
@@ -87,10 +87,10 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
         {onToggleRightPanel && (
           <button
             onClick={onToggleRightPanel}
-            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200"
+            className="p-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200"
             title={rightPanelOpen ? t.closePanel : t.openPanel}
           >
-            {rightPanelOpen ? <PanelRightClose size={20} /> : <PanelRight size={20} />}
+            {rightPanelOpen ? <PanelRightClose size={22} /> : <PanelRight size={22} />}
           </button>
         )}
       </div>

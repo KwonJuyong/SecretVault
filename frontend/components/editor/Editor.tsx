@@ -15,6 +15,7 @@ interface EditorProps {
   title: string;
   content: string;
   icon: string;
+  pageId?: string | null;
   onChangeTitle: (title: string) => void;
   onChangeContent: (content: string) => void;
   onChangeIcon: (icon: string) => void;
@@ -54,7 +55,7 @@ const emojiCategories = [
 ];
 
 export default function Editor({
-  title, content, icon,
+  title, content, icon, pageId,
   onChangeTitle, onChangeContent, onChangeIcon,
   subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
   subPageTitles, subPageIcons,
@@ -145,6 +146,7 @@ export default function Editor({
         onSaveContent={onSaveContent}
         subPageTitles={subPageTitles}
         subPageIcons={subPageIcons}
+        pageId={pageId}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}

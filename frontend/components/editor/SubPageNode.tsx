@@ -26,7 +26,7 @@ export const SubPageNode = Node.create({
   name: 'subPageLink',
   group: 'block',
   atom: true,
-  draggable: false,
+  draggable: true,
 
   addAttributes() {
     return {

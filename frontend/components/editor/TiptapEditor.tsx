@@ -32,13 +32,15 @@ interface TiptapEditorProps {
   onSaveContent?: (html: string) => Promise<void>;
   subPageTitles?: Record<string, string>;
   subPageIcons?: Record<string, string>;
+  pageId?: string | null;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons, pageId }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subPageTitlesRef = useRef(subPageTitles);
   const subPageIconsRef = useRef(subPageIcons);
+  const prevPageIdRef = useRef<string | null | undefined>(undefined);
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
@@ -177,50 +179,54 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
     },
   });
 
-  // Sync external content changes into editor (deferred to avoid flushSync warning)
+  // Sync external content changes into editor only when navigating to a different page.
+  // Gating on pageId (not content) prevents overwriting the editor during user edits,
+  // which was causing subpage blocks to disappear after typing.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
+    // If same page, this is a round-trip from onChange → parent state → prop. Skip.
+    if (pageId === prevPageIdRef.current) return;
+    prevPageIdRef.current = pageId;
+
     let htmlContent = content;
     if (content && !isHtmlContent(content)) {
       htmlContent = markdownToHtml(content);
     }
-    const currentHtml = editor.getHTML();
-    if (htmlContent !== currentHtml) {
-      requestAnimationFrame(() => {
-        if (editor.isDestroyed) return;
-        suppressUpdate.current = true;
-        editor.commands.setContent(htmlContent || '<p></p>');
-        suppressUpdate.current = false;
 
-        // After setting content, sync sub-page link titles and icons immediately
-        try {
-          const titles = subPageTitlesRef.current;
-          const icons = subPageIconsRef.current;
-          if (titles || icons) {
-            const { doc } = editor.state;
-            const { tr } = editor.state;
-            let modified = false;
-            doc.descendants((node, pos) => {
-              if (node.type.name === 'subPageLink') {
-                const newAttrs = { ...node.attrs };
-                let changed = false;
-                const liveTitle = titles?.[node.attrs.pageId];
-                const liveIcon = icons?.[node.attrs.pageId];
-                if (liveTitle && liveTitle !== node.attrs.title) { newAttrs.title = liveTitle; changed = true; }
-                if (liveIcon !== undefined && liveIcon !== node.attrs.icon) { newAttrs.icon = liveIcon; changed = true; }
-                if (changed) { tr.setNodeMarkup(pos, undefined, newAttrs); modified = true; }
-              }
-            });
-            if (modified) {
-              suppressUpdate.current = true;
-              editor.view.dispatch(tr);
-              suppressUpdate.current = false;
+    requestAnimationFrame(() => {
+      if (editor.isDestroyed) return;
+      suppressUpdate.current = true;
+      editor.commands.setContent(htmlContent || '<p></p>');
+      suppressUpdate.current = false;
+
+      // After setting content, sync sub-page link titles and icons immediately
+      try {
+        const titles = subPageTitlesRef.current;
+        const icons = subPageIconsRef.current;
+        if (titles || icons) {
+          const { doc } = editor.state;
+          const { tr } = editor.state;
+          let modified = false;
+          doc.descendants((node, pos) => {
+            if (node.type.name === 'subPageLink') {
+              const newAttrs = { ...node.attrs };
+              let changed = false;
+              const liveTitle = titles?.[node.attrs.pageId];
+              const liveIcon = icons?.[node.attrs.pageId];
+              if (liveTitle && liveTitle !== node.attrs.title) { newAttrs.title = liveTitle; changed = true; }
+              if (liveIcon !== undefined && liveIcon !== node.attrs.icon) { newAttrs.icon = liveIcon; changed = true; }
+              if (changed) { tr.setNodeMarkup(pos, undefined, newAttrs); modified = true; }
             }
+          });
+          if (modified) {
+            suppressUpdate.current = true;
+            editor.view.dispatch(tr);
+            suppressUpdate.current = false;
           }
-        } catch { /* ignore stale transaction errors during navigation */ }
-      });
-    }
-  }, [content, editor]);
+        }
+      } catch { /* ignore stale transaction errors during navigation */ }
+    });
+  }, [pageId, content, editor]);
 
   // Keep sub-page link titles and icons in sync with actual page data
   useEffect(() => {

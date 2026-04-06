@@ -347,6 +347,7 @@ export default function AppPage() {
             title={editTitle}
             content={editContent}
             icon={editIcon}
+            pageId={activePageId}
             onChangeTitle={setEditTitle}
             onChangeContent={setEditContent}
             onChangeIcon={setEditIcon}
