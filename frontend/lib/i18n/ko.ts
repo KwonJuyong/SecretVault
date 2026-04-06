@@ -72,11 +72,17 @@ const ko: Translations = {
 
   // Right Panel
   overview: '개요',
+  contents: '목차',
+  noHeadings: '제목 없음',
   pages: '페이지',
   noPages: '페이지 없음',
   export: '내보내기',
   markdownExport: 'Markdown (.md)',
   pdfExport: 'PDF',
+
+  // Width toggle
+  wideLayout: '넓은 레이아웃',
+  narrowLayout: '좁은 레이아웃',
 
   // Trash Panel
   trashEmpty: '휴지통이 비어 있습니다',

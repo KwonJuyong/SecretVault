@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from config import CORS_ORIGINS
 from database import engine, Base
 from models import User, Workspace, WorkspaceMember, Page
 from routers import auth, workspaces, pages, page_shares, ws
@@ -41,7 +42,7 @@ app = FastAPI(title="SecretVault API", version="2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

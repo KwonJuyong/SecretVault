@@ -71,3 +71,9 @@ export interface WorkspaceMember {
   role: string;
   joined_at: string | null;
 }
+
+export interface TocHeading {
+  id: string;
+  level: number;
+  text: string;
+}

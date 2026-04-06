@@ -70,11 +70,17 @@ const en = {
 
   // Right Panel
   overview: 'Overview',
+  contents: 'Contents',
+  noHeadings: 'No headings',
   pages: 'Pages',
   noPages: 'No pages',
   export: 'Export',
   markdownExport: 'Markdown (.md)',
   pdfExport: 'PDF',
+
+  // Width toggle
+  wideLayout: 'Wide layout',
+  narrowLayout: 'Narrow layout',
 
   // Trash Panel
   trashEmpty: 'Trash is empty',

@@ -8,7 +8,7 @@ import {
   encrypt, decrypt,
   generatePageKey, wrapPageKey, unwrapPageKey,
 } from '@/lib/crypto';
-import type { PageTreeItem, PageData, Workspace } from '@/lib/types';
+import type { PageTreeItem, PageData, Workspace, TocHeading } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import RightPanel from '@/components/layout/RightPanel';
@@ -43,6 +43,13 @@ export default function AppPage() {
   const [showShare, setShowShare] = useState(false);
   const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
   const [subPageTitles, setSubPageTitles] = useState<Record<string, string>>({});
+  const [tocHeadings, setTocHeadings] = useState<TocHeading[]>([]);
+  const [fullWidth, setFullWidth] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('editorFullWidth') === 'true';
+    }
+    return false;
+  });
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageKeyCache = useRef<Map<string, CryptoKey>>(new Map());
@@ -125,6 +132,7 @@ export default function AppPage() {
       setEditIcon(data.icon || '');
       setSharedPagePermission(null);
       setSaveStatus('idle');
+      setTocHeadings([]);
       isFirstLoad.current = true;
     } catch (e) { console.error('Failed to load page:', e); }
   }, [workspaceId, getPageKey]);
@@ -308,6 +316,14 @@ export default function AppPage() {
   }, [editTitle, editContent]);
   const handleExportPDF = useCallback(() => { exportPDF(editTitle || 'Untitled', editContent); }, [editTitle, editContent]);
 
+  const handleToggleWidth = useCallback(() => {
+    setFullWidth(prev => {
+      const next = !prev;
+      localStorage.setItem('editorFullWidth', String(next));
+      return next;
+    });
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setShowSearch(true); } };
@@ -356,6 +372,8 @@ export default function AppPage() {
           rightPanelOpen={rightPanelOpen}
           onToggleRightPanel={activePageId ? () => setRightPanelOpen(!rightPanelOpen) : undefined}
           onShare={activePageId ? () => setShowShare(true) : undefined}
+          fullWidth={fullWidth}
+          onToggleWidth={activePageId ? handleToggleWidth : undefined}
         />
 
         {activePageId ? (
@@ -373,6 +391,8 @@ export default function AppPage() {
             onSaveContent={saveContent}
             subPageTitles={subPageTitles}
             subPageIcons={subPageIcons}
+            onHeadingsChange={setTocHeadings}
+            fullWidth={fullWidth}
           />
         ) : (
           <PageTreeView
@@ -386,7 +406,7 @@ export default function AppPage() {
       </div>
 
       {activePageId && rightPanelOpen && (
-        <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} pages={pages} decryptedTitles={subPageTitles} activePageId={activePageId} onSelectPage={loadPage} />
+        <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} pages={pages} decryptedTitles={subPageTitles} activePageId={activePageId} onSelectPage={loadPage} tocHeadings={tocHeadings} />
       )}
 
       {showSearch && <SearchModal pages={pages} decryptedTitles={subPageTitles} onSelect={loadPage} onClose={() => setShowSearch(false)} />}

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { FileDown, FileText, ChevronRight, X } from 'lucide-react';
+import { FileDown, FileText, ChevronRight, X, AlignLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { PageTreeItem } from '@/lib/types';
+import type { PageTreeItem, TocHeading } from '@/lib/types';
 
 interface RightPanelProps {
   content: string;
@@ -15,11 +15,12 @@ interface RightPanelProps {
   decryptedTitles: Record<string, string>;
   activePageId: string | null;
   onSelectPage: (pageId: string) => void;
+  tocHeadings?: TocHeading[];
 }
 
 export default function RightPanel({
   content, title, onClose, onExportMarkdown, onExportPDF,
-  pages, decryptedTitles, activePageId, onSelectPage,
+  pages, decryptedTitles, activePageId, onSelectPage, tocHeadings = [],
 }: RightPanelProps) {
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -80,6 +81,29 @@ export default function RightPanel({
           <X size={14} />
         </button>
       </div>
+
+      {/* Table of Contents */}
+      {tocHeadings.length > 0 && (
+        <div className="p-2 border-b border-neutral-200/50 dark:border-neutral-800">
+          <div className="flex items-center gap-1.5 px-2 mb-1.5">
+            <AlignLeft size={10} className="text-neutral-400 dark:text-neutral-500 flex-shrink-0" />
+            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{t.contents}</p>
+          </div>
+          <div className="space-y-0.5">
+            {tocHeadings.map((h) => (
+              <button
+                key={h.id}
+                onClick={() => document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="w-full text-left py-[4px] px-2 rounded-md text-[12px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors truncate"
+                style={{ paddingLeft: `${(h.level - 1) * 12 + 8}px` }}
+                title={h.text}
+              >
+                <span className={h.level === 1 ? 'font-medium' : 'font-normal'}>{h.text}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Page tree */}
       <div className="flex-1 overflow-y-auto p-2">

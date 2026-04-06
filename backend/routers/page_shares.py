@@ -16,7 +16,7 @@ router = APIRouter(tags=["page-shares"])
 
 
 def _verify_page_owner(workspace_id: str, page_id: str, user: User, db: Session):
-    """Verify user has access to the workspace and the page exists."""
+    """Verify user is the page creator or a workspace owner/admin."""
     ws_uuid = uuid.UUID(workspace_id)
     membership = (
         db.query(WorkspaceMember)
@@ -33,6 +33,10 @@ def _verify_page_owner(workspace_id: str, page_id: str, user: User, db: Session)
     )
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
+
+    # Only page creator or workspace owner/admin can manage shares
+    if page.created_by != user.id and membership.role not in ("owner", "admin"):
+        raise HTTPException(status_code=403, detail="Only the page creator or workspace admin can manage shares")
 
     return ws_uuid, page
 

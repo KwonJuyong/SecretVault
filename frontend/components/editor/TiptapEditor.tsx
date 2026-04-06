@@ -22,6 +22,7 @@ import { MathInline, MathBlock } from './MathExtension';
 import { SubPageNode } from './SubPageNode';
 import { DragHandle } from './DragHandle';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
+import type { TocHeading } from '@/lib/types';
 
 const lowlight = createLowlight(common);
 
@@ -34,14 +35,17 @@ interface TiptapEditorProps {
   subPageTitles?: Record<string, string>;
   subPageIcons?: Record<string, string>;
   pageId?: string | null;
+  onHeadingsChange?: (headings: TocHeading[]) => void;
+  fullWidth?: boolean;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons, pageId }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons, pageId, onHeadingsChange, fullWidth }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subPageTitlesRef = useRef(subPageTitles);
   const subPageIconsRef = useRef(subPageIcons);
   const prevPageIdRef = useRef<string | null | undefined>(undefined);
+  const onHeadingsChangeRef = useRef(onHeadingsChange);
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
@@ -51,6 +55,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
   // Keep refs in sync
   useEffect(() => { subPageTitlesRef.current = subPageTitles; }, [subPageTitles]);
   useEffect(() => { subPageIconsRef.current = subPageIcons; }, [subPageIcons]);
+  useEffect(() => { onHeadingsChangeRef.current = onHeadingsChange; }, [onHeadingsChange]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -192,6 +197,22 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       }
 
       onChange(editor.getHTML());
+
+      // Sync heading IDs and emit TOC
+      requestAnimationFrame(() => {
+        if (editor.isDestroyed) return;
+        const headingEls = editor.view.dom.querySelectorAll('h1, h2, h3');
+        const headings: TocHeading[] = [];
+        headingEls.forEach((el, idx) => {
+          const text = el.textContent?.trim() || '';
+          if (text) {
+            const id = `toc-${idx}`;
+            (el as HTMLElement).id = id;
+            headings.push({ id, level: parseInt(el.tagName[1]), text });
+          }
+        });
+        onHeadingsChangeRef.current?.(headings);
+      });
     },
   });
 
@@ -244,6 +265,19 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }
       } catch { /* ignore stale transaction errors during navigation */ }
+
+      // Sync heading IDs after page load
+      const headingEls = editor.view.dom.querySelectorAll('h1, h2, h3');
+      const headings: TocHeading[] = [];
+      headingEls.forEach((el, idx) => {
+        const text = el.textContent?.trim() || '';
+        if (text) {
+          const id = `toc-${idx}`;
+          (el as HTMLElement).id = id;
+          headings.push({ id, level: parseInt(el.tagName[1]), text });
+        }
+      });
+      onHeadingsChangeRef.current?.(headings);
     });
   }, [pageId, content, editor]);
 
@@ -390,7 +424,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[900px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
+        <div className={`${fullWidth ? 'max-w-[1400px]' : 'max-w-[900px]'} mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]`}>
           <EditorContent editor={editor} />
         </div>
       </div>

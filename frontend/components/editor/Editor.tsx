@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import TiptapEditor from './TiptapEditor';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText, Plus, ChevronRight } from 'lucide-react';
+import type { TocHeading } from '@/lib/types';
 
 interface SubPageItem {
   id: string;
@@ -25,6 +26,8 @@ interface EditorProps {
   onSaveContent?: (html: string) => Promise<void>;
   subPageTitles?: Record<string, string>;
   subPageIcons?: Record<string, string>;
+  onHeadingsChange?: (headings: TocHeading[]) => void;
+  fullWidth?: boolean;
 }
 
 const emojiCategories = [
@@ -59,6 +62,7 @@ export default function Editor({
   onChangeTitle, onChangeContent, onChangeIcon,
   subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
   subPageTitles, subPageIcons,
+  onHeadingsChange, fullWidth,
 }: EditorProps) {
   const { t } = useLanguage();
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -80,7 +84,7 @@ export default function Editor({
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Title area - centered with max-width */}
       <div className="w-full bg-white dark:bg-[#191919]">
-        <div className="max-w-[900px] mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3">
+        <div className={`${fullWidth ? 'max-w-[1400px]' : 'max-w-[900px]'} mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3`}>
           {/* Icon picker */}
           <div className="relative mb-4 inline-block">
             <button
@@ -147,6 +151,8 @@ export default function Editor({
         subPageTitles={subPageTitles}
         subPageIcons={subPageIcons}
         pageId={pageId}
+        onHeadingsChange={onHeadingsChange}
+        fullWidth={fullWidth}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}
