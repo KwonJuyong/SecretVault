@@ -201,6 +201,22 @@ export default function AppPage() {
     } catch (e) { console.error('Failed to create page:', e); }
   }, [workspaceId, publicKey, fetchPages, loadPage]);
 
+  // Decrypt a page key by fetching its grant (used by ShareModal for recursive key sharing)
+  const getDecryptedPageKey = useCallback(async (pid: string): Promise<CryptoKey | null> => {
+    if (!workspaceId || !privateKey) return null;
+    let key = pageKeyCache.current.get(pid);
+    if (!key) {
+      try {
+        const data = await api.get<{ page_key_grant: string | null }>(`/workspaces/${workspaceId}/pages/${pid}`);
+        if (data.page_key_grant) {
+          key = await unwrapPageKey(data.page_key_grant, privateKey);
+          pageKeyCache.current.set(pid, key);
+        }
+      } catch { return null; }
+    }
+    return key ?? null;
+  }, [workspaceId, privateKey]);
+
   // Save content explicitly
   const saveContent = useCallback(async (html: string) => {
     if (!activePageId || !workspaceId) return;
@@ -353,7 +369,7 @@ export default function AppPage() {
             onChangeIcon={setEditIcon}
             subPages={subPages}
             onCreateSubPage={createSubPage}
-            onNavigateToPage={loadPage}
+            onNavigateToPage={sharedPagePermission !== null ? loadSharedPage : loadPage}
             onSaveContent={saveContent}
             subPageTitles={subPageTitles}
             subPageIcons={subPageIcons}
@@ -379,7 +395,7 @@ export default function AppPage() {
       {showCreateWorkspace && <CreateWorkspaceModal onClose={() => setShowCreateWorkspace(false)} onCreated={handleWorkspaceCreated} />}
       {showTips && <TipsModal onClose={() => setShowTips(false)} />}
       {showShare && activePageId && (
-        <ShareModal workspaceId={workspaceId} pageId={activePageId} pageTitle={editTitle || 'Untitled'} onClose={() => setShowShare(false)} />
+        <ShareModal workspaceId={workspaceId} pageId={activePageId} pageTitle={editTitle || 'Untitled'} allPages={pages} getDecryptedPageKey={getDecryptedPageKey} onClose={() => setShowShare(false)} />
       )}
     </div>
   );

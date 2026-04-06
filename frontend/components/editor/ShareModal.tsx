@@ -6,6 +6,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { unwrapPageKey, wrapPageKey, importPublicKey } from '@/lib/crypto';
 import { X, UserPlus, Trash2, Globe, Eye, Edit3 } from 'lucide-react';
+import type { PageTreeItem } from '@/lib/types';
+
+/** Collect all descendant page IDs (BFS). */
+function findDescendants(pages: PageTreeItem[], parentId: string): string[] {
+  const result: string[] = [];
+  const queue = [parentId];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    for (const p of pages) {
+      if (p.parent_id === cur) {
+        result.push(p.id);
+        queue.push(p.id);
+      }
+    }
+  }
+  return result;
+}
 
 interface PageShareItem {
   id: number;
@@ -21,14 +38,17 @@ interface ShareModalProps {
   workspaceId: string;
   pageId: string;
   pageTitle: string;
+  allPages?: PageTreeItem[];
+  getDecryptedPageKey?: (pageId: string) => Promise<CryptoKey | null>;
   onClose: () => void;
 }
 
-export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: ShareModalProps) {
+export default function ShareModal({ workspaceId, pageId, pageTitle, allPages, getDecryptedPageKey, onClose }: ShareModalProps) {
   const { privateKey } = useAuth();
   const { t } = useLanguage();
   const [shares, setShares] = useState<PageShareItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sharing, setSharing] = useState(false);
   const [email, setEmail] = useState('');
   const [permission, setPermission] = useState('view');
   const [error, setError] = useState('');
@@ -50,33 +70,51 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
   useEffect(() => { fetchShares(); }, []);
 
   const handleShare = async () => {
-    if (!email.trim()) return;
+    if (!email.trim() || sharing) return;
     setError('');
     setSuccess('');
+    setSharing(true);
     try {
       const sharePayload: Record<string, any> = { email: email.trim(), permission };
+      let recipientPubKey: CryptoKey | null = null;
 
+      // Wrap page key for recipient
       try {
         const pubKeyRes = await api.get<{ public_key: string }>(`/users/${encodeURIComponent(email.trim())}/public-key`);
         if (pubKeyRes.public_key && privateKey) {
+          recipientPubKey = await importPublicKey(pubKeyRes.public_key);
           const pageData = await api.get<{ page_key_grant: string | null }>(`/workspaces/${workspaceId}/pages/${pageId}`);
           if (pageData.page_key_grant) {
             const pageKey = await unwrapPageKey(pageData.page_key_grant, privateKey);
-            const recipientPubKey = await importPublicKey(pubKeyRes.public_key);
-            const wrappedForRecipient = await wrapPageKey(pageKey, recipientPubKey);
-            sharePayload.encrypted_page_key = wrappedForRecipient;
+            sharePayload.encrypted_page_key = await wrapPageKey(pageKey, recipientPubKey);
           }
         }
-      } catch {
-        // Key wrapping failed — share without key grant
+      } catch { /* key wrapping failed — share without key grant */ }
+
+      // Share root page
+      await api.post(`/workspaces/${workspaceId}/pages/${pageId}/shares`, sharePayload);
+
+      // Grant key access to all descendant pages so the recipient can decrypt them too
+      if (recipientPubKey && getDecryptedPageKey && allPages) {
+        const descendants = findDescendants(allPages, pageId);
+        await Promise.allSettled(descendants.map(async (descId) => {
+          const descKey = await getDecryptedPageKey(descId);
+          if (!descKey) return;
+          const wrappedKey = await wrapPageKey(descKey, recipientPubKey!);
+          await api.post(`/workspaces/${workspaceId}/pages/${descId}/key-grant`, {
+            email: email.trim(),
+            encrypted_page_key: wrappedKey,
+          });
+        }));
       }
 
-      await api.post(`/workspaces/${workspaceId}/pages/${pageId}/shares`, sharePayload);
       setSuccess(t.sharedWithEmail.replace('{email}', email));
       setEmail('');
       fetchShares();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t.failedToShare);
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -142,9 +180,10 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, onClose }: 
             </select>
             <button
               onClick={handleShare}
-              className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition flex items-center gap-1.5"
+              disabled={sharing}
+              className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 disabled:opacity-60 text-white text-sm font-medium transition flex items-center gap-1.5"
             >
-              <UserPlus size={15} /> {t.share}
+              <UserPlus size={15} /> {sharing ? '...' : t.share}
             </button>
           </div>
           {error && <p className="text-xs text-red-500 mt-2">{error}</p>}

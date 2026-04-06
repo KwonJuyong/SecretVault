@@ -161,7 +161,10 @@ export default function Sidebar({
               >
                 <span className="flex-shrink-0 text-base leading-none">{sp.icon || '\u{1F4C4}'}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-[13px]">{sp.shared_by_email ? t.fromEmail.replace('{email}', sp.shared_by_email) : t.sharedPage}</p>
+                  <p className="truncate text-[13px] font-medium">{sp.title || t.untitled}</p>
+                  {sp.shared_by_email && (
+                    <p className="truncate text-[11px] text-neutral-400">{sp.shared_by_email}</p>
+                  )}
                 </div>
                 {sp.permission === 'view' ? <Eye size={12} className="text-neutral-400 flex-shrink-0" /> : <Edit3 size={12} className="text-neutral-400 flex-shrink-0" />}
               </div>
