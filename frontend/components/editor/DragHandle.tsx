@@ -2,6 +2,7 @@
 
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Fragment, Slice } from '@tiptap/pm/model';
 import { Node as PMNode } from '@tiptap/pm/model';
 
 export const DragHandle = Extension.create({
@@ -9,13 +10,16 @@ export const DragHandle = Extension.create({
 
   addProseMirrorPlugins() {
     let isDragging = false;
-    let dragStartPos: number | null = null;
-    let dragNode: PMNode | null = null;
-    let currentBlockPos: number | null = null;
+    // Track dragged block by index in the top-level children array (stable across transactions)
+    let dragNodeIndex = -1;
+    let currentBlockIndex = -1;
     let currentBlockDom: HTMLElement | null = null;
     let handleEl: HTMLDivElement | null = null;
     let dropLineEl: HTMLDivElement | null = null;
     let scrollEl: HTMLElement | null = null;
+
+    // Drop gap stored on the indicator element for the drop handler to read
+    type DropGap = { targetIdx: number; after: boolean; targetPos: number; lineY: number };
 
     const findScrollParent = (el: HTMLElement | null): HTMLElement => {
       while (el) {
@@ -26,64 +30,81 @@ export const DragHandle = Extension.create({
       return document.documentElement;
     };
 
-    const findDropTarget = (view: any, clientY: number): { pos: number; after: boolean } | null => {
-      const doc = view.state.doc;
-      let bestPos = -1;
-      let bestAfter = false;
-      let bestDist = Infinity;
-
-      doc.forEach((node: PMNode, offset: number) => {
+    // Collect all top-level blocks with their DOM refs and positions
+    const getTopLevelBlocks = (view: any) => {
+      const blocks: { pos: number; dom: HTMLElement; size: number }[] = [];
+      view.state.doc.forEach((node: PMNode, offset: number) => {
         try {
           const dom = view.nodeDOM(offset) as HTMLElement;
-          if (!dom || !dom.getBoundingClientRect) return;
-          const rect = dom.getBoundingClientRect();
-          const mid = rect.top + rect.height / 2;
-          const after = clientY > mid;
-          const dist = Math.abs(clientY - mid);
-
-          if (dist < bestDist) {
-            bestPos = offset;
-            bestAfter = after;
-            bestDist = dist;
+          if (dom && dom.getBoundingClientRect) {
+            blocks.push({ pos: offset, dom, size: node.nodeSize });
           }
         } catch { /* skip */ }
       });
-
-      return bestPos >= 0 ? { pos: bestPos, after: bestAfter } : null;
+      return blocks;
     };
 
-    const showDropLine = (view: any, target: { pos: number; after: boolean }) => {
+    // Find which inter-block gap is nearest to clientY (edge-based, not center-based)
+    const findDropGap = (view: any, clientY: number): DropGap | null => {
+      const blocks = getTopLevelBlocks(view);
+      if (blocks.length === 0) return null;
+
+      let best: { targetIdx: number; after: boolean; lineY: number; dist: number } | null = null;
+
+      blocks.forEach((block, i) => {
+        const rect = block.dom.getBoundingClientRect();
+
+        // Gap BEFORE block i (its top edge)
+        const dTop = Math.abs(clientY - rect.top);
+        if (!best || dTop < best.dist) {
+          best = { targetIdx: i, after: false, lineY: rect.top, dist: dTop };
+        }
+
+        // Gap AFTER block i (its bottom edge)
+        const dBottom = Math.abs(clientY - rect.bottom);
+        if (!best || dBottom < best.dist) {
+          best = { targetIdx: i, after: true, lineY: rect.bottom, dist: dBottom };
+        }
+      });
+
+      if (!best) return null;
+      return {
+        targetIdx: best.targetIdx,
+        after: best.after,
+        targetPos: blocks[best.targetIdx].pos,
+        lineY: best.lineY,
+      };
+    };
+
+    const showDropLine = (view: any, clientY: number) => {
       if (!dropLineEl || !scrollEl) return;
-      try {
-        const dom = view.nodeDOM(target.pos) as HTMLElement;
-        if (!dom) return;
-        const scrollRect = scrollEl.getBoundingClientRect();
-        const nodeRect = dom.getBoundingClientRect();
-        const editorRect = view.dom.getBoundingClientRect();
-        const lineY = target.after
-          ? nodeRect.bottom - scrollRect.top + scrollEl.scrollTop
-          : nodeRect.top - scrollRect.top + scrollEl.scrollTop;
-        dropLineEl.style.display = 'block';
-        dropLineEl.style.top = `${lineY}px`;
-        dropLineEl.style.left = `${editorRect.left - scrollRect.left}px`;
-        dropLineEl.style.width = `${editorRect.width}px`;
-      } catch {
-        dropLineEl.style.display = 'none';
-      }
+      const gap = findDropGap(view, clientY);
+      if (!gap) { hideDropLine(); return; }
+
+      const scrollRect = scrollEl.getBoundingClientRect();
+      const editorRect = view.dom.getBoundingClientRect();
+      // lineY is viewport-relative; convert to scroll-container-relative document coords
+      const lineY = gap.lineY - scrollRect.top + scrollEl.scrollTop;
+
+      dropLineEl.style.display = 'block';
+      dropLineEl.style.top = `${lineY}px`;
+      dropLineEl.style.left = `${editorRect.left - scrollRect.left}px`;
+      dropLineEl.style.width = `${editorRect.width}px`;
+      (dropLineEl as any)._gap = gap;
     };
 
     const hideDropLine = () => {
-      if (dropLineEl) dropLineEl.style.display = 'none';
+      if (dropLineEl) {
+        dropLineEl.style.display = 'none';
+        (dropLineEl as any)._gap = null;
+      }
     };
 
     const resetDragState = (view?: any) => {
       isDragging = false;
-      dragStartPos = null;
-      dragNode = null;
+      dragNodeIndex = -1;
       hideDropLine();
-      if (currentBlockDom) {
-        currentBlockDom.style.opacity = '';
-      }
+      if (currentBlockDom) currentBlockDom.style.opacity = '';
       if (view?.dom) view.dom.removeAttribute('data-dragging');
     };
 
@@ -93,6 +114,7 @@ export const DragHandle = Extension.create({
         view(editorView) {
           scrollEl = findScrollParent(editorView.dom);
 
+          // ── Drag handle dot ────────────────────────────────────────────
           handleEl = document.createElement('div');
           handleEl.className = 'block-drag-handle';
           handleEl.draggable = true;
@@ -104,6 +126,7 @@ export const DragHandle = Extension.create({
           </svg>`;
           handleEl.style.display = 'none';
 
+          // ── Drop indicator line ─────────────────────────────────────────
           dropLineEl = document.createElement('div');
           dropLineEl.className = 'block-drop-indicator';
           dropLineEl.style.display = 'none';
@@ -115,6 +138,7 @@ export const DragHandle = Extension.create({
             scrollEl.appendChild(dropLineEl);
           }
 
+          // ── Position handle beside hovered block ────────────────────────
           const positionHandle = (blockEl: HTMLElement) => {
             if (!scrollEl || !handleEl) return;
             const scrollRect = scrollEl.getBoundingClientRect();
@@ -127,133 +151,98 @@ export const DragHandle = Extension.create({
             handleEl.style.left = `${Math.max(4, left)}px`;
           };
 
-          handleEl.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            if (currentBlockPos === null) return;
-            dragStartPos = currentBlockPos;
-            dragNode = null;
-            try {
-              dragNode = editorView.state.doc.nodeAt(currentBlockPos);
-            } catch { /* ignore */ }
+          // ── Handle drag events ──────────────────────────────────────────
+          handleEl.addEventListener('mousedown', () => {
+            dragNodeIndex = currentBlockIndex;
           });
 
           handleEl.addEventListener('dragstart', (e) => {
-            if (dragStartPos === null || !dragNode) {
-              e.preventDefault();
-              return;
-            }
+            if (dragNodeIndex < 0) { e.preventDefault(); return; }
             isDragging = true;
             editorView.dom.setAttribute('data-dragging', 'true');
             e.dataTransfer!.effectAllowed = 'move';
             e.dataTransfer!.setData('text/plain', '');
-            e.dataTransfer!.setData('application/x-block-drag', 'true');
 
             if (currentBlockDom) {
-              currentBlockDom.style.opacity = '0.4';
+              currentBlockDom.style.opacity = '0.35';
               const ghost = currentBlockDom.cloneNode(true) as HTMLElement;
-              ghost.style.position = 'absolute';
-              ghost.style.top = '-9999px';
-              ghost.style.left = '-9999px';
-              ghost.style.opacity = '0.85';
+              ghost.style.cssText = [
+                'position:absolute', 'top:-9999px', 'left:-9999px',
+                'opacity:0.9', 'background:white', 'border-radius:8px',
+                'padding:8px 12px', 'box-shadow:0 4px 16px rgba(0,0,0,0.15)',
+              ].join(';');
               ghost.style.width = `${currentBlockDom.offsetWidth}px`;
-              ghost.style.background = 'white';
-              ghost.style.borderRadius = '8px';
-              ghost.style.padding = '8px 12px';
-              ghost.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
-              ghost.style.transform = 'rotate(1deg)';
               document.body.appendChild(ghost);
-              e.dataTransfer!.setDragImage(ghost, 0, 0);
+              e.dataTransfer!.setDragImage(ghost, 24, 16);
               setTimeout(() => ghost.remove(), 50);
             }
 
-            setTimeout(() => {
-              if (handleEl) handleEl.style.display = 'none';
-            }, 0);
+            setTimeout(() => { if (handleEl) handleEl.style.display = 'none'; }, 0);
           });
 
           handleEl.addEventListener('dragend', () => {
             resetDragState(editorView);
             currentBlockDom = null;
-            currentBlockPos = null;
+            currentBlockIndex = -1;
           });
 
-          // Use CAPTURE phase so we intercept before ProseMirror handles it
+          // ── scrollEl capture listeners (fire before ProseMirror) ────────
           const onDragOver = (e: DragEvent) => {
             if (!isDragging) return;
             e.preventDefault();
             e.stopPropagation();
-            if (e.dataTransfer) {
-              e.dataTransfer.dropEffect = 'move';
-            }
-            const target = findDropTarget(editorView, e.clientY);
-            if (target) {
-              showDropLine(editorView, target);
-            } else {
-              hideDropLine();
-            }
+            e.dataTransfer!.dropEffect = 'move';
+            showDropLine(editorView, e.clientY);
           };
 
           const onDrop = (e: DragEvent) => {
-            if (!isDragging || dragStartPos === null || !dragNode) return;
+            if (!isDragging) return;
             e.preventDefault();
             e.stopPropagation();
 
-            const target = findDropTarget(editorView, e.clientY);
-            if (!target) {
-              resetDragState(editorView);
-              return;
-            }
+            const gap: DropGap | null = (dropLineEl as any)?._gap ?? null;
+            if (!gap) { resetDragState(editorView); return; }
 
             try {
               const { state } = editorView;
 
-              // Verify the dragged node is still at the expected position;
-              // if a concurrent transaction shifted it, search the document.
-              let actualDragPos = dragStartPos;
-              const nodeAtOriginal = state.doc.nodeAt(dragStartPos);
-              if (!nodeAtOriginal || !nodeAtOriginal.eq(dragNode!)) {
-                let found = false;
-                state.doc.forEach((n: PMNode, offset: number) => {
-                  if (!found && dragNode && n.eq(dragNode)) {
-                    actualDragPos = offset;
-                    found = true;
-                  }
-                });
-                if (!found) { resetDragState(editorView); return; }
+              // Snapshot current top-level blocks
+              const blocks: { pos: number; size: number }[] = [];
+              state.doc.forEach((node: PMNode, offset: number) => {
+                blocks.push({ pos: offset, size: node.nodeSize });
+              });
+
+              if (dragNodeIndex < 0 || dragNodeIndex >= blocks.length) {
+                resetDragState(editorView); return;
               }
 
-              const node = state.doc.nodeAt(actualDragPos)!;
-              const nodeSize = node.nodeSize;
-              const targetNode = state.doc.nodeAt(target.pos);
-              if (!targetNode) { resetDragState(editorView); return; }
+              // Build new order: remove dragged block, then insert at target gap
+              const newOrder = [...blocks];
+              const [dragged] = newOrder.splice(dragNodeIndex, 1);
 
-              const targetEnd = target.pos + targetNode.nodeSize;
-              const insertPos = target.after ? targetEnd : target.pos;
+              // After splice, find target in the updated list
+              let insertAt = newOrder.findIndex(b => b.pos === gap.targetPos);
+              if (insertAt < 0) { resetDragState(editorView); return; }
+              if (gap.after) insertAt += 1;
 
-              // Don't drop onto self
-              if (insertPos >= actualDragPos && insertPos <= actualDragPos + nodeSize) {
-                resetDragState(editorView);
-                return;
-              }
+              newOrder.splice(insertAt, 0, dragged);
 
-              // Use replaceWith approach: build new doc order
-              const { tr } = state;
+              // Skip if order didn't actually change
+              const changed = newOrder.some((b, i) => b.pos !== blocks[i].pos);
+              if (!changed) { resetDragState(editorView); return; }
 
-              if (actualDragPos < insertPos) {
-                // Moving down: insert copy first, then delete original
-                const copyNode = node.copy(node.content);
-                tr.insert(insertPos, copyNode);
-                tr.delete(actualDragPos, actualDragPos + nodeSize);
-              } else {
-                // Moving up: delete original first, then insert
-                const copyNode = node.copy(node.content);
-                tr.delete(actualDragPos, actualDragPos + nodeSize);
-                tr.insert(insertPos, copyNode);
-              }
+              // Collect actual ProseMirror nodes in the new order
+              const newNodes: PMNode[] = newOrder.map(b => state.doc.nodeAt(b.pos)!);
+              if (newNodes.some(n => !n)) { resetDragState(editorView); return; }
 
+              // Replace the entire document content in one step
+              let frag = Fragment.empty;
+              for (const n of newNodes) frag = frag.append(Fragment.from(n));
+
+              const tr = state.tr.replace(0, state.doc.content.size, new Slice(frag, 0, 0));
               editorView.dispatch(tr);
             } catch (err) {
-              console.error('Drag drop failed:', err);
+              console.error('[DragHandle] drop failed:', err);
             }
 
             resetDragState(editorView);
@@ -266,50 +255,35 @@ export const DragHandle = Extension.create({
             hideDropLine();
           };
 
-          // capture: true — fires before ProseMirror's own handlers
           if (scrollEl) {
             scrollEl.addEventListener('dragover', onDragOver, true);
             scrollEl.addEventListener('drop', onDrop, true);
             scrollEl.addEventListener('dragleave', onDragLeave, true);
           }
 
+          // ── Mouse move: track hovered block for handle position ─────────
           const onMouseMove = (e: MouseEvent) => {
             if (isDragging) return;
             const target = e.target as HTMLElement;
             if (handleEl && handleEl.contains(target)) return;
 
+            // Walk up to find first-level child of editorView.dom
             let blockEl: HTMLElement | null = null;
             let el: HTMLElement | null = target;
             while (el && el !== editorView.dom) {
-              if (el.parentElement === editorView.dom) {
-                blockEl = el;
-                break;
-              }
+              if (el.parentElement === editorView.dom) { blockEl = el; break; }
               el = el.parentElement;
             }
 
             if (blockEl && blockEl !== currentBlockDom) {
               currentBlockDom = blockEl;
-              try {
-                const pos = editorView.posAtDOM(blockEl, 0);
-                const resolved = editorView.state.doc.resolve(pos);
-                if (resolved.depth >= 1) {
-                  currentBlockPos = resolved.before(1);
-                } else {
-                  currentBlockPos = 0;
-                }
-                if (currentBlockPos < 0) currentBlockPos = 0;
-
-                const nodeCheck = editorView.state.doc.nodeAt(currentBlockPos);
-                if (nodeCheck) {
-                  positionHandle(blockEl);
-                } else {
-                  if (handleEl) handleEl.style.display = 'none';
-                  currentBlockPos = null;
-                }
-              } catch {
+              // Find its index by matching against nodeDOM for each top-level position
+              const idx = getTopLevelBlocks(editorView).findIndex(b => b.dom === blockEl);
+              currentBlockIndex = idx;
+              if (idx >= 0) {
+                positionHandle(blockEl);
+              } else {
                 if (handleEl) handleEl.style.display = 'none';
-                currentBlockPos = null;
               }
             }
           };
@@ -322,7 +296,7 @@ export const DragHandle = Extension.create({
               if (handleEl && !handleEl.matches(':hover') && !isDragging) {
                 handleEl.style.display = 'none';
                 currentBlockDom = null;
-                currentBlockPos = null;
+                currentBlockIndex = -1;
               }
             }, 200);
           };
@@ -338,7 +312,7 @@ export const DragHandle = Extension.create({
               if (handleEl && !handleEl.matches(':hover') && !isDragging) {
                 handleEl.style.display = 'none';
                 currentBlockDom = null;
-                currentBlockPos = null;
+                currentBlockIndex = -1;
               }
             }, 200);
           });
