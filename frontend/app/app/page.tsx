@@ -44,12 +44,6 @@ export default function AppPage() {
   const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
   const [subPageTitles, setSubPageTitles] = useState<Record<string, string>>({});
   const [tocHeadings, setTocHeadings] = useState<TocHeading[]>([]);
-  const [fullWidth, setFullWidth] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('editorFullWidth') === 'true';
-    }
-    return false;
-  });
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageKeyCache = useRef<Map<string, CryptoKey>>(new Map());
@@ -316,14 +310,6 @@ export default function AppPage() {
   }, [editTitle, editContent]);
   const handleExportPDF = useCallback(() => { exportPDF(editTitle || 'Untitled', editContent); }, [editTitle, editContent]);
 
-  const handleToggleWidth = useCallback(() => {
-    setFullWidth(prev => {
-      const next = !prev;
-      localStorage.setItem('editorFullWidth', String(next));
-      return next;
-    });
-  }, []);
-
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setShowSearch(true); } };
@@ -372,8 +358,6 @@ export default function AppPage() {
           rightPanelOpen={rightPanelOpen}
           onToggleRightPanel={activePageId ? () => setRightPanelOpen(!rightPanelOpen) : undefined}
           onShare={activePageId ? () => setShowShare(true) : undefined}
-          fullWidth={fullWidth}
-          onToggleWidth={activePageId ? handleToggleWidth : undefined}
         />
 
         {activePageId ? (
@@ -392,7 +376,6 @@ export default function AppPage() {
             subPageTitles={subPageTitles}
             subPageIcons={subPageIcons}
             onHeadingsChange={setTocHeadings}
-            fullWidth={fullWidth}
           />
         ) : (
           <PageTreeView

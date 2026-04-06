@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, CheckCircle, Loader2, AlertCircle, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Share2, Globe, Maximize2, Minimize2 } from 'lucide-react';
+import { Menu, CheckCircle, Loader2, AlertCircle, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Share2, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Language } from '@/contexts/LanguageContext';
 
@@ -12,11 +12,9 @@ interface TopbarProps {
   rightPanelOpen?: boolean;
   onToggleRightPanel?: () => void;
   onShare?: () => void;
-  fullWidth?: boolean;
-  onToggleWidth?: () => void;
 }
 
-export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageTitle, rightPanelOpen, onToggleRightPanel, onShare, fullWidth, onToggleWidth }: TopbarProps) {
+export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageTitle, rightPanelOpen, onToggleRightPanel, onShare }: TopbarProps) {
   const { lang, setLang, t } = useLanguage();
 
   const toggleLang = () => {
@@ -73,17 +71,6 @@ export default function Topbar({ sidebarOpen, onToggleSidebar, saveStatus, pageT
           <Globe size={17} />
           <span>{lang === 'en' ? 'EN' : 'KO'}</span>
         </button>
-
-        {/* Width toggle */}
-        {onToggleWidth && (
-          <button
-            onClick={onToggleWidth}
-            className="p-2.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition-colors duration-200"
-            title={fullWidth ? t.narrowLayout : t.wideLayout}
-          >
-            {fullWidth ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-          </button>
-        )}
 
         {/* Share button */}
         {onShare && (

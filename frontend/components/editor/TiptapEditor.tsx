@@ -36,10 +36,9 @@ interface TiptapEditorProps {
   subPageIcons?: Record<string, string>;
   pageId?: string | null;
   onHeadingsChange?: (headings: TocHeading[]) => void;
-  fullWidth?: boolean;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons, pageId, onHeadingsChange, fullWidth }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons, pageId, onHeadingsChange }: TiptapEditorProps) {
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subPageTitlesRef = useRef(subPageTitles);
@@ -424,7 +423,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className={`${fullWidth ? 'max-w-[1400px]' : 'max-w-[900px]'} mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]`}>
+        <div className="max-w-[900px] xl:max-w-[1050px] 2xl:max-w-[1200px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>
       </div>
