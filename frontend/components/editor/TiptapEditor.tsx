@@ -20,6 +20,7 @@ import CodeBlockToolbar from './CodeBlockView';
 import SlashMenu, { BlockType } from './SlashMenu';
 import { MathInline, MathBlock } from './MathExtension';
 import { SubPageNode } from './SubPageNode';
+import { TableOfContentsNode } from './TableOfContentsNode';
 import { DragHandle } from './DragHandle';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
 import type { TocHeading } from '@/lib/types';
@@ -80,6 +81,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       MathInline,
       MathBlock,
       SubPageNode,
+      TableOfContentsNode,
       DragHandle,
     ],
     content: '',
@@ -350,6 +352,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       case 'image': fileInputRef.current?.click(); break;
       case 'mathInline': editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run(); break;
       case 'mathBlock': editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run(); break;
+      case 'toc': editor.chain().focus().insertContent({ type: 'tableOfContents' }).run(); break;
       case 'subpage': {
         // Save the cursor position BEFORE the async API call
         const insertPos = editor.state.selection.from;
@@ -423,7 +426,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[900px] xl:max-w-[1050px] 2xl:max-w-[1200px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
+        <div className="max-w-[900px] xl:max-w-[1000px] 2xl:max-w-[1100px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
           <EditorContent editor={editor} />
         </div>
       </div>

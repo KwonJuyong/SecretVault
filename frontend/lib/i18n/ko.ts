@@ -147,6 +147,9 @@ const ko: Translations = {
   mathBlockDesc: '디스플레이 LaTeX 수식 ($$...$$)',
   subpageLabel: '하위 페이지',
   subpageDesc: '중첩된 페이지 만들기',
+  tocLabel: '목차',
+  tocDesc: '인라인 목차 삽입',
+  tocEmpty: '제목을 추가하면 목차가 표시됩니다',
 
   // Share Modal
   sharePage: '페이지 공유',

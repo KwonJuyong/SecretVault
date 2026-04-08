@@ -83,7 +83,7 @@ export default function Editor({
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Title area - centered with max-width */}
       <div className="w-full bg-white dark:bg-[#191919]">
-        <div className="max-w-[900px] mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3">
+        <div className="max-w-[900px] xl:max-w-[1000px] 2xl:max-w-[1100px] mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3">
           {/* Icon picker */}
           <div className="relative mb-4 inline-block">
             <button

@@ -145,6 +145,9 @@ const en = {
   mathBlockDesc: 'Display LaTeX equation ($$...$$)',
   subpageLabel: 'Sub-page',
   subpageDesc: 'Create a nested page',
+  tocLabel: 'Table of Contents',
+  tocDesc: 'Insert inline table of contents',
+  tocEmpty: 'Add headings to see the table of contents',
 
   // Share Modal
   sharePage: 'Share Page',

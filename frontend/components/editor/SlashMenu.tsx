@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare,
-  Quote, Code2, Minus, Table, Type, Image, FileText, Sigma, Pi,
+  Quote, Code2, Minus, Table, Type, Image, FileText, Sigma, Pi, AlignLeft,
 } from 'lucide-react';
 
-export type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo' | 'quote' | 'code' | 'divider' | 'table' | 'image' | 'subpage' | 'mathInline' | 'mathBlock';
+export type BlockType = 'paragraph' | 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo' | 'quote' | 'code' | 'divider' | 'table' | 'image' | 'subpage' | 'mathInline' | 'mathBlock' | 'toc';
 
 export interface SlashCommand {
   type: BlockType;
@@ -46,6 +46,7 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
     { type: 'mathInline', label: t.mathInlineLabel, description: t.mathInlineDesc, icon: <Sigma size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'inline', 'katex', '수식'] },
     { type: 'mathBlock', label: t.mathBlockLabel, description: t.mathBlockDesc, icon: <Pi size={20} />, keywords: ['math', 'latex', 'formula', 'equation', 'block', 'display', 'katex', '수식'] },
     { type: 'subpage', label: t.subpageLabel, description: t.subpageDesc, icon: <FileText size={20} />, keywords: ['subpage', 'page', 'nested', 'child', 'sub', '하위페이지'] },
+    { type: 'toc', label: t.tocLabel, description: t.tocDesc, icon: <AlignLeft size={20} />, keywords: ['toc', 'contents', 'table of contents', 'outline', '목차', 'content'] },
   ];
 
   const filtered = commands.filter(cmd => {
