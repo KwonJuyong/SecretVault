@@ -1,3 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text y=".9em" font-size="90">🔒</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .body { fill: #1a1a1a }
+    .arc  { fill: none; stroke: #1a1a1a; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round }
+    @media (prefers-color-scheme: dark) {
+      .body { fill: #e2e2e2 }
+      .arc  { stroke: #e2e2e2 }
+    }
+  </style>
+  <rect class="body" x="5" y="16" width="22" height="13" rx="3.5"/>
+  <path class="arc"  d="M11 16V11a5 5 0 0 1 10 0v5"/>
 </svg>
