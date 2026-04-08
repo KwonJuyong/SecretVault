@@ -1,7 +1,7 @@
 'use client';
 
 import { Extension } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey, NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import { Node as PMNode } from '@tiptap/pm/model';
 
@@ -154,6 +154,25 @@ export const DragHandle = Extension.create({
           // ── Handle drag events ──────────────────────────────────────────
           handleEl.addEventListener('mousedown', () => {
             dragNodeIndex = currentBlockIndex;
+          });
+
+          handleEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentBlockIndex < 0) return;
+            const blocks = getTopLevelBlocks(editorView);
+            if (currentBlockIndex >= blocks.length) return;
+            const block = blocks[currentBlockIndex];
+            try {
+              const sel = NodeSelection.create(editorView.state.doc, block.pos);
+              editorView.dispatch(editorView.state.tr.setSelection(sel));
+            } catch {
+              try {
+                const resolved = editorView.state.doc.resolve(block.pos + 1);
+                const sel = TextSelection.near(resolved);
+                editorView.dispatch(editorView.state.tr.setSelection(sel));
+              } catch { /* ignore */ }
+            }
+            editorView.focus();
           });
 
           handleEl.addEventListener('dragstart', (e) => {

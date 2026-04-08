@@ -146,50 +146,52 @@ export default function PageTreeView({ pages, decryptedTitles, activePageId, onS
   }, []);
 
   return (
-    <div className="h-full flex flex-col bg-neutral-50/50 dark:bg-[#1c1c1c]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200/50 dark:border-neutral-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-            <FileText size={16} className="text-violet-500 dark:text-violet-400" />
-          </div>
-          <div>
-            <h2 className="text-[15px] font-semibold text-neutral-800 dark:text-neutral-200">Page Overview</h2>
-            <p className="text-[11px] text-neutral-400">{pages.length} pages</p>
-          </div>
-        </div>
-        <button
-          onClick={() => onCreatePage()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition"
-        >
-          <Plus size={14} /> New Page
-        </button>
-      </div>
-
-      {/* Tree */}
-      <div className="flex-1 overflow-auto p-5">
-        {tree.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
-              <FileText size={28} className="text-neutral-300 dark:text-neutral-600" />
+    <div className="h-full flex flex-col bg-neutral-50/50 dark:bg-[#1c1c1c] overflow-auto">
+      <div className="max-w-[720px] w-full mx-auto flex flex-col flex-1 px-6 py-8 min-h-0">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+              <FileText size={16} className="text-violet-500 dark:text-violet-400" />
             </div>
-            <p className="text-[15px] text-neutral-500 mb-2">No pages yet</p>
-            <p className="text-[13px] text-neutral-400 mb-4">Create your first page to get started</p>
-            <button onClick={() => onCreatePage()} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition">
-              <Plus size={14} /> Create Page
-            </button>
+            <div>
+              <h2 className="text-[15px] font-semibold text-neutral-800 dark:text-neutral-200">Page Overview</h2>
+              <p className="text-[11px] text-neutral-400">{pages.length} pages</p>
+            </div>
           </div>
-        ) : (
-          <div className="tree-root">
-            {tree.map(node => (
-              <TreeNodeCard
-                key={node.id} node={node} onSelect={onSelectPage}
-                activeId={activePageId} onCreateChild={onCreatePage}
-                onRename={onRenameStart} collapsed={collapsed} onToggle={toggleCollapse}
-              />
-            ))}
-          </div>
-        )}
+          <button
+            onClick={() => onCreatePage()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition"
+          >
+            <Plus size={14} /> New Page
+          </button>
+        </div>
+
+        {/* Tree */}
+        <div className="flex-1">
+          {tree.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center pt-16">
+              <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                <FileText size={28} className="text-neutral-300 dark:text-neutral-600" />
+              </div>
+              <p className="text-[15px] text-neutral-500 mb-2">No pages yet</p>
+              <p className="text-[13px] text-neutral-400 mb-4">Create your first page to get started</p>
+              <button onClick={() => onCreatePage()} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-medium transition">
+                <Plus size={14} /> Create Page
+              </button>
+            </div>
+          ) : (
+            <div className="tree-root">
+              {tree.map(node => (
+                <TreeNodeCard
+                  key={node.id} node={node} onSelect={onSelectPage}
+                  activeId={activePageId} onCreateChild={onCreatePage}
+                  onRename={onRenameStart} collapsed={collapsed} onToggle={toggleCollapse}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
