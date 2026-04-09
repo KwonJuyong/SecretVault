@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { TextSelection, NodeSelection } from '@tiptap/pm/state';
 import { addRowAfter } from '@tiptap/pm/tables';
+import { trailingNode } from '@tiptap/pm/trailing-node';
+import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -93,6 +95,13 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       TableOfContentsNode,
       DragHandle,
       IMECompositionFix,
+      // Always keep a trailing empty paragraph so blocks can be dropped at the end
+      Extension.create({
+        name: 'trailingParagraph',
+        addProseMirrorPlugins() {
+          return [trailingNode({ nodeName: 'paragraph', ignoredNodes: [] })];
+        },
+      }),
     ],
     content: '',
     editorProps: {
