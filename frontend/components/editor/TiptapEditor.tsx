@@ -117,8 +117,8 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }
 
-        // Shift+Enter inside table: add row below current row
-        if (event.key === 'Enter' && event.shiftKey) {
+        // Ctrl+Enter inside table: add row below current row
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
           const { $from } = view.state.selection;
           let inTable = false;
           for (let d = $from.depth; d >= 0; d--) {
