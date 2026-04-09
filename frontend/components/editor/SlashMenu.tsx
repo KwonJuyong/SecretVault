@@ -19,7 +19,7 @@ export interface SlashCommand {
 
 interface SlashMenuProps {
   filter: string;
-  position: { top: number; left: number };
+  position: { top: number; lineTop: number; left: number };
   onSelect: (type: BlockType) => void;
   onClose: () => void;
 }
@@ -94,18 +94,35 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
     el?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
-  // Adjust position to not overflow viewport
-  const adjustedPosition = { ...position };
+  // Decide whether to show above or below the cursor line
+  const menuHeight = 400;
+  const menuWidth = 288;
+  const margin = 8;
+  let adjustedTop = position.top;
+  let adjustedLeft = position.left;
+
   if (typeof window !== 'undefined') {
-    const menuHeight = 400;
-    const menuWidth = 288;
-    if (position.top + menuHeight > window.innerHeight) {
-      adjustedPosition.top = Math.max(8, position.top - menuHeight - 8);
+    const spaceBelow = window.innerHeight - position.top - margin;
+    const spaceAbove = position.lineTop - margin;
+
+    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+      // Not enough room below and more space above — show above
+      adjustedTop = Math.max(margin, position.lineTop - menuHeight - 6);
+    } else {
+      // Show below; clamp to viewport bottom
+      adjustedTop = position.top;
+      if (adjustedTop + menuHeight > window.innerHeight) {
+        adjustedTop = Math.max(margin, window.innerHeight - menuHeight - margin);
+      }
     }
-    if (position.left + menuWidth > window.innerWidth) {
-      adjustedPosition.left = window.innerWidth - menuWidth - 8;
+
+    if (adjustedLeft + menuWidth > window.innerWidth) {
+      adjustedLeft = window.innerWidth - menuWidth - margin;
     }
+    if (adjustedLeft < margin) adjustedLeft = margin;
   }
+
+  const adjustedPosition = { top: adjustedTop, left: adjustedLeft };
 
   if (filtered.length === 0) {
     return (

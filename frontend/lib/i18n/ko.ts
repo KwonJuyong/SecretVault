@@ -151,6 +151,12 @@ const ko: Translations = {
   tocDesc: '인라인 목차 삽입',
   tocEmpty: '제목을 추가하면 목차가 표시됩니다',
 
+  // Block Menu
+  blockMenuTurnInto: '변환',
+  blockMenuDuplicate: '복제',
+  blockMenuDelete: '삭제',
+  blockMenuBack: '뒤로',
+
   // Share Modal
   sharePage: '페이지 공유',
   enterEmailToShare: '공유할 이메일을 입력하세요',

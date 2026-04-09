@@ -18,6 +18,7 @@ import { common, createLowlight } from 'lowlight';
 import EditorToolbar from './EditorToolbar';
 import CodeBlockToolbar from './CodeBlockView';
 import SlashMenu, { BlockType } from './SlashMenu';
+import BlockMenu from './BlockMenu';
 import { MathInline, MathBlock } from './MathExtension';
 import { SubPageNode } from './SubPageNode';
 import { TableOfContentsNode } from './TableOfContentsNode';
@@ -50,8 +51,14 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
-  const [slashPos, setSlashPos] = useState({ top: 0, left: 0 });
+  const [slashPos, setSlashPos] = useState({ top: 0, lineTop: 0, left: 0 });
   const slashStartRef = useRef<number | null>(null);
+
+  const [blockMenu, setBlockMenu] = useState<{
+    pos: number;
+    rect: { top: number; right: number; bottom: number; left: number };
+    blockType: string;
+  } | null>(null);
 
   // Keep refs in sync
   useEffect(() => { subPageTitlesRef.current = subPageTitles; }, [subPageTitles]);
@@ -117,7 +124,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
             setTimeout(() => {
               try {
                 const coords = view.coordsAtPos(pos);
-                setSlashPos({ top: coords.bottom + 6, left: coords.left });
+                setSlashPos({ top: coords.bottom + 6, lineTop: coords.top, left: coords.left });
                 setSlashOpen(true);
                 setSlashFilter('');
                 slashStartRef.current = pos;
@@ -284,6 +291,16 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
     });
   }, [pageId, content, editor]);
 
+  // Listen for block context menu events dispatched by DragHandle
+  useEffect(() => {
+    if (!editor) return;
+    const handler = (e: Event) => {
+      setBlockMenu((e as CustomEvent).detail);
+    };
+    editor.view.dom.addEventListener('block-menu-open', handler);
+    return () => editor.view.dom.removeEventListener('block-menu-open', handler);
+  }, [editor]);
+
   // Keep sub-page link titles and icons in sync with actual page data
   useEffect(() => {
     if (!editor || editor.isDestroyed || (!subPageTitles && !subPageIcons)) return;
@@ -331,19 +348,32 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
   const handleSlashSelect = useCallback(async (type: BlockType) => {
     if (!editor || slashStartRef.current === null) return;
 
+    setSlashOpen(false);
+
+    // Delete the "/" and any filter text typed after it
+    let deleteOk = false;
     try {
       const { from } = editor.state.selection;
       const start = slashStartRef.current;
-      if (start >= 0 && from >= start) {
+      const docSize = editor.state.doc.content.size;
+      if (start >= 0 && from >= start && from <= docSize) {
         editor.chain().focus().deleteRange({ from: start, to: from }).run();
+        deleteOk = true;
       }
     } catch { /* ignore */ }
 
+    if (!deleteOk) {
+      slashStartRef.current = null;
+      return;
+    }
+
+    slashStartRef.current = null;
+
     switch (type) {
       case 'paragraph': editor.chain().focus().setParagraph().run(); break;
-      case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
-      case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
-      case 'h3': editor.chain().focus().toggleHeading({ level: 3 }).run(); break;
+      case 'h1': editor.chain().focus().setHeading({ level: 1 }).run(); break;
+      case 'h2': editor.chain().focus().setHeading({ level: 2 }).run(); break;
+      case 'h3': editor.chain().focus().setHeading({ level: 3 }).run(); break;
       case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
       case 'numbered': editor.chain().focus().toggleOrderedList().run(); break;
       case 'todo': editor.chain().focus().toggleTaskList().run(); break;
@@ -351,7 +381,11 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       case 'code': editor.chain().focus().toggleCodeBlock().run(); break;
       case 'divider': editor.chain().focus().setHorizontalRule().run(); break;
       case 'table': editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
-      case 'image': fileInputRef.current?.click(); break;
+      case 'image': {
+        editor.chain().focus().run();
+        fileInputRef.current?.click();
+        break;
+      }
       case 'mathInline': editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run(); break;
       case 'mathBlock': editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run(); break;
       case 'toc': editor.chain().focus().insertContent({ type: 'tableOfContents' }).run(); break;
@@ -376,9 +410,6 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         break;
       }
     }
-
-    setSlashOpen(false);
-    slashStartRef.current = null;
   }, [editor, onInsertSubPage, onChange, onSaveContent]);
 
   const handleSlashClose = useCallback(() => {
@@ -441,6 +472,16 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           position={slashPos}
           onSelect={handleSlashSelect}
           onClose={handleSlashClose}
+        />
+      )}
+
+      {blockMenu && editor && (
+        <BlockMenu
+          pos={blockMenu.pos}
+          anchorRect={blockMenu.rect}
+          blockType={blockMenu.blockType}
+          editor={editor}
+          onClose={() => setBlockMenu(null)}
         />
       )}
     </div>

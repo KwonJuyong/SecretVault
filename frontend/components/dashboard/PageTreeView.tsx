@@ -101,7 +101,7 @@ function TreeNodeCard({
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
               onBlur={handleRenameSubmit}
-              onKeyDown={e => { if (e.isComposing) return; if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setEditing(false); }}
+              onKeyDown={e => { if (e.nativeEvent.isComposing) return; if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setEditing(false); }}
               className="flex-1 min-w-0 bg-white dark:bg-neutral-800 border border-violet-400 rounded px-1.5 py-0.5 text-sm outline-none"
               onClick={e => e.stopPropagation()}
             />

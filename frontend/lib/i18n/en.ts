@@ -149,6 +149,12 @@ const en = {
   tocDesc: 'Insert inline table of contents',
   tocEmpty: 'Add headings to see the table of contents',
 
+  // Block Menu
+  blockMenuTurnInto: 'Turn into',
+  blockMenuDuplicate: 'Duplicate',
+  blockMenuDelete: 'Delete',
+  blockMenuBack: 'Back',
+
   // Share Modal
   sharePage: 'Share Page',
   enterEmailToShare: 'Enter email to share',

@@ -36,7 +36,7 @@ export const DragHandle = Extension.create({
       view.state.doc.forEach((node: PMNode, offset: number) => {
         try {
           const dom = view.nodeDOM(offset) as HTMLElement;
-          if (dom && dom.getBoundingClientRect) {
+          if (dom) {
             blocks.push({ pos: offset, dom, size: node.nodeSize });
           }
         } catch { /* skip */ }
@@ -68,11 +68,12 @@ export const DragHandle = Extension.create({
       });
 
       if (!best) return null;
+      const b = best as { targetIdx: number; after: boolean; lineY: number; dist: number };
       return {
-        targetIdx: best.targetIdx,
-        after: best.after,
-        targetPos: blocks[best.targetIdx].pos,
-        lineY: best.lineY,
+        targetIdx: b.targetIdx,
+        after: b.after,
+        targetPos: blocks[b.targetIdx].pos,
+        lineY: b.lineY,
       };
     };
 
@@ -162,6 +163,8 @@ export const DragHandle = Extension.create({
             const blocks = getTopLevelBlocks(editorView);
             if (currentBlockIndex >= blocks.length) return;
             const block = blocks[currentBlockIndex];
+
+            // Select the block
             try {
               const sel = NodeSelection.create(editorView.state.doc, block.pos);
               editorView.dispatch(editorView.state.tr.setSelection(sel));
@@ -173,6 +176,18 @@ export const DragHandle = Extension.create({
               } catch { /* ignore */ }
             }
             editorView.focus();
+
+            // Open block context menu
+            const blockNode = editorView.state.doc.nodeAt(block.pos);
+            const rect = handleEl!.getBoundingClientRect();
+            editorView.dom.dispatchEvent(new CustomEvent('block-menu-open', {
+              bubbles: true,
+              detail: {
+                pos: block.pos,
+                rect: { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left },
+                blockType: blockNode?.type.name ?? 'paragraph',
+              },
+            }));
           });
 
           handleEl.addEventListener('dragstart', (e) => {
