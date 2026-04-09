@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { TextSelection, NodeSelection } from '@tiptap/pm/state';
+import { addRowAfter } from '@tiptap/pm/tables';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -112,6 +113,19 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
             const resolved = view.state.doc.resolve(afterPos);
             const newSel = TextSelection.near(resolved);
             view.dispatch(view.state.tr.setSelection(newSel));
+            return true;
+          }
+        }
+
+        // Shift+Enter inside table: add row below current row
+        if (event.key === 'Enter' && event.shiftKey) {
+          const { $from } = view.state.selection;
+          let inTable = false;
+          for (let d = $from.depth; d >= 0; d--) {
+            if ($from.node(d).type.name === 'table') { inTable = true; break; }
+          }
+          if (inTable && addRowAfter(view.state, view.dispatch)) {
+            event.preventDefault();
             return true;
           }
         }
@@ -369,6 +383,46 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
     slashStartRef.current = null;
 
+    // Block-level nodes that must be placed outside table cells
+    const MUST_EXIT_TABLE = new Set(['table', 'divider', 'toc', 'mathBlock', 'image', 'subpage']);
+
+    // If inside a table cell, exit to after the table before inserting block nodes
+    if (MUST_EXIT_TABLE.has(type) && editor.isActive('table')) {
+      const { $from } = editor.state.selection;
+      for (let d = $from.depth; d >= 0; d--) {
+        if ($from.node(d).type.name === 'table') {
+          const afterTable = $from.after(d);
+          // Ensure there's a paragraph after the table to receive the cursor
+          const docAfter = editor.state.doc.resolve(Math.min(afterTable, editor.state.doc.content.size));
+          if (!docAfter.nodeAfter || docAfter.nodeAfter.type.name !== 'paragraph') {
+            editor.view.dispatch(
+              editor.state.tr.insert(afterTable, editor.state.schema.nodes.paragraph.create())
+            );
+          }
+          // Move cursor to the paragraph after the table
+          const newResolved = editor.state.doc.resolve(afterTable + 1);
+          editor.view.dispatch(
+            editor.state.tr.setSelection(TextSelection.near(newResolved))
+          );
+          break;
+        }
+      }
+    }
+
+    // Helper: explicitly replace the current empty paragraph with a block node.
+    // This prevents ProseMirror from accidentally touching adjacent atom nodes (e.g., TOC).
+    const replaceCurrentParagraph = (insertFn: () => void) => {
+      try {
+        const { $from } = editor.state.selection;
+        if ($from.parent.type.name === 'paragraph' && $from.parent.content.size === 0) {
+          const paraPos = $from.before();
+          const nodeSel = NodeSelection.create(editor.state.doc, paraPos);
+          editor.view.dispatch(editor.state.tr.setSelection(nodeSel));
+        }
+      } catch { /* ignore */ }
+      insertFn();
+    };
+
     switch (type) {
       case 'paragraph': editor.chain().focus().setParagraph().run(); break;
       case 'h1': editor.chain().focus().setHeading({ level: 1 }).run(); break;
@@ -379,32 +433,44 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       case 'todo': editor.chain().focus().toggleTaskList().run(); break;
       case 'quote': editor.chain().focus().toggleBlockquote().run(); break;
       case 'code': editor.chain().focus().toggleCodeBlock().run(); break;
-      case 'divider': editor.chain().focus().setHorizontalRule().run(); break;
-      case 'table': editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+      case 'divider':
+        replaceCurrentParagraph(() => editor.chain().focus().setHorizontalRule().run());
+        break;
+      case 'table':
+        replaceCurrentParagraph(() =>
+          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+        );
+        break;
       case 'image': {
         editor.chain().focus().run();
         fileInputRef.current?.click();
         break;
       }
-      case 'mathInline': editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run(); break;
-      case 'mathBlock': editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run(); break;
-      case 'toc': editor.chain().focus().insertContent({ type: 'tableOfContents' }).run(); break;
+      case 'mathInline':
+        editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run();
+        break;
+      case 'mathBlock':
+        replaceCurrentParagraph(() =>
+          editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run()
+        );
+        break;
+      case 'toc':
+        replaceCurrentParagraph(() =>
+          editor.chain().focus().insertContent({ type: 'tableOfContents' }).run()
+        );
+        break;
       case 'subpage': {
         // Save the cursor position BEFORE the async API call
         const insertPos = editor.state.selection.from;
         const created = await onInsertSubPage?.();
         if (created) {
-          // Insert link at the exact saved position (not wherever cursor drifted)
           editor.chain().focus().insertContentAt(insertPos, {
             type: 'subPageLink',
             attrs: { pageId: created.id, title: created.title || 'Untitled' },
           }).run();
-          // Save parent page WITH the link before navigating away
           const updatedHtml = editor.getHTML();
           onChange(updatedHtml);
-          if (onSaveContent) {
-            await onSaveContent(updatedHtml);
-          }
+          if (onSaveContent) await onSaveContent(updatedHtml);
           onNavigateToPage?.(created.id);
         }
         break;
@@ -459,7 +525,7 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
           }
         }}
       >
-        <div className="max-w-[960px] xl:max-w-[1100px] 2xl:max-w-[1250px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[50vh]">
+        <div className="max-w-[960px] xl:max-w-[1100px] 2xl:max-w-[1250px] mx-auto px-8 sm:px-14 lg:px-16 py-8 pb-[100vh]">
           <EditorContent editor={editor} />
         </div>
       </div>

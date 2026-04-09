@@ -88,7 +88,6 @@ export const TableOfContentsNode = Node.create({
         'data-type': 'table-of-contents',
         class: 'toc-block-placeholder',
       }),
-      'Table of Contents',
     ];
   },
 
