@@ -418,18 +418,22 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       }
     }
 
-    // Helper: explicitly replace the current empty paragraph with a block node.
-    // This prevents ProseMirror from accidentally touching adjacent atom nodes (e.g., TOC).
-    const replaceCurrentParagraph = (insertFn: () => void) => {
+    // Replace the current empty paragraph with a new block node using a single
+    // ProseMirror transaction so adjacent atom nodes (e.g. TOC) are never touched.
+    const replaceCurrentBlock = (makeNode: () => import('@tiptap/pm/model').Node | null): boolean => {
       try {
         const { $from } = editor.state.selection;
-        if ($from.parent.type.name === 'paragraph' && $from.parent.content.size === 0) {
-          const paraPos = $from.before();
-          const nodeSel = NodeSelection.create(editor.state.doc, paraPos);
-          editor.view.dispatch(editor.state.tr.setSelection(nodeSel));
-        }
-      } catch { /* ignore */ }
-      insertFn();
+        if ($from.parent.type.name !== 'paragraph') return false;
+        const paraFrom = $from.before(); // position before the paragraph node
+        const paraTo   = $from.after();  // position after the paragraph node
+        const node = makeNode();
+        if (!node) return false;
+        editor.view.dispatch(
+          editor.state.tr.replaceWith(paraFrom, paraTo, node).scrollIntoView()
+        );
+        editor.view.focus();
+        return true;
+      } catch { return false; }
     };
 
     switch (type) {
@@ -442,14 +446,27 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       case 'todo': editor.chain().focus().toggleTaskList().run(); break;
       case 'quote': editor.chain().focus().toggleBlockquote().run(); break;
       case 'code': editor.chain().focus().toggleCodeBlock().run(); break;
-      case 'divider':
-        replaceCurrentParagraph(() => editor.chain().focus().setHorizontalRule().run());
-        break;
-      case 'table':
-        replaceCurrentParagraph(() =>
-          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+      case 'divider': {
+        const ok = replaceCurrentBlock(() =>
+          editor.state.schema.nodes.horizontalRule?.create() ?? null
         );
+        if (!ok) editor.chain().focus().setHorizontalRule().run();
         break;
+      }
+      case 'table': {
+        const ok = replaceCurrentBlock(() => {
+          const s = editor.state.schema;
+          const cell   = s.nodes.tableCell?.createAndFill() ?? null;
+          const header = s.nodes.tableHeader?.createAndFill() ?? null;
+          if (!cell || !header) return null;
+          const headerRow = s.nodes.tableRow?.createAndFill(null, [header, header, header]) ?? null;
+          const row       = s.nodes.tableRow?.createAndFill(null, [cell, cell, cell]) ?? null;
+          if (!headerRow || !row) return null;
+          return s.nodes.table?.createAndFill(null, [headerRow, row, row]) ?? null;
+        });
+        if (!ok) editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+        break;
+      }
       case 'image': {
         editor.chain().focus().run();
         fileInputRef.current?.click();
@@ -458,16 +475,20 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       case 'mathInline':
         editor.chain().focus().insertContent({ type: 'mathInline', attrs: { latex: '' } }).run();
         break;
-      case 'mathBlock':
-        replaceCurrentParagraph(() =>
-          editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run()
+      case 'mathBlock': {
+        const ok = replaceCurrentBlock(() =>
+          editor.state.schema.nodes.mathBlock?.create({ latex: '' }) ?? null
         );
+        if (!ok) editor.chain().focus().insertContent({ type: 'mathBlock', attrs: { latex: '' } }).run();
         break;
-      case 'toc':
-        replaceCurrentParagraph(() =>
-          editor.chain().focus().insertContent({ type: 'tableOfContents' }).run()
+      }
+      case 'toc': {
+        const ok = replaceCurrentBlock(() =>
+          editor.state.schema.nodes.tableOfContents?.create() ?? null
         );
+        if (!ok) editor.chain().focus().insertContent({ type: 'tableOfContents' }).run();
         break;
+      }
       case 'subpage': {
         // Save the cursor position BEFORE the async API call
         const insertPos = editor.state.selection.from;
