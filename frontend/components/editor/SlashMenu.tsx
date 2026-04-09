@@ -63,6 +63,7 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.isComposing) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         e.stopPropagation();

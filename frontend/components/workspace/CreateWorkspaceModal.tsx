@@ -87,7 +87,7 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
               onChange={e => setName(e.target.value)}
               placeholder={t.workspaceNamePlaceholder}
               className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
+              onKeyDown={e => !e.isComposing && e.key === 'Enter' && handleCreate()}
               autoFocus
             />
           </div>

@@ -33,6 +33,7 @@ export default function SearchModal({ pages, decryptedTitles, onSelect, onClose 
   useEffect(() => { setSelectedIndex(0); }, [query]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.isComposing) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex(i => Math.min(i + 1, filtered.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setSelectedIndex(i => Math.max(i - 1, 0)); }
     else if (e.key === 'Enter' && filtered[selectedIndex]) { onSelect(filtered[selectedIndex].id); onClose(); }

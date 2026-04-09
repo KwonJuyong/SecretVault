@@ -92,6 +92,9 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       scrollThreshold: 100,
       scrollMargin: 80,
       handleKeyDown: (view, event) => {
+        // Do not interfere with IME composition (Korean/Japanese/Chinese input)
+        if (event.isComposing) return false;
+
         // If a subpage atom block is NodeSelected, prevent printable keys and
         // Backspace/Delete from replacing or deleting it. Instead, nudge the
         // cursor to just after the block so the user can keep typing normally.
