@@ -31,42 +31,75 @@ export default function TrashPanel({ workspaceId, onClose, onRestore }: TrashPan
   useEffect(() => { fetchTrash(); }, []);
 
   const handleRestore = async (pageId: string) => {
-    try { await api.post(`/workspaces/${workspaceId}/pages/${pageId}/restore`); fetchTrash(); onRestore(); }
-    catch (e) { console.error(e); }
+    try {
+      await api.post(`/workspaces/${workspaceId}/pages/${pageId}/restore`);
+      fetchTrash();
+      onRestore();
+    } catch (e) { console.error(e); }
   };
 
   const handlePermanentDelete = async (pageId: string) => {
     if (!confirm(t.permanentDeleteConfirm)) return;
-    try { await api.delete(`/workspaces/${workspaceId}/pages/${pageId}?permanent=true`); fetchTrash(); }
-    catch (e) { console.error(e); }
+    try {
+      await api.delete(`/workspaces/${workspaceId}/pages/${pageId}?permanent=true`);
+      fetchTrash();
+    } catch (e) { console.error(e); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm" />
-      <div className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] animate-fade-in" onClick={onClose}>
+      <div className="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-md mx-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)] shadow-[var(--shadow-xl)] overflow-hidden animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 h-14 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-2">
-            <Trash2 size={18} className="text-neutral-500" />
-            <h2 className="text-base font-semibold text-neutral-800 dark:text-white">{t.trash}</h2>
+            <div className="w-7 h-7 rounded-lg bg-[var(--bg-surface-2)] flex items-center justify-center">
+              <Trash2 size={15} className="text-[var(--fg-secondary)]" />
+            </div>
+            <h2 className="text-[14.5px] font-semibold text-[var(--fg-primary)]">{t.trash}</h2>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400"><X size={18} /></button>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+          >
+            <X size={16} />
+          </button>
         </div>
-        <div className="max-h-96 overflow-y-auto p-3">
+        <div className="max-h-[50vh] overflow-y-auto p-2">
           {loading ? (
-            <div className="py-8 text-center text-neutral-400 text-sm">{t.loading}</div>
+            <div className="py-12 text-center text-[var(--fg-tertiary)] text-[13px]">{t.loading}</div>
           ) : pages.length === 0 ? (
-            <div className="py-8 text-center text-neutral-400 text-sm">{t.trashEmpty}</div>
+            <div className="py-12 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-[var(--bg-surface-2)] flex items-center justify-center">
+                <Trash2 size={18} className="text-[var(--fg-tertiary)]" />
+              </div>
+              <p className="text-[13px] text-[var(--fg-tertiary)]">{t.trashEmpty}</p>
+            </div>
           ) : (
             pages.map(page => (
-              <div key={page.id} className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 group">
-                <FileText size={15} className="text-neutral-400 flex-shrink-0" />
-                <span className="text-sm text-neutral-600 dark:text-neutral-400 truncate flex-1">{page.decryptedTitle}</span>
-                <button onClick={() => handleRestore(page.id)} className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-neutral-400 hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition" title={t.restore}>
-                  <RotateCcw size={14} />
+              <div
+                key={page.id}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--bg-hover)] group transition-colors"
+              >
+                <FileText size={14} className="text-[var(--fg-tertiary)] flex-shrink-0" />
+                <span className="text-[13px] text-[var(--fg-secondary)] truncate flex-1">
+                  {page.decryptedTitle}
+                </span>
+                <button
+                  onClick={() => handleRestore(page.id)}
+                  className="p-1.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-[var(--fg-tertiary)] hover:text-emerald-600 dark:hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition"
+                  title={t.restore}
+                >
+                  <RotateCcw size={13} />
                 </button>
-                <button onClick={() => handlePermanentDelete(page.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition" title={t.deletePermanently}>
-                  <Trash2 size={14} />
+                <button
+                  onClick={() => handlePermanentDelete(page.id)}
+                  className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-[var(--fg-tertiary)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                  title={t.deletePermanently}
+                >
+                  <Trash2 size={13} />
                 </button>
               </div>
             ))

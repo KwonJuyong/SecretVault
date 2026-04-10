@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Shield, UserPlus, ArrowLeft, Eye, EyeOff, Globe } from 'lucide-react';
+import { Shield, UserPlus, ArrowLeft, Eye, EyeOff, Globe, Lock } from 'lucide-react';
 
 export default function SignupForm() {
   const [email, setEmail] = useState('');
@@ -46,66 +46,69 @@ export default function SignupForm() {
     }
   };
 
-  const inputClass = "w-full h-[52px] px-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-[15px] placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors duration-200";
+  const inputClass =
+    'w-full h-11 px-3.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[14px] placeholder-[var(--fg-tertiary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow';
 
   return (
-    <div className="min-h-screen flex p-4 sm:p-6 lg:p-0 bg-neutral-100 dark:bg-neutral-900 lg:bg-white lg:dark:bg-neutral-950">
-      {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[520px] bg-gradient-to-br from-[#1c1826] via-[#241e33] to-[#1c1826] flex-col justify-between text-white px-16 py-14">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-11 h-11 rounded-xl bg-violet-500 flex items-center justify-center">
-              <Shield size={24} />
+    <div className="min-h-screen flex bg-[var(--bg-app)]">
+      {/* Left - Branding hero */}
+      <div className="hidden lg:flex lg:w-[540px] auth-hero relative flex-col justify-between text-white px-14 py-12 overflow-hidden">
+        <div className="absolute inset-0 auth-grid pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-900/40">
+              <Shield size={22} strokeWidth={2.2} />
             </div>
-            <span className="text-2xl font-bold tracking-tight">SecretVault</span>
+            <span className="text-[22px] font-bold tracking-tight">SecretVault</span>
           </div>
         </div>
-        <div className="pr-8">
-          <h2 className="text-[34px] font-bold leading-tight mb-5 whitespace-pre-line">
+        <div className="relative pr-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-5 rounded-full bg-white/5 border border-white/10 backdrop-blur text-[11.5px] font-medium text-violet-200">
+            <Lock size={11} /> End-to-end encrypted
+          </div>
+          <h2 className="text-[38px] font-bold leading-[1.1] mb-5 whitespace-pre-line tracking-tight">
             {t.startCollaborating}
           </h2>
-          <p className="text-violet-200/60 text-[15px] leading-relaxed max-w-[360px]">
+          <p className="text-violet-100/60 text-[15px] leading-relaxed max-w-[380px]">
             {t.startCollaboratingDesc}
           </p>
         </div>
-        <div className="text-xs text-neutral-500">
-          &copy; {new Date().getFullYear()} SecretVault. {t.allRightsReserved}
+        <div className="relative text-[11.5px] text-white/30">
+          &copy; {new Date().getFullYear()} SecretVault · {t.allRightsReserved}
         </div>
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-16 relative">
-        {/* Language toggle */}
+      <div className="flex-1 flex items-center justify-center relative px-6 sm:px-14 py-10">
         <button
           onClick={toggleLang}
-          className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[13px] font-medium transition-colors duration-200"
+          className="absolute top-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] text-[12.5px] font-semibold transition-colors"
           title={t.language}
         >
-          <Globe size={15} />
+          <Globe size={14} />
           <span>{lang === 'en' ? 'EN' : 'KO'}</span>
         </button>
 
-        <div className="w-full max-w-[420px]">
-          {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-11 h-11 rounded-xl bg-violet-500 flex items-center justify-center text-white">
-              <Shield size={24} />
+        <div className="w-full max-w-[400px]">
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+              <Shield size={22} strokeWidth={2.2} />
             </div>
-            <span className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">SecretVault</span>
+            <span className="text-[22px] font-bold text-[var(--fg-primary)] tracking-tight">SecretVault</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{t.createAccount}</h1>
-          <p className="text-base text-neutral-500 dark:text-neutral-400 mb-10">{t.setupWorkspace}</p>
+          <h1 className="text-[28px] font-bold text-[var(--fg-primary)] tracking-tight mb-1.5">{t.createAccount}</h1>
+          <p className="text-[14.5px] text-[var(--fg-secondary)] mb-8">{t.setupWorkspace}</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm">
+              <div className="px-3.5 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-[13px] animate-slide-up">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
+              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
                 {t.email} <span className="text-red-500">*</span>
               </label>
               <input
@@ -120,7 +123,7 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
+              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
                 {t.username} <span className="text-red-500">*</span>
               </label>
               <input
@@ -134,7 +137,7 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
+              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
                 {t.password} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -142,22 +145,23 @@ export default function SignupForm() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className={`${inputClass} pr-11`}
+                  className={`${inputClass} pr-10`}
                   placeholder={t.createPassword}
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+                  tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">
+              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
                 {t.confirmPassword} <span className="text-red-500">*</span>
               </label>
               <input
@@ -173,26 +177,26 @@ export default function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[52px] flex items-center justify-center gap-2 rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-[15px] font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm mt-2"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[14px] font-semibold transition-colors shadow-[var(--shadow-sm)] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <UserPlus size={18} />
+                  <UserPlus size={16} />
                   {t.createAccount}
                 </>
               )}
             </button>
           </form>
 
-          <p className="mt-10 text-center text-[15px] text-neutral-500 dark:text-neutral-400">
+          <p className="mt-8 text-center text-[13.5px] text-[var(--fg-secondary)]">
             {t.haveAccount}{' '}
             <button
               onClick={() => router.push('/login')}
-              className="text-violet-500 hover:text-violet-600 dark:text-violet-400 font-semibold inline-flex items-center gap-1"
+              className="text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold inline-flex items-center gap-1 transition-colors"
             >
-              <ArrowLeft size={15} />
+              <ArrowLeft size={13} />
               {t.signIn}
             </button>
           </p>

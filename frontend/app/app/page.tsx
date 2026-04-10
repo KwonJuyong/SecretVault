@@ -319,8 +319,8 @@ export default function AppPage() {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white dark:bg-[#191919]">
-        <div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen flex items-center justify-center bg-[var(--bg-app)]">
+        <div className="w-7 h-7 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin" />
       </div>
     );
   }
@@ -330,7 +330,7 @@ export default function AppPage() {
   const decryptedTitle = editTitle || 'Untitled';
 
   return (
-    <div className="h-screen flex bg-white dark:bg-[#191919] text-neutral-900 dark:text-neutral-100">
+    <div className="h-screen flex bg-[var(--bg-app)] text-[var(--fg-primary)]">
       <Sidebar
         pages={pages}
         activePageId={activePageId}

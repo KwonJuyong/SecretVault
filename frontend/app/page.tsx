@@ -15,8 +15,8 @@ export default function Home() {
   }, [isAuthenticated, isLoading, router]);
 
   return (
-    <div className="h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
-      <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    <div className="h-screen flex items-center justify-center bg-[var(--bg-app)]">
+      <div className="w-7 h-7 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin" />
     </div>
   );
 }

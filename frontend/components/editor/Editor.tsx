@@ -89,15 +89,15 @@ export default function Editor({
   }, [onChangeContent]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--bg-surface)]">
       {/* Title area - centered with max-width */}
-      <div className="w-full bg-white dark:bg-[#191919]">
-        <div className="max-w-[960px] xl:max-w-[1100px] 2xl:max-w-[1250px] mx-auto px-8 sm:px-14 lg:px-16 pt-16 pb-3">
+      <div className="w-full">
+        <div className="max-w-[960px] xl:max-w-[1100px] 2xl:max-w-[1250px] mx-auto px-8 sm:px-14 lg:px-16 pt-14 pb-3">
           {/* Icon picker */}
-          <div className="relative mb-4 inline-block">
+          <div className="relative mb-3 inline-block">
             <button
               onClick={() => setShowIconPicker(!showIconPicker)}
-              className="text-6xl hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl p-2.5 transition"
+              className="text-[56px] leading-none hover:bg-[var(--bg-hover)] rounded-xl p-2 transition-colors"
               title={t.changeIcon}
             >
               {icon || '\u{1F4C4}'}
@@ -105,16 +105,16 @@ export default function Editor({
             {showIconPicker && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowIconPicker(false)} />
-                <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 w-80 overflow-hidden">
-                  <div className="flex gap-0.5 px-2 pt-2 pb-1 overflow-x-auto border-b border-neutral-100 dark:border-neutral-800">
+                <div className="absolute left-0 top-full mt-1 z-50 bg-[var(--bg-surface)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--border-default)] w-80 overflow-hidden animate-scale-in origin-top-left">
+                  <div className="flex gap-0.5 px-2 pt-2 pb-1 overflow-x-auto border-b border-[var(--border-subtle)]">
                     {emojiCategories.map((cat, i) => (
                       <button
                         key={cat.name}
                         onClick={() => setActiveCategory(i)}
-                        className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition ${
+                        className={`px-2.5 py-1 rounded-md text-[11.5px] font-medium whitespace-nowrap transition-colors ${
                           i === activeCategory
-                            ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-500 dark:text-violet-300'
-                            : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                            ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                            : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)]'
                         }`}
                       >
                         {cat.name}
@@ -126,7 +126,7 @@ export default function Editor({
                       <button
                         key={i}
                         onClick={() => { onChangeIcon(emoji); setShowIconPicker(false); }}
-                        className="text-xl p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition flex items-center justify-center"
+                        className="text-[18px] w-8 h-8 rounded-md hover:bg-[var(--bg-hover)] transition flex items-center justify-center"
                       >
                         {emoji || '\u274C'}
                       </button>
@@ -144,7 +144,7 @@ export default function Editor({
             value={title}
             onChange={e => onChangeTitle(e.target.value)}
             placeholder={t.untitled}
-            className="w-full text-[40px] font-bold text-[rgb(55,53,47)] dark:text-[rgba(255,255,255,0.95)] bg-transparent border-none outline-none placeholder-[rgba(55,53,47,0.25)] dark:placeholder-[rgba(255,255,255,0.2)] leading-tight"
+            className="w-full text-[40px] font-bold tracking-tight text-[var(--fg-primary)] bg-transparent border-none outline-none placeholder-[var(--fg-quaternary)] leading-tight"
           />
         </div>
       </div>

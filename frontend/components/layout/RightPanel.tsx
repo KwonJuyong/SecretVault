@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileDown, FileText, ChevronRight, X, AlignLeft } from 'lucide-react';
+import { FileDown, FileText, ChevronRight, X, AlignLeft, Download } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { PageTreeItem, TocHeading } from '@/lib/types';
 
@@ -41,7 +41,7 @@ export default function RightPanel({
     const hasChildren = children.length > 0 || page.has_children;
     const isActive = page.id === activePageId;
     const isCollapsed = collapsed.has(page.id);
-    const title = decryptedTitles[page.id] || t.untitled;
+    const pageTitle = decryptedTitles[page.id] || t.untitled;
 
     return (
       <div key={page.id}>
@@ -49,23 +49,23 @@ export default function RightPanel({
           onClick={() => onSelectPage(page.id)}
           className={`w-full flex items-center gap-1.5 py-[5px] px-2 rounded-md text-left transition-colors text-[12.5px] ${
             isActive
-              ? 'bg-violet-50/70 dark:bg-violet-900/15 text-violet-500 dark:text-violet-300'
-              : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-medium'
+              : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
           }`}
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
         >
           {hasChildren ? (
             <span
               onClick={e => { e.stopPropagation(); toggleCollapse(page.id); }}
-              className="flex-shrink-0 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
+              className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover-strong)]"
             >
               <ChevronRight size={11} className={`transition-transform ${!isCollapsed ? 'rotate-90' : ''}`} />
             </span>
           ) : (
             <span className="w-[15px] flex-shrink-0" />
           )}
-          {page.icon && <span className="text-xs leading-none flex-shrink-0">{page.icon}</span>}
-          <span className="truncate">{title}</span>
+          {page.icon && <span className="text-[12px] leading-none flex-shrink-0">{page.icon}</span>}
+          <span className="truncate">{pageTitle}</span>
         </button>
         {hasChildren && !isCollapsed && children.map(child => renderNode(child, depth + 1))}
       </div>
@@ -73,32 +73,39 @@ export default function RightPanel({
   };
 
   return (
-    <div className="w-[240px] h-full flex flex-col bg-[#f8f8f7] dark:bg-[#1a1a1a] border-l border-neutral-200/70 dark:border-neutral-800 flex-shrink-0">
+    <aside className="w-[252px] h-full flex flex-col bg-[var(--bg-surface-2)] border-l border-[var(--border-subtle)] flex-shrink-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200/70 dark:border-neutral-800">
-        <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{t.overview}</span>
-        <button onClick={onClose} className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 transition">
-          <X size={14} />
+      <div className="flex items-center justify-between px-4 h-12 border-b border-[var(--border-subtle)]">
+        <span className="text-[11px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider">
+          {t.overview}
+        </span>
+        <button
+          onClick={onClose}
+          className="p-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+        >
+          <X size={13} />
         </button>
       </div>
 
       {/* Table of Contents */}
       {tocHeadings.length > 0 && (
-        <div className="p-2 border-b border-neutral-200/50 dark:border-neutral-800">
+        <div className="p-2 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-1.5 px-2 mb-1.5">
-            <AlignLeft size={10} className="text-neutral-400 dark:text-neutral-500 flex-shrink-0" />
-            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{t.contents}</p>
+            <AlignLeft size={10} className="text-[var(--fg-tertiary)] flex-shrink-0" />
+            <p className="text-[10px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider">
+              {t.contents}
+            </p>
           </div>
           <div className="space-y-0.5">
             {tocHeadings.map((h) => (
               <button
                 key={h.id}
                 onClick={() => document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="w-full text-left py-[4px] px-2 rounded-md text-[12px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors truncate"
+                className="w-full text-left py-[4px] px-2 rounded-md text-[12px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors truncate"
                 style={{ paddingLeft: `${(h.level - 1) * 12 + 8}px` }}
                 title={h.text}
               >
-                <span className={h.level === 1 ? 'font-medium' : 'font-normal'}>{h.text}</span>
+                <span className={h.level === 1 ? 'font-semibold' : 'font-normal'}>{h.text}</span>
               </button>
             ))}
           </div>
@@ -106,33 +113,37 @@ export default function RightPanel({
       )}
 
       {/* Page tree */}
-      <div className="flex-1 overflow-y-auto p-2">
-        <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-2 mb-1.5">{t.pages}</p>
+      <div className="flex-1 overflow-y-auto p-2 min-h-0">
+        <p className="text-[10px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider px-2 mb-1.5">
+          {t.pages}
+        </p>
         {rootPages.length === 0 ? (
-          <p className="text-[11px] text-neutral-400 px-2 py-3 text-center">{t.noPages}</p>
+          <p className="text-[11px] text-[var(--fg-tertiary)] px-2 py-3 text-center">{t.noPages}</p>
         ) : (
           rootPages.map(page => renderNode(page))
         )}
       </div>
 
       {/* Export - bottom */}
-      <div className="p-3 space-y-1.5 border-t border-neutral-200/50 dark:border-neutral-800">
-        <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider px-1 mb-1">{t.export}</p>
+      <div className="p-2 border-t border-[var(--border-subtle)]">
+        <p className="text-[10px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider px-2 mb-1 flex items-center gap-1">
+          <Download size={10} /> {t.export}
+        </p>
         <button
           onClick={onExportMarkdown}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
         >
-          <FileText size={14} className="text-neutral-400" />
+          <FileText size={13} className="text-[var(--fg-tertiary)]" />
           <span>{t.markdownExport}</span>
         </button>
         <button
           onClick={onExportPDF}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
         >
-          <FileDown size={14} className="text-neutral-400" />
+          <FileDown size={13} className="text-[var(--fg-tertiary)]" />
           <span>{t.pdfExport}</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

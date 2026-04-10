@@ -107,7 +107,7 @@ export default function BlockMenu({ pos, anchorRect, blockType, editor, onClose 
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
-        className="fixed z-50 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
+        className="fixed z-50 bg-[var(--bg-surface)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--border-default)] overflow-hidden animate-scale-in origin-top-left"
         style={{ top, left, width: menuW }}
       >
         {panel === 'main' ? (
@@ -115,25 +115,25 @@ export default function BlockMenu({ pos, anchorRect, blockType, editor, onClose 
             {canTurnInto && (
               <button
                 onClick={() => setPanel('turnInto')}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[13px] text-[var(--fg-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               >
                 <span>{t.blockMenuTurnInto}</span>
-                <ChevronRight size={14} className="text-neutral-400" />
+                <ChevronRight size={13} className="text-[var(--fg-tertiary)]" />
               </button>
             )}
             <button
               onClick={handleDuplicate}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] text-[var(--fg-primary)] hover:bg-[var(--bg-hover)] transition-colors"
             >
-              <Copy size={15} className="text-neutral-400" />
+              <Copy size={14} className="text-[var(--fg-tertiary)]" />
               {t.blockMenuDuplicate}
             </button>
-            <div className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+            <div className="my-1 border-t border-[var(--border-subtle)]" />
             <button
               onClick={handleDelete}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors"
             >
-              <Trash2 size={15} />
+              <Trash2 size={14} />
               {t.blockMenuDelete}
             </button>
           </div>
@@ -141,9 +141,9 @@ export default function BlockMenu({ pos, anchorRect, blockType, editor, onClose 
           <div className="flex flex-col">
             <button
               onClick={() => setPanel('main')}
-              className="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 border-b border-neutral-100 dark:border-neutral-800 transition"
+              className="flex items-center gap-1 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] border-b border-[var(--border-subtle)] transition-colors"
             >
-              <ChevronLeft size={13} />
+              <ChevronLeft size={12} />
               {t.blockMenuBack}
             </button>
             <div className="p-1 max-h-64 overflow-y-auto">
@@ -151,9 +151,9 @@ export default function BlockMenu({ pos, anchorRect, blockType, editor, onClose 
                 <button
                   key={opt.type}
                   onClick={() => handleTurnInto(opt.type)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-700 dark:text-neutral-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-600 dark:hover:text-violet-300 transition"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] text-[var(--fg-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors"
                 >
-                  <span className="text-neutral-400">{opt.icon}</span>
+                  <span className="text-[var(--fg-tertiary)]">{opt.icon}</span>
                   {t[opt.labelKey]}
                 </button>
               ))}

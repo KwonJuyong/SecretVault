@@ -525,25 +525,25 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
 
       {/* Table controls */}
       {isTableActive && editor && (
-        <div className="flex items-center gap-2 px-8 py-2.5 border-b border-neutral-100 dark:border-neutral-800/60 bg-[rgb(247,246,243)] dark:bg-[#2f3437] text-sm flex-wrap">
-          <span className="text-neutral-400 mr-2 font-medium">Table</span>
-          <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Col Before</button>
-          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Col After</button>
-          <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Row Before</button>
-          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">+ Row After</button>
-          <div className="w-px h-4 bg-neutral-200/60 dark:bg-neutral-700/50 mx-0.5" />
-          <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">Header Row</button>
-          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">Merge</button>
-          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-3 py-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition">Split</button>
-          <div className="w-px h-4 bg-neutral-200/60 dark:bg-neutral-700/50 mx-0.5" />
-          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-3 py-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition">- Col</button>
-          <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-3 py-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition">- Row</button>
-          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-3 py-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition">Delete</button>
+        <div className="flex items-center gap-1 px-6 py-1.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface-2)] text-[12px] flex-wrap">
+          <span className="text-[var(--fg-tertiary)] mr-2 font-semibold uppercase tracking-wider text-[10.5px]">Table</span>
+          <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">+ Col Before</button>
+          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">+ Col After</button>
+          <button onClick={() => editor.chain().focus().addRowBefore().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">+ Row Before</button>
+          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">+ Row After</button>
+          <div className="w-px h-4 bg-[var(--border-subtle)] mx-1" />
+          <button onClick={() => editor.chain().focus().toggleHeaderRow().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">Header Row</button>
+          <button onClick={() => editor.chain().focus().mergeCells().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">Merge</button>
+          <button onClick={() => editor.chain().focus().splitCell().run()} className="px-2 py-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] transition-colors">Split</button>
+          <div className="w-px h-4 bg-[var(--border-subtle)] mx-1" />
+          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 transition-colors">− Col</button>
+          <button onClick={() => editor.chain().focus().deleteRow().run()} className="px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 transition-colors">− Row</button>
+          <button onClick={() => editor.chain().focus().deleteTable().run()} className="px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-red-500 transition-colors">Delete</button>
         </div>
       )}
 
       <div
-        className="flex-1 overflow-y-auto bg-white dark:bg-[#191919]"
+        className="flex-1 overflow-y-auto bg-[var(--bg-surface)]"
         onClick={e => {
           const target = (e.target as HTMLElement).closest('[data-subpage-id]');
           if (target) {

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Shield, ArrowRight, Eye, EyeOff, Globe } from 'lucide-react';
+import { Shield, ArrowRight, Eye, EyeOff, Globe, Lock } from 'lucide-react';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -42,79 +42,83 @@ export default function LoginForm() {
 
   if (redirecting) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-neutral-950 gap-4">
-        <div className="w-11 h-11 rounded-xl bg-violet-500 flex items-center justify-center text-white">
-          <Shield size={24} />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-app)] gap-5">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white shadow-[var(--shadow-lg)]">
+          <Shield size={28} strokeWidth={2.2} />
         </div>
-        <div className="w-6 h-6 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" />
-        <p className="text-sm text-neutral-400">{t.loadingWorkspace}</p>
+        <div className="w-6 h-6 border-2 border-violet-400/30 border-t-violet-500 rounded-full animate-spin" />
+        <p className="text-[13px] text-[var(--fg-tertiary)]">{t.loadingWorkspace}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex p-4 sm:p-6 lg:p-0 bg-neutral-100 dark:bg-neutral-900 lg:bg-white lg:dark:bg-neutral-950">
-      {/* Left - Branding */}
-      <div className="hidden lg:flex lg:w-[520px] bg-gradient-to-br from-[#1c1826] via-[#241e33] to-[#1c1826] flex-col justify-between text-white px-16 py-14">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-11 h-11 rounded-xl bg-violet-500 flex items-center justify-center">
-              <Shield size={24} />
+    <div className="min-h-screen flex bg-[var(--bg-app)]">
+      {/* Left - Branding hero */}
+      <div className="hidden lg:flex lg:w-[540px] auth-hero relative flex-col justify-between text-white px-14 py-12 overflow-hidden">
+        <div className="absolute inset-0 auth-grid pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-900/40">
+              <Shield size={22} strokeWidth={2.2} />
             </div>
-            <span className="text-2xl font-bold tracking-tight">SecretVault</span>
+            <span className="text-[22px] font-bold tracking-tight">SecretVault</span>
           </div>
         </div>
-        <div className="pr-8">
-          <h2 className="text-[34px] font-bold leading-tight mb-5 whitespace-pre-line">
+        <div className="relative pr-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-5 rounded-full bg-white/5 border border-white/10 backdrop-blur text-[11.5px] font-medium text-violet-200">
+            <Lock size={11} /> End-to-end encrypted
+          </div>
+          <h2 className="text-[38px] font-bold leading-[1.1] mb-5 whitespace-pre-line tracking-tight">
             {t.secureWorkspace}
           </h2>
-          <p className="text-violet-200/60 text-[15px] leading-relaxed max-w-[360px]">
+          <p className="text-violet-100/60 text-[15px] leading-relaxed max-w-[380px]">
             {t.secureWorkspaceDesc}
           </p>
         </div>
-        <div className="text-xs text-neutral-500">
-          &copy; {new Date().getFullYear()} SecretVault. {t.allRightsReserved}
+        <div className="relative text-[11.5px] text-white/30">
+          &copy; {new Date().getFullYear()} SecretVault · {t.allRightsReserved}
         </div>
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-neutral-950 px-8 sm:px-16 relative">
+      <div className="flex-1 flex items-center justify-center relative px-6 sm:px-14 py-10">
         {/* Language toggle */}
         <button
           onClick={toggleLang}
-          className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 text-[13px] font-medium transition-colors duration-200"
+          className="absolute top-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] text-[12.5px] font-semibold transition-colors"
           title={t.language}
         >
-          <Globe size={15} />
+          <Globe size={14} />
           <span>{lang === 'en' ? 'EN' : 'KO'}</span>
         </button>
 
-        <div className="w-full max-w-[420px]">
+        <div className="w-full max-w-[400px]">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-11 h-11 rounded-xl bg-violet-500 flex items-center justify-center text-white">
-              <Shield size={24} />
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+              <Shield size={22} strokeWidth={2.2} />
             </div>
-            <span className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">SecretVault</span>
+            <span className="text-[22px] font-bold text-[var(--fg-primary)] tracking-tight">SecretVault</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">{t.welcomeBack}</h1>
-          <p className="text-base text-neutral-500 dark:text-neutral-400 mb-10">{t.signInToWorkspace}</p>
+          <h1 className="text-[28px] font-bold text-[var(--fg-primary)] tracking-tight mb-1.5">{t.welcomeBack}</h1>
+          <p className="text-[14.5px] text-[var(--fg-secondary)] mb-9">{t.signInToWorkspace}</p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm">
+              <div className="px-3.5 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-[13px] animate-slide-up">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">{t.email}</label>
+              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">{t.email}</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full h-[52px] px-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-[15px] placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors duration-200"
+                className="w-full h-11 px-3.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[14px] placeholder-[var(--fg-tertiary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow"
                 placeholder={t.enterEmail}
                 autoFocus
                 autoComplete="email"
@@ -122,22 +126,23 @@ export default function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-[15px] font-medium text-neutral-700 dark:text-neutral-300 mb-2.5">{t.password}</label>
+              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">{t.password}</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full h-[52px] px-4 pr-11 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-[15px] placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors duration-200"
+                  className="w-full h-11 px-3.5 pr-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[14px] placeholder-[var(--fg-tertiary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow"
                   placeholder={t.enterPassword}
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+                  tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
             </div>
@@ -145,24 +150,24 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[52px] flex items-center justify-center gap-2 rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-[15px] font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm mt-2"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[14px] font-semibold transition-colors shadow-[var(--shadow-sm)] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   {t.signIn}
-                  <ArrowRight size={18} />
+                  <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
 
-          <p className="mt-10 text-center text-[15px] text-neutral-500 dark:text-neutral-400">
+          <p className="mt-9 text-center text-[13.5px] text-[var(--fg-secondary)]">
             {t.noAccount}{' '}
             <button
               onClick={() => router.push('/signup')}
-              className="text-violet-500 hover:text-violet-600 dark:text-violet-400 font-semibold"
+              className="text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold transition-colors"
             >
               {t.createOne}
             </button>

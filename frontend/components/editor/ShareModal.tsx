@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { unwrapPageKey, wrapPageKey, importPublicKey } from '@/lib/crypto';
-import { X, UserPlus, Trash2, Globe, Eye, Edit3 } from 'lucide-react';
+import { X, UserPlus, Trash2, Share2, Users } from 'lucide-react';
 import type { PageTreeItem } from '@/lib/types';
 
 /** Collect all descendant page IDs (BFS). */
@@ -140,95 +140,106 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, allPages, g
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm" />
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] animate-fade-in"
+      onClick={onClose}
+    >
+      <div className="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+        className="relative w-full max-w-md mx-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)] shadow-[var(--shadow-xl)] overflow-hidden animate-scale-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
-          <div>
-            <h2 className="text-base font-semibold text-neutral-800 dark:text-white flex items-center gap-2">
-              <Globe size={18} /> {t.sharePage}
-            </h2>
-            <p className="text-xs text-neutral-400 mt-0.5 truncate max-w-[280px]">{pageTitle || t.untitled}</p>
+        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--border-subtle)]">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Share2 size={14} className="text-[var(--accent)]" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-[14.5px] font-semibold text-[var(--fg-primary)]">{t.sharePage}</h2>
+              <p className="text-[12px] text-[var(--fg-tertiary)] truncate max-w-[280px]">
+                {pageTitle || t.untitled}
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400">
-            <X size={18} />
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors flex-shrink-0"
+          >
+            <X size={16} />
           </button>
         </div>
 
         {/* Invite */}
-        <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
+        <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
           <div className="flex gap-2">
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder={t.enterEmailToShare}
-              className="flex-1 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
+              className="flex-1 min-w-0 px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
               onKeyDown={e => e.key === 'Enter' && handleShare()}
             />
             <select
               value={permission}
               onChange={e => setPermission(e.target.value)}
-              className="px-2 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none"
+              className="px-2 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none cursor-pointer focus:border-[var(--accent)]"
             >
               <option value="view">{t.view}</option>
               <option value="edit">{t.edit}</option>
             </select>
             <button
               onClick={handleShare}
-              disabled={sharing}
-              className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 disabled:opacity-60 text-white text-sm font-medium transition flex items-center gap-1.5"
+              disabled={sharing || !email.trim()}
+              className="px-3.5 h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-[13px] font-semibold transition-colors flex items-center gap-1.5 flex-shrink-0 shadow-[var(--shadow-sm)]"
             >
-              <UserPlus size={15} /> {sharing ? '...' : t.share}
+              <UserPlus size={14} /> {sharing ? '...' : t.share}
             </button>
           </div>
-          {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-          {success && <p className="text-xs text-emerald-500 mt-2">{success}</p>}
+          {error && <p className="text-[12px] text-red-500 mt-2">{error}</p>}
+          {success && <p className="text-[12px] text-emerald-600 dark:text-emerald-400 mt-2">{success}</p>}
         </div>
 
         {/* Shared with */}
         <div className="px-5 py-4">
-          <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            {t.sharedWith} ({shares.length})
+          <h3 className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider mb-2">
+            <Users size={11} /> {t.sharedWith} ({shares.length})
           </h3>
-          <div className="max-h-56 overflow-y-auto space-y-1">
+          <div className="max-h-56 overflow-y-auto -mx-1">
             {loading ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">{t.loading}</p>
+              <p className="text-[13px] text-[var(--fg-tertiary)] py-6 text-center">{t.loading}</p>
             ) : shares.length === 0 ? (
-              <p className="text-sm text-neutral-400 py-4 text-center">{t.notSharedYet}</p>
+              <p className="text-[13px] text-[var(--fg-tertiary)] py-6 text-center">{t.notSharedYet}</p>
             ) : (
               shares.map(share => (
                 <div
                   key={share.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 group"
+                  className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-hover)] group transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-neutral-400 dark:bg-neutral-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
                     {(share.display_name || share.email).charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                    <p className="text-[13px] font-medium text-[var(--fg-primary)] truncate">
                       {share.display_name || share.email}
                     </p>
-                    <p className="text-[11px] text-neutral-400 truncate">{share.email}</p>
+                    <p className="text-[11px] text-[var(--fg-tertiary)] truncate">{share.email}</p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <select
                       value={share.permission}
                       onChange={e => handleUpdatePermission(share.id, e.target.value)}
-                      className="text-xs px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 outline-none"
+                      className="text-[11.5px] px-1.5 py-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-secondary)] outline-none cursor-pointer hover:border-[var(--border-strong)]"
                     >
                       <option value="view">{t.view}</option>
                       <option value="edit">{t.edit}</option>
                     </select>
                     <button
                       onClick={() => handleRemoveShare(share.id, share.email)}
-                      className="p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                      className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/15 text-[var(--fg-tertiary)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

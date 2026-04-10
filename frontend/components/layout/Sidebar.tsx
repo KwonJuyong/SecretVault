@@ -9,7 +9,7 @@ import type { PageTreeItem, Workspace, SharedPageItem } from '@/lib/types';
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
 import {
   Plus, Search, FileText, ChevronRight, ChevronDown,
-  Trash2, LogOut, HelpCircle, Save, Share2, Users,
+  Trash2, LogOut, HelpCircle, Save, Users,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -77,39 +77,65 @@ export default function Sidebar({
   const childrenOf = (parentId: string) => pages.filter(p => p.parent_id === parentId);
 
   const openUserMenu = () => { setEditDisplayName(displayName || ''); setUserMenuOpen(true); };
-  const handleSaveProfile = async () => { setSaving(true); try { await api.put('/me', { display_name: editDisplayName }); } catch {} setSaving(false); };
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try { await api.put('/me', { display_name: editDisplayName }); } catch {}
+    setSaving(false);
+  };
 
   const renderPageItem = (page: PageTreeItem, depth: number = 0) => {
     const isActive = page.id === activePageId;
     const isExpanded = expandedIds.has(page.id);
     const children = childrenOf(page.id);
+    const hasChildren = children.length > 0 || page.has_children;
     const isHovered = hoveredId === page.id;
     const title = decryptTitle(page.id);
 
     return (
       <div key={page.id}>
         <div
-          className={`group flex items-center gap-2 py-[9px] px-2.5 mx-2 rounded-lg cursor-pointer transition-colors text-[14px] ${
+          className={`group relative flex items-center gap-1.5 py-1.5 pr-1.5 mx-2 rounded-[7px] cursor-pointer transition-colors duration-150 text-[13.5px] font-medium ${
             isActive
-              ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300'
-              : 'text-neutral-700 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
+              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+              : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
           }`}
-          style={{ paddingLeft: `${depth * 18 + 8}px` }}
+          style={{ paddingLeft: `${depth * 14 + 6}px` }}
           onClick={() => onSelectPage(page.id)}
           onMouseEnter={() => setHoveredId(page.id)}
           onMouseLeave={() => setHoveredId(null)}
         >
-          {children.length > 0 || page.has_children ? (
-            <button onClick={e => { e.stopPropagation(); toggleExpand(page.id); }} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex-shrink-0">
-              {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+          {hasChildren ? (
+            <button
+              onClick={e => { e.stopPropagation(); toggleExpand(page.id); }}
+              className="p-0.5 rounded hover:bg-[var(--bg-hover-strong)] flex-shrink-0 transition-colors"
+            >
+              {isExpanded
+                ? <ChevronDown size={14} className="opacity-60" />
+                : <ChevronRight size={14} className="opacity-60" />}
             </button>
-          ) : (<span className="w-5 flex-shrink-0" />)}
-          <span className="flex-shrink-0 text-base leading-none">{page.icon || ''}</span>
+          ) : (
+            <span className="w-[18px] flex-shrink-0" />
+          )}
+          <span className="flex-shrink-0 text-[15px] leading-none w-[18px] text-center">
+            {page.icon || <FileText size={14} className="inline opacity-50" />}
+          </span>
           <span className="truncate flex-1">{title}</span>
           {isHovered && (
-            <div className="flex items-center gap-0 flex-shrink-0">
-              <button onClick={e => { e.stopPropagation(); onDeletePage(page.id); }} className="p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition"><Trash2 size={14} /></button>
-              <button onClick={e => { e.stopPropagation(); onCreatePage(page.id); }} className="p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 transition"><Plus size={14} /></button>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                onClick={e => { e.stopPropagation(); onDeletePage(page.id); }}
+                className="p-1 rounded-[5px] hover:bg-red-50 dark:hover:bg-red-500/15 text-[var(--fg-tertiary)] hover:text-red-500 transition-colors"
+                title={t.blockMenuDelete}
+              >
+                <Trash2 size={13} />
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); onCreatePage(page.id); }}
+                className="p-1 rounded-[5px] hover:bg-[var(--bg-hover-strong)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+                title={t.createFirstPage}
+              >
+                <Plus size={13} />
+              </button>
             </div>
           )}
         </div>
@@ -119,34 +145,56 @@ export default function Sidebar({
   };
 
   return (
-    <div className="w-[260px] h-full flex flex-col bg-[#f8f8f7] dark:bg-[#1a1a1a] border-r border-neutral-200/50 dark:border-neutral-800 flex-shrink-0">
+    <aside className="w-[264px] h-full flex flex-col bg-[var(--bg-surface-2)] border-r border-[var(--border-subtle)] flex-shrink-0">
       {/* Workspace Switcher */}
-      <div className="px-4 py-3 border-b border-neutral-200/50 dark:border-neutral-800">
-        <WorkspaceSwitcher currentWorkspaceId={currentWorkspaceId} onSwitch={onSwitchWorkspace} onOpenSettings={onOpenWorkspaceSettings} onCreateWorkspace={onCreateWorkspace} />
+      <div className="px-3 pt-3 pb-2">
+        <WorkspaceSwitcher
+          currentWorkspaceId={currentWorkspaceId}
+          onSwitch={onSwitchWorkspace}
+          onOpenSettings={onOpenWorkspaceSettings}
+          onCreateWorkspace={onCreateWorkspace}
+        />
       </div>
 
       {/* Search */}
-      <div className="px-3 py-2">
-        <button onClick={onOpenSearch} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-          <Search size={17} /><span>{t.search}</span>
-          <kbd className="ml-auto text-[11px] px-1.5 py-0.5 rounded bg-neutral-200/80 dark:bg-neutral-700 text-neutral-400 font-mono">Ctrl+K</kbd>
+      <div className="px-3 pb-2">
+        <button
+          onClick={onOpenSearch}
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[8px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150 border border-transparent hover:border-[var(--border-default)]"
+        >
+          <Search size={15} className="opacity-70" />
+          <span>{t.search}</span>
+          <kbd className="ml-auto sc-kbd !py-[1px] !px-[5px] !text-[10px]">Ctrl K</kbd>
         </button>
       </div>
 
-      {/* ═══ TOP: My Pages ═══ */}
+      {/* ═══ My Pages ═══ */}
       <div className="flex-1 min-h-0 flex flex-col">
-        <div className="flex items-center justify-between px-5 pt-3 pb-1.5">
-          <span className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{t.myPages}</span>
-          <button onClick={() => onCreatePage()} className="p-1.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition">
-            <Plus size={16} />
+        <div className="flex items-center justify-between px-5 pt-2 pb-1">
+          <span className="text-[10.5px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-[0.08em]">
+            {t.myPages}
+          </span>
+          <button
+            onClick={() => onCreatePage()}
+            className="p-1 rounded-[5px] hover:bg-[var(--bg-hover-strong)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+            title={t.createFirstPage}
+          >
+            <Plus size={14} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto pb-1">
           {rootPages.length === 0 ? (
-            <div className="px-5 py-6 text-center">
-              <FileText size={28} className="mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
-              <p className="text-[13px] text-neutral-400">{t.noPagesYet}</p>
-              <button onClick={() => onCreatePage()} className="mt-2 text-[13px] text-violet-500 hover:text-violet-500 font-medium">{t.createFirstPage}</button>
+            <div className="px-5 py-8 text-center">
+              <div className="mx-auto mb-3 w-10 h-10 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] flex items-center justify-center">
+                <FileText size={18} className="text-[var(--fg-tertiary)]" />
+              </div>
+              <p className="text-[12px] text-[var(--fg-tertiary)] mb-2">{t.noPagesYet}</p>
+              <button
+                onClick={() => onCreatePage()}
+                className="inline-flex items-center gap-1 text-[12.5px] text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors"
+              >
+                <Plus size={12} /> {t.createFirstPage}
+              </button>
             </div>
           ) : (
             rootPages.map(page => renderPageItem(page))
@@ -154,30 +202,40 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* ═══ BOTTOM: Shared / Workspace ═══ */}
-      <div className="border-t border-neutral-200/50 dark:border-neutral-800 flex flex-col" style={{ minHeight: '120px', maxHeight: '40%' }}>
-        <div className="flex items-center gap-1.5 px-5 pt-3 pb-1.5">
-          <Users size={12} className="text-neutral-400" />
-          <span className="text-[10.5px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{t.sharedWithMe}</span>
+      {/* ═══ Shared With Me ═══ */}
+      <div
+        className="border-t border-[var(--border-subtle)] flex flex-col"
+        style={{ minHeight: '120px', maxHeight: '36%' }}
+      >
+        <div className="flex items-center gap-1.5 px-5 pt-3 pb-1">
+          <Users size={11} className="text-[var(--fg-tertiary)]" />
+          <span className="text-[10.5px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-[0.08em]">
+            {t.sharedWithMe}
+          </span>
         </div>
         <div className="flex-1 overflow-y-auto pb-1">
           {sharedPages.length === 0 ? (
-            <div className="px-5 py-4 text-center">
-              <p className="text-[12px] text-neutral-400">{t.noSharedPages}</p>
+            <div className="px-5 py-3 text-center">
+              <p className="text-[11.5px] text-[var(--fg-tertiary)]">{t.noSharedPages}</p>
             </div>
           ) : (
             sharedPages.map(sp => (
-              <div key={sp.id}
-                className={`flex items-center gap-2 py-[6px] px-2.5 mx-2 rounded-lg cursor-pointer transition-colors text-[13px] ${
-                  activePageId === sp.id ? 'bg-violet-50/80 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300' : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
+              <div
+                key={sp.id}
+                className={`flex items-center gap-2 py-1.5 px-2.5 mx-2 rounded-[7px] cursor-pointer transition-colors duration-150 ${
+                  activePageId === sp.id
+                    ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
                 }`}
                 onClick={() => onOpenSharedPage?.(sp.id)}
               >
-                <span className="flex-shrink-0 text-base leading-none">{sp.icon || '📄'}</span>
+                <span className="flex-shrink-0 text-[14px] leading-none w-[16px] text-center">
+                  {sp.icon || '📄'}
+                </span>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-[13px] font-medium">{sharedTitles[sp.id] || t.untitled}</p>
+                  <p className="truncate text-[12.5px] font-medium">{sharedTitles[sp.id] || t.untitled}</p>
                   {sp.shared_by_email && (
-                    <p className="truncate text-[11px] text-neutral-400">{sp.shared_by_email}</p>
+                    <p className="truncate text-[10.5px] text-[var(--fg-tertiary)] mt-0.5">{sp.shared_by_email}</p>
                   )}
                 </div>
               </div>
@@ -187,45 +245,77 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 border-t border-neutral-200/50 dark:border-neutral-800 space-y-0.5">
-        <button onClick={onOpenTrash} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-          <Trash2 size={17} /><span>{t.trash}</span>
+      <div className="px-2 py-2 border-t border-[var(--border-subtle)]">
+        <button
+          onClick={onOpenTrash}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+        >
+          <Trash2 size={15} className="opacity-70" />
+          <span>{t.trash}</span>
         </button>
-        <button onClick={onOpenTips} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-          <HelpCircle size={17} /><span>{t.help}</span>
+        <button
+          onClick={onOpenTips}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+        >
+          <HelpCircle size={15} className="opacity-70" />
+          <span>{t.help}</span>
         </button>
 
-        <div className="relative">
-          <button onClick={openUserMenu} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition">
-            <div className="w-7 h-7 rounded-full bg-neutral-400 dark:bg-neutral-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+        {/* User menu */}
+        <div className="relative mt-1 pt-2 border-t border-[var(--border-subtle)]">
+          <button
+            onClick={openUserMenu}
+            className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-[8px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+          >
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--brand-500,#8b5cf6)] to-[var(--brand-700,#6d28d9)] flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 shadow-[var(--shadow-xs)]">
               {(displayName || email || '?').charAt(0).toUpperCase()}
             </div>
-            <span className="truncate">{displayName || email}</span>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="truncate text-[12.5px] font-medium text-[var(--fg-primary)]">{displayName || email}</p>
+              {displayName && <p className="truncate text-[10.5px] text-[var(--fg-tertiary)]">{email}</p>}
+            </div>
           </button>
           {userMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-              <div className="absolute left-0 bottom-full mb-1 w-64 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50 overflow-hidden">
-                <div className="px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-neutral-700">
-                  <p className="text-[11px] text-neutral-400 uppercase tracking-wider mb-0.5">{t.account}</p>
-                  <p className="text-sm text-neutral-800 dark:text-neutral-200 truncate">{email}</p>
+              <div className="absolute left-0 bottom-full mb-2 w-[260px] bg-[var(--bg-surface)] rounded-xl border border-[var(--border-default)] shadow-[var(--shadow-lg)] z-50 overflow-hidden animate-scale-in origin-bottom-left">
+                <div className="px-4 pt-3 pb-2.5 border-b border-[var(--border-subtle)]">
+                  <p className="text-[10px] text-[var(--fg-tertiary)] uppercase tracking-[0.08em] font-semibold mb-1">{t.account}</p>
+                  <p className="text-[13px] text-[var(--fg-primary)] truncate font-medium">{email}</p>
                 </div>
-                <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700">
-                  <label className="text-[11px] text-neutral-400 uppercase tracking-wider block mb-1">{t.displayName}</label>
+                <div className="px-4 py-3 border-b border-[var(--border-subtle)]">
+                  <label className="text-[10px] text-[var(--fg-tertiary)] uppercase tracking-[0.08em] font-semibold block mb-1.5">
+                    {t.displayName}
+                  </label>
                   <div className="flex gap-1.5">
-                    <input type="text" value={editDisplayName} onChange={e => setEditDisplayName(e.target.value)}
-                      className="flex-1 px-3 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-800 dark:text-neutral-200 outline-none focus:border-violet-400" placeholder={t.displayNamePlaceholder} />
-                    <button onClick={handleSaveProfile} disabled={saving} className="px-2 py-1 rounded-md bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium transition disabled:opacity-50"><Save size={12} /></button>
+                    <input
+                      type="text"
+                      value={editDisplayName}
+                      onChange={e => setEditDisplayName(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[13px] text-[var(--fg-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow"
+                      placeholder={t.displayNamePlaceholder}
+                    />
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className="px-2.5 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors disabled:opacity-50 flex items-center justify-center"
+                      title={t.saveChanges}
+                    >
+                      <Save size={13} />
+                    </button>
                   </div>
                 </div>
-                <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
-                  <LogOut size={15} /> {t.signOut}
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium"
+                >
+                  <LogOut size={14} /> {t.signOut}
                 </button>
               </div>
             </>
           )}
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

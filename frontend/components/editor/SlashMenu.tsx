@@ -127,10 +127,10 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
   if (filtered.length === 0) {
     return (
       <div
-        className="fixed z-50 w-72 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-3"
+        className="fixed z-50 w-[288px] bg-[var(--bg-surface)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--border-default)] p-3 animate-scale-in origin-top-left"
         style={{ top: adjustedPosition.top, left: adjustedPosition.left }}
       >
-        <p className="text-sm text-neutral-400 text-center py-2">{t.noMatchingCommands}</p>
+        <p className="text-[13px] text-[var(--fg-tertiary)] text-center py-2">{t.noMatchingCommands}</p>
       </div>
     );
   }
@@ -140,33 +140,36 @@ export default function SlashMenu({ filter, position, onSelect, onClose }: Slash
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
         ref={containerRef}
-        className="fixed z-50 w-72 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+        className="fixed z-50 w-[288px] bg-[var(--bg-surface)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--border-default)] overflow-hidden animate-scale-in origin-top-left"
         style={{ top: adjustedPosition.top, left: adjustedPosition.left }}
       >
-        <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-800">
-          <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{t.blocks}</p>
+        <div className="px-3 pt-3 pb-1.5">
+          <p className="text-[10px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider">{t.blocks}</p>
         </div>
-        <div ref={menuRef} className="max-h-72 overflow-y-auto p-1">
+        <div ref={menuRef} className="max-h-[360px] overflow-y-auto px-1.5 pb-1.5">
           {filtered.map((cmd, i) => (
             <button
               key={cmd.type}
               onClick={() => onSelect(cmd.type)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition ${
+              onMouseEnter={() => setSelectedIndex(i)}
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left transition-colors ${
                 i === selectedIndex
-                  ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-500 dark:text-violet-300'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                  ? 'bg-[var(--accent-soft)]'
+                  : 'hover:bg-[var(--bg-hover)]'
               }`}
             >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 border ${
                 i === selectedIndex
-                  ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-500 dark:text-violet-400'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+                  ? 'bg-[var(--bg-surface)] border-[var(--accent)]/30 text-[var(--accent)]'
+                  : 'bg-[var(--bg-surface-2)] border-[var(--border-subtle)] text-[var(--fg-secondary)]'
               }`}>
-                {cmd.icon}
+                {cmd.icon && <span className="[&>svg]:w-[17px] [&>svg]:h-[17px]">{cmd.icon}</span>}
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{cmd.label}</p>
-                <p className="text-xs text-neutral-400 truncate">{cmd.description}</p>
+              <div className="min-w-0 flex-1">
+                <p className={`text-[13px] font-medium truncate ${i === selectedIndex ? 'text-[var(--accent)]' : 'text-[var(--fg-primary)]'}`}>
+                  {cmd.label}
+                </p>
+                <p className="text-[11.5px] text-[var(--fg-tertiary)] truncate">{cmd.description}</p>
               </div>
             </button>
           ))}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Workspace } from '@/lib/types';
-import { X } from 'lucide-react';
+import { X, FolderPlus } from 'lucide-react';
 
 interface CreateWorkspaceModalProps {
   onClose: () => void;
@@ -44,32 +44,43 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-sm" />
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] animate-fade-in"
+      onClick={onClose}
+    >
+      <div className="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+        className="relative w-full max-w-md mx-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)] shadow-[var(--shadow-xl)] overflow-hidden animate-scale-in"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
-          <h2 className="text-base font-semibold text-neutral-800 dark:text-white">{t.createWorkspace}</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400">
-            <X size={18} />
+        <div className="flex items-center justify-between px-5 h-14 border-b border-[var(--border-subtle)]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center">
+              <FolderPlus size={15} className="text-[var(--accent)]" />
+            </div>
+            <h2 className="text-[14.5px] font-semibold text-[var(--fg-primary)]">{t.createWorkspace}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+          >
+            <X size={16} />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="px-5 py-5 space-y-4">
           {/* Icon picker */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t.icon}</label>
+            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-2">{t.icon}</label>
             <div className="flex gap-1.5 flex-wrap">
               {icons.map(emoji => (
                 <button
                   key={emoji}
                   onClick={() => setIcon(emoji)}
-                  className={`text-xl p-2 rounded-lg transition ${
+                  className={`text-[18px] w-9 h-9 rounded-lg transition flex items-center justify-center ${
                     icon === emoji
-                      ? 'bg-violet-50 dark:bg-violet-900/30 ring-2 ring-violet-400'
-                      : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      ? 'bg-[var(--accent-soft)] ring-2 ring-[var(--accent)]'
+                      : 'hover:bg-[var(--bg-hover)]'
                   }`}
                 >
                   {emoji}
@@ -80,13 +91,13 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">{t.name}</label>
+            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">{t.name}</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder={t.workspaceNamePlaceholder}
-              className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30"
+              className="w-full px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
               onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -94,22 +105,22 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">{t.descriptionOptional}</label>
+            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">{t.descriptionOptional}</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder={t.workspaceDescPlaceholder}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-violet-400/30 resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)] resize-none"
             />
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-[12px] text-red-500">{error}</p>}
 
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white font-medium text-sm transition"
+            className="w-full h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-semibold text-[13px] transition-colors shadow-[var(--shadow-sm)]"
           >
             {loading ? t.creating : t.createWorkspace}
           </button>

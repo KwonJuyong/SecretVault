@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Save } from 'lucide-react';
+import { X, User, Save, Check } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -32,25 +32,78 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     finally { setSaving(false); }
   };
 
+  const initial = (displayName || userEmail || '?').trim().charAt(0).toUpperCase();
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
-          <h2 className="text-lg font-bold text-neutral-900">{t.profile}</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400"><X size={18} /></button>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] animate-fade-in"
+      onClick={onClose}
+    >
+      <div className="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-sm mx-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)] shadow-[var(--shadow-xl)] overflow-hidden animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 h-14 border-b border-[var(--border-subtle)]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center">
+              <User size={15} className="text-[var(--accent)]" />
+            </div>
+            <h2 className="text-[14.5px] font-semibold text-[var(--fg-primary)]">{t.profile}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+          >
+            <X size={16} />
+          </button>
         </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">{t.email}</label>
-            <input type="email" value={userEmail} disabled className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-100 text-neutral-500 text-sm" />
+
+        <div className="px-5 py-5 space-y-4">
+          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-subtle)]">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-[17px] font-bold flex-shrink-0">
+              {initial}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[13.5px] font-semibold text-[var(--fg-primary)] truncate">
+                {displayName || userEmail}
+              </div>
+              <div className="text-[12px] text-[var(--fg-tertiary)] truncate">{userEmail}</div>
+            </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">{t.displayName}</label>
-            <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" placeholder={t.yourDisplayName} />
+            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">
+              {t.email}
+            </label>
+            <input
+              type="email"
+              value={userEmail}
+              disabled
+              className="w-full px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[var(--fg-tertiary)] text-[13px] cursor-not-allowed"
+            />
           </div>
-          <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition disabled:opacity-50">
-            <Save size={14} /> {saving ? t.saving : saved ? t.savedExclaim : t.saveChanges}
+
+          <div>
+            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">
+              {t.displayName}
+            </label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              placeholder={t.yourDisplayName}
+              className="w-full px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[13px] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
+            />
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors disabled:opacity-50 shadow-[var(--shadow-sm)]"
+          >
+            {saved ? <Check size={14} /> : <Save size={14} />}
+            {saving ? t.saving : saved ? t.savedExclaim : t.saveChanges}
           </button>
         </div>
       </div>

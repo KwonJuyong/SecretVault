@@ -38,14 +38,14 @@ export default function CodeBlockToolbar({ editor }: CodeBlockToolbarProps) {
   const currentLang = editor.getAttributes('codeBlock').language || '';
 
   return (
-    <div className="flex items-center gap-2 px-5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-xs">
-      <span className="text-neutral-400 mr-1">Code:</span>
+    <div className="flex items-center gap-2 px-5 py-1.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface-2)] text-[11.5px]">
+      <span className="text-[var(--fg-tertiary)] mr-1 font-medium">Code</span>
       <select
         value={currentLang}
         onChange={e => {
           editor.chain().focus().updateAttributes('codeBlock', { language: e.target.value }).run();
         }}
-        className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-2 py-0.5 text-xs text-neutral-700 dark:text-neutral-300 outline-none cursor-pointer"
+        className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-md px-2 py-0.5 text-[11.5px] text-[var(--fg-secondary)] outline-none cursor-pointer hover:border-[var(--border-strong)] focus:border-[var(--accent)] transition-colors"
       >
         {LANGUAGES.map(lang => (
           <option key={lang.value} value={lang.value}>{lang.label}</option>
