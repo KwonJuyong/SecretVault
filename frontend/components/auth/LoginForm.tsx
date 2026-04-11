@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Shield, ArrowRight, Eye, EyeOff, Globe, Lock } from 'lucide-react';
+import { BookLock, ArrowRight, Eye, EyeOff, Globe, Lock } from 'lucide-react';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -43,10 +43,10 @@ export default function LoginForm() {
   if (redirecting) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-app)] gap-5">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white shadow-[var(--shadow-lg)]">
-          <Shield size={28} strokeWidth={2.2} />
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#3a3442] to-[#1e1a26] flex items-center justify-center text-[#e8e2d4] shadow-[var(--shadow-lg)] ring-1 ring-black/5">
+          <BookLock size={26} strokeWidth={1.75} />
         </div>
-        <div className="w-6 h-6 border-2 border-violet-400/30 border-t-violet-500 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[var(--accent)]/25 border-t-[var(--accent)] rounded-full animate-spin" />
         <p className="text-[13px] text-[var(--fg-tertiary)]">{t.loadingWorkspace}</p>
       </div>
     );
@@ -55,24 +55,24 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen flex bg-[var(--bg-app)]">
       {/* Left - Branding hero */}
-      <div className="hidden lg:flex lg:w-[540px] auth-hero relative flex-col justify-between text-white px-14 py-12 overflow-hidden">
+      <div className="hidden lg:flex lg:w-[440px] auth-hero relative flex-col justify-between text-white px-16 pl-20 py-20 overflow-hidden">
         <div className="absolute inset-0 auth-grid pointer-events-none" />
         <div className="relative">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-900/40">
-              <Shield size={22} strokeWidth={2.2} />
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#3a3442] to-[#1e1a26] flex items-center justify-center text-[#e8e2d4] shadow-lg shadow-black/30 ring-1 ring-white/10">
+              <BookLock size={21} strokeWidth={1.75} />
             </div>
-            <span className="text-[22px] font-bold tracking-tight">SecretVault</span>
+            <span className="text-[22px] font-semibold tracking-tight">SecretVault</span>
           </div>
         </div>
-        <div className="relative pr-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-5 rounded-full bg-white/5 border border-white/10 backdrop-blur text-[11.5px] font-medium text-violet-200">
+        <div className="relative pr-6 mt-10 mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-8 rounded-full bg-white/5 border border-white/10 backdrop-blur text-[11.5px] font-medium text-white/70">
             <Lock size={11} /> End-to-end encrypted
           </div>
-          <h2 className="text-[38px] font-bold leading-[1.1] mb-5 whitespace-pre-line tracking-tight">
+          <h2 className="text-[36px] font-semibold leading-[1.15] mb-7 whitespace-pre-line tracking-tight text-white/95">
             {t.secureWorkspace}
           </h2>
-          <p className="text-violet-100/60 text-[15px] leading-relaxed max-w-[380px]">
+          <p className="text-white/55 text-[15px] leading-[1.75] max-w-[340px]">
             {t.secureWorkspaceDesc}
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function LoginForm() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center relative px-6 sm:px-14 py-10">
+      <div className="flex-1 flex items-center justify-center relative px-8 sm:px-20 py-16">
         {/* Language toggle */}
         <button
           onClick={toggleLang}
@@ -96,10 +96,10 @@ export default function LoginForm() {
         <div className="w-full max-w-[400px]">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
-              <Shield size={22} strokeWidth={2.2} />
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#3a3442] to-[#1e1a26] flex items-center justify-center text-[#e8e2d4] shadow-lg ring-1 ring-black/5">
+              <BookLock size={21} strokeWidth={1.75} />
             </div>
-            <span className="text-[22px] font-bold text-[var(--fg-primary)] tracking-tight">SecretVault</span>
+            <span className="text-[22px] font-semibold text-[var(--fg-primary)] tracking-tight">SecretVault</span>
           </div>
 
           <h1 className="text-[28px] font-bold text-[var(--fg-primary)] tracking-tight mb-1.5">{t.welcomeBack}</h1>
