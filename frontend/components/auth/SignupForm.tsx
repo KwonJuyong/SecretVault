@@ -54,7 +54,7 @@ export default function SignupForm() {
       {/* Left - Branding hero */}
       <div
         className="hidden lg:flex lg:w-[460px] auth-hero relative flex-col justify-between text-white overflow-hidden"
-        style={{ paddingLeft: '72px', paddingRight: '56px', paddingTop: '60px', paddingBottom: '52px' }}
+        style={{ paddingLeft: '58px', paddingRight: '56px', paddingTop: '50px', paddingBottom: '48px' }}
       >
         <div className="absolute inset-0 auth-grid pointer-events-none" />
         <div className="relative">
