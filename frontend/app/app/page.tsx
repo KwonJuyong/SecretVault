@@ -345,7 +345,6 @@ export default function AppPage() {
         onCreateWorkspace={() => setShowCreateWorkspace(true)}
         currentWorkspaceId={workspaceId}
         collapsed={!sidebarOpen}
-        onOpenSharedPage={loadSharedPage}
         decryptedTitles={subPageTitles}
       />
 
@@ -389,7 +388,7 @@ export default function AppPage() {
       </div>
 
       {activePageId && rightPanelOpen && (
-        <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} pages={pages} decryptedTitles={subPageTitles} activePageId={activePageId} onSelectPage={loadPage} tocHeadings={tocHeadings} />
+        <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} activePageId={activePageId} tocHeadings={tocHeadings} onOpenSharedPage={loadSharedPage} />
       )}
 
       {showSearch && <SearchModal pages={pages} decryptedTitles={subPageTitles} onSelect={loadPage} onClose={() => setShowSearch(false)} />}

@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
-import { unwrapPageKey, decrypt } from '@/lib/crypto';
-import type { PageTreeItem, Workspace, SharedPageItem } from '@/lib/types';
+import type { PageTreeItem, Workspace } from '@/lib/types';
 import WorkspaceSwitcher from '@/components/workspace/WorkspaceSwitcher';
 import {
   Plus, Search, FileText, ChevronRight, ChevronDown,
-  Trash2, LogOut, HelpCircle, Save, Users,
+  Trash2, LogOut, HelpCircle, Save,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,7 +25,6 @@ interface SidebarProps {
   onCreateWorkspace: () => void;
   currentWorkspaceId: string;
   collapsed: boolean;
-  onOpenSharedPage?: (pageId: string) => void;
   decryptedTitles?: Record<string, string>;
 }
 
@@ -34,33 +32,15 @@ export default function Sidebar({
   pages, activePageId, onSelectPage, onCreatePage,
   onDeletePage, onOpenSearch, onOpenTrash, onOpenTips, collapsed,
   onSwitchWorkspace, onOpenWorkspaceSettings, onCreateWorkspace,
-  currentWorkspaceId, onOpenSharedPage, decryptedTitles = {},
+  currentWorkspaceId, decryptedTitles = {},
 }: SidebarProps) {
-  const { email, displayName, logout, privateKey } = useAuth();
+  const { email, displayName, logout } = useAuth();
   const { t } = useLanguage();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
-  const [sharedPages, setSharedPages] = useState<SharedPageItem[]>([]);
-  const [sharedTitles, setSharedTitles] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    api.get<SharedPageItem[]>('/shared-pages').then(async (pages) => {
-      setSharedPages(pages);
-      if (!privateKey) return;
-      const titles: Record<string, string> = {};
-      await Promise.allSettled(pages.map(async (sp) => {
-        if (!sp.page_key_grant) return;
-        try {
-          const pageKey = await unwrapPageKey(sp.page_key_grant, privateKey);
-          titles[sp.id] = sp.title ? await decrypt(sp.title, pageKey) : '';
-        } catch { /* leave as empty */ }
-      }));
-      setSharedTitles(titles);
-    }).catch(() => {});
-  }, [currentWorkspaceId, privateKey]);
 
   if (collapsed) return null;
 
@@ -198,48 +178,6 @@ export default function Sidebar({
             </div>
           ) : (
             rootPages.map(page => renderPageItem(page))
-          )}
-        </div>
-      </div>
-
-      {/* ═══ Shared With Me ═══ */}
-      <div
-        className="border-t border-[var(--border-subtle)] flex flex-col"
-        style={{ minHeight: '120px', maxHeight: '36%' }}
-      >
-        <div className="flex items-center gap-1.5 px-5 pt-3 pb-1">
-          <Users size={11} className="text-[var(--fg-tertiary)]" />
-          <span className="text-[10.5px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-[0.08em]">
-            {t.sharedWithMe}
-          </span>
-        </div>
-        <div className="flex-1 overflow-y-auto pb-1">
-          {sharedPages.length === 0 ? (
-            <div className="px-5 py-3 text-center">
-              <p className="text-[11.5px] text-[var(--fg-tertiary)]">{t.noSharedPages}</p>
-            </div>
-          ) : (
-            sharedPages.map(sp => (
-              <div
-                key={sp.id}
-                className={`flex items-center gap-2 py-1.5 px-2.5 mx-2 rounded-[7px] cursor-pointer transition-colors duration-150 ${
-                  activePageId === sp.id
-                    ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-                    : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
-                }`}
-                onClick={() => onOpenSharedPage?.(sp.id)}
-              >
-                <span className="flex-shrink-0 text-[14px] leading-none w-[16px] text-center">
-                  {sp.icon || '📄'}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-[12.5px] font-medium">{sharedTitles[sp.id] || t.untitled}</p>
-                  {sp.shared_by_email && (
-                    <p className="truncate text-[10.5px] text-[var(--fg-tertiary)] mt-0.5">{sp.shared_by_email}</p>
-                  )}
-                </div>
-              </div>
-            ))
           )}
         </div>
       </div>
