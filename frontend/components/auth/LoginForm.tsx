@@ -57,7 +57,7 @@ export default function LoginForm() {
       {/* Left - Branding hero */}
       <div
         className="hidden lg:flex lg:w-[460px] auth-hero relative flex-col justify-between text-white overflow-hidden"
-        style={{ paddingLeft: '58px', paddingRight: '56px', paddingTop: '50px', paddingBottom: '48px' }}
+        style={{ paddingLeft: '82px', paddingRight: '64px', paddingTop: '82px', paddingBottom: '80px' }}
       >
         <div className="absolute inset-0 auth-grid pointer-events-none" />
         <div className="relative">
