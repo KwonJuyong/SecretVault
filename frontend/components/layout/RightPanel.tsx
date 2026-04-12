@@ -122,8 +122,8 @@ export default function RightPanel({
         )}
       </div>
 
-      {/* Export - bottom */}
-      <div className="p-2 border-t border-[var(--border-subtle)]">
+      {/* Export - bottom (only when a page is active) */}
+      {activePageId && <div className="p-2 border-t border-[var(--border-subtle)]">
         <p className="text-[10px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-wider px-2 mb-1 flex items-center gap-1">
           <Download size={10} /> {t.export}
         </p>
@@ -141,7 +141,7 @@ export default function RightPanel({
           <FileDown size={13} className="text-[var(--fg-tertiary)]" />
           <span>{t.pdfExport}</span>
         </button>
-      </div>
+      </div>}
     </aside>
   );
 }

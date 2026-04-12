@@ -34,7 +34,7 @@ export default function AppPage() {
   const [editIcon, setEditIcon] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
   const [settingsWorkspace, setSettingsWorkspace] = useState<Workspace | null>(null);
@@ -355,7 +355,7 @@ export default function AppPage() {
           saveStatus={saveStatus}
           pageTitle={activePageId ? decryptedTitle : undefined}
           rightPanelOpen={rightPanelOpen}
-          onToggleRightPanel={activePageId ? () => setRightPanelOpen(!rightPanelOpen) : undefined}
+          onToggleRightPanel={() => setRightPanelOpen(!rightPanelOpen)}
           onShare={activePageId ? () => setShowShare(true) : undefined}
         />
 
@@ -387,7 +387,7 @@ export default function AppPage() {
         )}
       </div>
 
-      {activePageId && rightPanelOpen && (
+      {rightPanelOpen && (
         <RightPanel content={editContent} title={decryptedTitle} onClose={() => setRightPanelOpen(false)} onExportMarkdown={handleExportMarkdown} onExportPDF={handleExportPDF} activePageId={activePageId} tocHeadings={tocHeadings} onOpenSharedPage={loadSharedPage} />
       )}
 
