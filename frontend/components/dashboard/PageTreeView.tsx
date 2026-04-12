@@ -23,14 +23,14 @@ interface PageTreeViewProps {
   onRenameStart?: (pageId: string, title: string) => void;
 }
 
-function buildTree(pages: PageTreeItem[], titles: Record<string, string>): TreeNode[] {
+function buildTree(pages: PageTreeItem[], titles: Record<string, string>, untitledLabel: string): TreeNode[] {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
   for (const p of pages) {
     map.set(p.id, {
       id: p.id,
-      title: titles[p.id] || 'Untitled',
+      title: titles[p.id] || untitledLabel,
       icon: p.icon || '',
       children: [],
       depth: 0,
@@ -63,6 +63,7 @@ function TreeNodeCard({
   collapsed: Set<string>;
   onToggle: (id: string) => void;
 }) {
+  const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(node.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -130,7 +131,7 @@ function TreeNodeCard({
         <button
           onClick={e => { e.stopPropagation(); onCreateChild(node.id); }}
           className="p-1.5 rounded-md hover:bg-[var(--bg-hover-strong)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] opacity-0 group-hover:opacity-100 transition flex-shrink-0"
-          title="Add sub-page"
+          title={t.addSubPage}
         >
           <Plus size={14} />
         </button>
@@ -160,7 +161,7 @@ export default function PageTreeView({
   pages, decryptedTitles, activePageId, onSelectPage, onCreatePage, onRenameStart,
 }: PageTreeViewProps) {
   const { t } = useLanguage();
-  const tree = buildTree(pages, decryptedTitles);
+  const tree = buildTree(pages, decryptedTitles, t.untitled);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const toggleCollapse = useCallback((id: string) => {
@@ -174,30 +175,32 @@ export default function PageTreeView({
   const rootCount = tree.length;
   const totalCount = pages.length;
 
+  const countLabel = totalCount === 0
+    ? t.startNewPageHint
+    : `${totalCount} ${totalCount === 1 ? t.pageSuffix : t.pagesSuffix} · ${rootCount} ${t.rootSuffix}`;
+
   return (
     <div className="h-full flex flex-col bg-[var(--bg-app)] overflow-auto">
-      <div className="max-w-[760px] w-full mx-auto flex flex-col flex-1 px-8 py-12 min-h-0">
+      <div className="max-w-[760px] w-full mx-auto flex flex-col flex-1 px-8 py-10 min-h-0">
         {/* Hero Header */}
-        <div className="mb-10 animate-slide-up">
+        <div className="mb-8 animate-slide-up">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[11px] font-semibold mb-3">
-                <Sparkles size={11} /> WORKSPACE
+                <Sparkles size={11} /> {t.myPages.toUpperCase()}
               </div>
-              <h1 className="text-[32px] font-bold tracking-tight text-[var(--fg-primary)] mb-1.5">
-                Your pages
+              <h1 className="text-[30px] font-bold tracking-tight text-[var(--fg-primary)] mb-1.5">
+                {t.yourPages}
               </h1>
-              <p className="text-[14px] text-[var(--fg-secondary)]">
-                {totalCount === 0
-                  ? 'Start a new page to capture your ideas.'
-                  : `${totalCount} page${totalCount === 1 ? '' : 's'} · ${rootCount} root`}
+              <p className="text-[13.5px] text-[var(--fg-secondary)]">
+                {countLabel}
               </p>
             </div>
             <button
               onClick={() => onCreatePage()}
-              className="flex items-center gap-1.5 px-3.5 h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors shadow-[var(--shadow-sm)] flex-shrink-0"
+              className="flex items-center gap-1.5 px-4 h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors shadow-[var(--shadow-sm)] flex-shrink-0"
             >
-              <Plus size={15} /> New page
+              <Plus size={15} /> {t.newPage}
             </button>
           </div>
         </div>
@@ -211,7 +214,7 @@ export default function PageTreeView({
               </div>
               <p className="text-[15px] font-semibold text-[var(--fg-primary)] mb-1">{t.noPagesYet}</p>
               <p className="text-[13px] text-[var(--fg-tertiary)] mb-5">
-                {t.noPagesYetSearch || 'Start from scratch or use a /-command inside a page.'}
+                {t.startNewPageHint}
               </p>
               <button
                 onClick={() => onCreatePage()}

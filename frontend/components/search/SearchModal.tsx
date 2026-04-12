@@ -103,15 +103,15 @@ export default function SearchModal({ pages, decryptedTitles, onSelect, onClose 
           <span className="inline-flex items-center gap-1.5">
             <kbd className="sc-kbd !px-1.5">↑</kbd>
             <kbd className="sc-kbd !px-1.5">↓</kbd>
-            Navigate
+            {t.kbdNavigate}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <kbd className="sc-kbd !px-1.5">↵</kbd>
-            Select
+            {t.kbdSelect}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <kbd className="sc-kbd">Esc</kbd>
-            Close
+            {t.kbdClose}
           </span>
         </div>
       </div>

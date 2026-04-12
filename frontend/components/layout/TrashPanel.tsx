@@ -20,10 +20,7 @@ export default function TrashPanel({ workspaceId, onClose, onRestore }: TrashPan
   const fetchTrash = async () => {
     try {
       const data = await api.get<PageTreeItem[]>(`/workspaces/${workspaceId}/trash`);
-      setPages(data.map(p => ({
-        ...p,
-        decryptedTitle: p.icon ? `${p.icon} Page` : 'Deleted page',
-      })));
+      setPages(data.map(p => ({ ...p, decryptedTitle: '' })));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -81,11 +78,13 @@ export default function TrashPanel({ workspaceId, onClose, onRestore }: TrashPan
             pages.map(page => (
               <div
                 key={page.id}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--bg-hover)] group transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-hover)] group transition-colors"
               >
-                <FileText size={14} className="text-[var(--fg-tertiary)] flex-shrink-0" />
+                <span className="flex-shrink-0 text-[15px] leading-none w-[18px] text-center">
+                  {page.icon || <FileText size={14} className="inline text-[var(--fg-tertiary)]" />}
+                </span>
                 <span className="text-[13px] text-[var(--fg-secondary)] truncate flex-1">
-                  {page.decryptedTitle}
+                  {t.untitled}
                 </span>
                 <button
                   onClick={() => handleRestore(page.id)}

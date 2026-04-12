@@ -45,7 +45,7 @@ export default function WorkspaceSwitcher({
           {current?.icon || '\u{1F4BC}'}
         </div>
         <span className="text-[13px] font-semibold text-[var(--fg-primary)] truncate flex-1 text-left">
-          {current?.name || 'Workspace'}
+          {current?.name || t.workspaces}
         </span>
         <ChevronDown
           size={13}
@@ -83,7 +83,9 @@ export default function WorkspaceSwitcher({
                       <p className={`text-[13px] font-medium truncate ${ws.id === currentWorkspaceId ? 'text-[var(--accent)]' : 'text-[var(--fg-primary)]'}`}>
                         {ws.name}
                       </p>
-                      <p className="text-[10.5px] text-[var(--fg-tertiary)] capitalize">{ws.role}</p>
+                      <p className="text-[10.5px] text-[var(--fg-tertiary)]">
+                        {ws.role === 'owner' ? t.owner : ws.role === 'admin' ? t.admin : t.member}
+                      </p>
                     </div>
                     {ws.id === currentWorkspaceId && (
                       <Check size={13} className="text-[var(--accent)] flex-shrink-0" />

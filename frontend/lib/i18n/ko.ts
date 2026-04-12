@@ -54,6 +54,15 @@ const ko: Translations = {
   openPanel: '패널 열기',
   share: '공유',
 
+  // Dashboard (PageTreeView)
+  yourPages: '내 페이지',
+  startNewPageHint: '새 페이지를 만들어 아이디어를 기록해 보세요.',
+  addSubPage: '하위 페이지 추가',
+  newPage: '새 페이지',
+  pageSuffix: '페이지',
+  pagesSuffix: '페이지',
+  rootSuffix: '최상위',
+
   // Sidebar
   search: '검색',
   myPages: '내 페이지',
@@ -170,6 +179,9 @@ const ko: Translations = {
   searchPages: '페이지 검색...',
   noPagesFound: '페이지를 찾을 수 없습니다.',
   noPagesYetSearch: '아직 페이지가 없습니다.',
+  kbdNavigate: '이동',
+  kbdSelect: '선택',
+  kbdClose: '닫기',
 
   // Workspace Switcher
   workspaces: '워크스페이스',
@@ -180,6 +192,7 @@ const ko: Translations = {
   workspaceSettingsTitle: '워크스페이스 설정',
   inviteMember: '멤버 초대',
   emailPlaceholder: '이메일',
+  owner: '소유자',
   member: '멤버',
   admin: '관리자',
   invite: '초대',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
@@ -25,6 +26,7 @@ import { FileText, Plus } from 'lucide-react';
 
 export default function AppPage() {
   const { isAuthenticated, isLoading, workspaceId, privateKey, publicKey, switchWorkspace } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   const [pages, setPages] = useState<PageTreeItem[]>([]);
@@ -159,7 +161,7 @@ export default function AppPage() {
       const pageKey = pageKeyCache.current.get(activePageId);
       if (!pageKey) { setSaveStatus('error'); return; }
 
-      const encTitle = await encrypt(editTitle || 'Untitled', pageKey);
+      const encTitle = await encrypt(editTitle || t.untitled, pageKey);
       const encContent = await encrypt(editContent, pageKey);
       await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, { title: encTitle, content: encContent, icon: editIcon });
       setSaveStatus('saved');
@@ -225,7 +227,7 @@ export default function AppPage() {
     try {
       const pageKey = pageKeyCache.current.get(activePageId);
       if (!pageKey) return;
-      const encTitle = await encrypt(editTitle || 'Untitled', pageKey);
+      const encTitle = await encrypt(editTitle || t.untitled, pageKey);
       const encContent = await encrypt(html, pageKey);
       await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, { title: encTitle, content: encContent, icon: editIcon });
       if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
@@ -237,7 +239,7 @@ export default function AppPage() {
     if (!activePageId || !workspaceId || !publicKey) return undefined;
     try {
       const pageKey = await generatePageKey();
-      const subEncTitle = await encrypt('Untitled', pageKey);
+      const subEncTitle = await encrypt(t.untitled, pageKey);
       const wrappedKey = await wrapPageKey(pageKey, publicKey);
 
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
@@ -250,7 +252,7 @@ export default function AppPage() {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'page_created', page_id: data.id }));
       }
-      return { id: data.id, title: 'Untitled' };
+      return { id: data.id, title: t.untitled };
     } catch (e) { console.error('Failed to create sub-page:', e); return undefined; }
   }, [activePageId, workspaceId, publicKey, fetchPages]);
 
@@ -276,10 +278,10 @@ export default function AppPage() {
         if (p.encrypted_page_key && privateKey) {
           try {
             const pageKey = await getPageKey(p.id, p.encrypted_page_key);
-            map[p.id] = pageKey && p.title ? await decrypt(p.title, pageKey) : 'Untitled';
-          } catch { map[p.id] = 'Untitled'; }
+            map[p.id] = pageKey && p.title ? await decrypt(p.title, pageKey) : t.untitled;
+          } catch { map[p.id] = t.untitled; }
         } else {
-          map[p.id] = 'Untitled';
+          map[p.id] = t.untitled;
         }
       }
       setSubPageTitles(map);
@@ -291,7 +293,7 @@ export default function AppPage() {
   const subPages = useMemo(
     () => Object.entries(subPageTitles)
       .filter(([id]) => pages.find(p => p.id === id && p.parent_id === activePageId))
-      .map(([id, title]) => ({ id, title: title || 'Untitled', icon: pages.find(p => p.id === id)?.icon || '' })),
+      .map(([id, title]) => ({ id, title: title || t.untitled, icon: pages.find(p => p.id === id)?.icon || '' })),
     [subPageTitles, pages, activePageId],
   );
 
@@ -309,9 +311,9 @@ export default function AppPage() {
   // Export
   const handleExportMarkdown = useCallback(() => {
     const md = htmlToMarkdown(editContent);
-    downloadFile(`# ${editTitle || 'Untitled'}\n\n${md}`, `${editTitle || 'Untitled'}.md`, 'text/markdown;charset=utf-8');
+    downloadFile(`# ${editTitle || t.untitled}\n\n${md}`, `${editTitle || t.untitled}.md`, 'text/markdown;charset=utf-8');
   }, [editTitle, editContent]);
-  const handleExportPDF = useCallback(() => { exportPDF(editTitle || 'Untitled', editContent); }, [editTitle, editContent]);
+  const handleExportPDF = useCallback(() => { exportPDF(editTitle || t.untitled, editContent); }, [editTitle, editContent, t.untitled]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -330,7 +332,7 @@ export default function AppPage() {
 
   if (!isAuthenticated) return null;
 
-  const decryptedTitle = editTitle || 'Untitled';
+  const decryptedTitle = editTitle || t.untitled;
 
   return (
     <div className="h-screen flex bg-[var(--bg-app)] text-[var(--fg-primary)]">
@@ -400,7 +402,7 @@ export default function AppPage() {
       {showCreateWorkspace && <CreateWorkspaceModal onClose={() => setShowCreateWorkspace(false)} onCreated={handleWorkspaceCreated} />}
       {showTips && <TipsModal onClose={() => setShowTips(false)} />}
       {showShare && activePageId && (
-        <ShareModal workspaceId={workspaceId} pageId={activePageId} pageTitle={editTitle || 'Untitled'} allPages={pages} getDecryptedPageKey={getDecryptedPageKey} onClose={() => setShowShare(false)} />
+        <ShareModal workspaceId={workspaceId} pageId={activePageId} pageTitle={editTitle || t.untitled} allPages={pages} getDecryptedPageKey={getDecryptedPageKey} onClose={() => setShowShare(false)} />
       )}
     </div>
   );

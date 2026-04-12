@@ -205,8 +205,8 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                         </button>
                       </>
                     ) : (
-                      <span className="text-[10.5px] font-medium text-[var(--fg-tertiary)] capitalize px-2 py-0.5 rounded-full bg-[var(--bg-surface-2)] border border-[var(--border-subtle)]">
-                        {member.role}
+                      <span className="text-[10.5px] font-medium text-[var(--fg-tertiary)] px-2 py-0.5 rounded-full bg-[var(--bg-surface-2)] border border-[var(--border-subtle)]">
+                        {member.role === 'owner' ? t.owner : member.role === 'admin' ? t.admin : t.member}
                       </span>
                     )}
                   </div>

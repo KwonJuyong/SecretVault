@@ -52,6 +52,15 @@ const en = {
   openPanel: 'Open panel',
   share: 'Share',
 
+  // Dashboard (PageTreeView)
+  yourPages: 'Your pages',
+  startNewPageHint: 'Start a new page to capture your ideas.',
+  addSubPage: 'Add sub-page',
+  newPage: 'New page',
+  pageSuffix: 'page',
+  pagesSuffix: 'pages',
+  rootSuffix: 'root',
+
   // Sidebar
   search: 'Search',
   myPages: 'My Pages',
@@ -168,6 +177,9 @@ const en = {
   searchPages: 'Search pages...',
   noPagesFound: 'No pages found.',
   noPagesYetSearch: 'No pages yet.',
+  kbdNavigate: 'Navigate',
+  kbdSelect: 'Select',
+  kbdClose: 'Close',
 
   // Workspace Switcher
   workspaces: 'Workspaces',
@@ -178,6 +190,7 @@ const en = {
   workspaceSettingsTitle: 'Workspace Settings',
   inviteMember: 'Invite Member',
   emailPlaceholder: 'Email',
+  owner: 'Owner',
   member: 'Member',
   admin: 'Admin',
   invite: 'Invite',
