@@ -215,6 +215,43 @@ const ko: Translations = {
 
   // User Guide (TipsModal)
   userGuide: '사용자 가이드',
+
+  // Getting Started
+  guideGettingStarted: '시작하기',
+  guideGettingStartedDesc: 'SecretVault는 종단간 암호화 노트 및 협업 앱입니다. 회원가입 후 개인 워크스페이스가 자동으로 생성됩니다. 작성한 내용은 서버로 전송되기 전에 브라우저에서 암호화됩니다.',
+
+  // Sharing
+  guideSharingTitle: '페이지 공유',
+  guideSharingStep1: '공유할 페이지를 엽니다.',
+  guideSharingStep2: '상단 바의 Share 버튼을 클릭합니다.',
+  guideSharingStep3: '상대방의 이메일 주소를 입력하고 확인합니다.',
+  guideSharingStep4: '공유된 페이지는 상대방 사이드바의 "공유된 페이지" 섹션에 나타납니다.',
+  guideSharingRevoke: '공유 해제: Share를 다시 열어 해당 사용자 옆의 제거 버튼을 클릭하세요.',
+
+  // Export
+  guideExportTitle: '페이지 내보내기',
+  guideExportStep1: '오른쪽 상단 버튼으로 오른쪽 패널을 엽니다.',
+  guideExportStep2: '내보내기 탭으로 이동합니다.',
+  guideExportStep3: '현재 페이지를 Markdown(.md) 또는 PDF로 다운로드합니다.',
+
+  // Language
+  guideLangTitle: '언어 설정',
+  guideLangDesc: '상단 바의 EN / KO 버튼을 클릭하면 영어와 한국어를 전환할 수 있습니다.',
+
+  // Account
+  guideAccountTitle: '계정 & 프로필',
+  guideAccountStep1: '사이드바 하단의 이름을 클릭하면 계정 메뉴가 열립니다.',
+  guideAccountStep2: '표시 이름을 수정하고 저장합니다.',
+  guideAccountStep3: 'Sign Out을 클릭하여 로그아웃합니다.',
+  guideAccountPasswordNote: '비밀번호 변경: 제로 지식 암호화 특성상 비밀번호 변경은 지원되지 않습니다. 비밀번호를 잊으면 데이터를 복구할 수 없으니 안전하게 보관하세요.',
+
+  // Workspace
+  guideWorkspaceTitle: '워크스페이스',
+  guideWorkspaceStep1: '사이드바 상단의 워크스페이스 이름을 클릭하면 워크스페이스를 전환하거나 새로 만들 수 있습니다.',
+  guideWorkspaceStep2: '워크스페이스 이름 옆 톱니바퀴 아이콘을 클릭하면 워크스페이스 설정이 열립니다.',
+  guideWorkspaceStep3: '소유자와 관리자는 멤버 초대 필드에 이메일을 입력하여 멤버를 초대할 수 있습니다.',
+  guideWorkspaceStep4: '멤버 이름 옆의 제거 버튼으로 멤버를 내보낼 수 있습니다.',
+
   guideSlashCommands: '슬래시 명령어',
   guideSlashIntro: '빈 줄 시작 부분에 /를 입력하세요:',
   guideSlashHeading: '제목 (H1, H2, H3)',

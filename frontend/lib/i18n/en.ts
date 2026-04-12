@@ -213,6 +213,43 @@ const en = {
 
   // User Guide (TipsModal)
   userGuide: 'User Guide',
+
+  // Getting Started
+  guideGettingStarted: 'Getting Started',
+  guideGettingStartedDesc: 'SecretVault is an end-to-end encrypted note-taking and collaboration app. After signing up, a personal workspace is created automatically. Everything you write is encrypted in your browser before being sent to the server.',
+
+  // Sharing
+  guideSharingTitle: 'Sharing a Page',
+  guideSharingStep1: 'Open the page you want to share.',
+  guideSharingStep2: 'Click the Share button in the top bar.',
+  guideSharingStep3: "Enter the recipient's email address and confirm.",
+  guideSharingStep4: 'The shared page appears under "Shared with me" in the recipient\'s sidebar.',
+  guideSharingRevoke: 'To revoke access: open Share again and click the remove button next to the user.',
+
+  // Export
+  guideExportTitle: 'Exporting Pages',
+  guideExportStep1: 'Open the right panel using the button in the top-right corner.',
+  guideExportStep2: 'Go to the Export tab.',
+  guideExportStep3: 'Download the current page as Markdown (.md) or PDF.',
+
+  // Language
+  guideLangTitle: 'Language',
+  guideLangDesc: 'Click the EN / KO button in the top bar to switch between English and Korean.',
+
+  // Account
+  guideAccountTitle: 'Account & Profile',
+  guideAccountStep1: 'Click your name at the bottom of the sidebar to open the account menu.',
+  guideAccountStep2: 'Edit your display name and save.',
+  guideAccountStep3: 'Click Sign Out to log out.',
+  guideAccountPasswordNote: 'Password change: Due to zero-knowledge encryption, password changing is not supported. If you forget your password, your data cannot be recovered — keep it safe.',
+
+  // Workspace
+  guideWorkspaceTitle: 'Workspaces',
+  guideWorkspaceStep1: 'Click the workspace name at the top of the sidebar to switch workspaces or create a new one.',
+  guideWorkspaceStep2: 'Click the gear icon next to the workspace name to open Workspace Settings.',
+  guideWorkspaceStep3: 'Owners and admins can invite members by entering their email in the Invite Member field.',
+  guideWorkspaceStep4: 'Members can be removed by clicking Remove next to their name.',
+
   guideSlashCommands: 'Slash Commands',
   guideSlashIntro: 'Type / at the start of an empty line:',
   guideSlashHeading: 'Headings (H1, H2, H3)',
