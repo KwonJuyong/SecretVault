@@ -59,8 +59,8 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-4">
-          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-subtle)]">
+        <div className="px-5 py-6 space-y-5">
+          <div className="flex items-center gap-3 pb-5 border-b border-[var(--border-subtle)]">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-[17px] font-bold flex-shrink-0">
               {initial}
             </div>
@@ -73,19 +73,19 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
           </div>
 
           <div>
-            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">
+            <label className="block text-[12.5px] font-medium text-[var(--fg-secondary)] mb-2">
               {t.email}
             </label>
             <input
               type="email"
               value={userEmail}
               disabled
-              className="w-full px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[var(--fg-tertiary)] text-[13px] cursor-not-allowed"
+              className="w-full px-4 h-11 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[var(--fg-tertiary)] text-[13.5px] cursor-not-allowed"
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">
+            <label className="block text-[12.5px] font-medium text-[var(--fg-secondary)] mb-2">
               {t.displayName}
             </label>
             <input
@@ -93,14 +93,14 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
               placeholder={t.yourDisplayName}
-              className="w-full px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[13px] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
+              className="w-full px-4 h-11 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[13.5px] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
             />
           </div>
 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors disabled:opacity-50 shadow-[var(--shadow-sm)]"
+            className="w-full flex items-center justify-center gap-2 h-11 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13.5px] font-semibold transition-colors disabled:opacity-50 shadow-[var(--shadow-sm)]"
           >
             {saved ? <Check size={14} /> : <Save size={14} />}
             {saving ? t.saving : saved ? t.savedExclaim : t.saveChanges}

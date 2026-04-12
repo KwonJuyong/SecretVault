@@ -74,7 +74,7 @@ export default function Sidebar({
     return (
       <div key={page.id}>
         <div
-          className={`group relative flex items-center gap-1.5 py-1.5 pr-1.5 mx-2 rounded-[7px] cursor-pointer transition-colors duration-150 text-[13.5px] font-medium ${
+          className={`group relative flex items-center gap-1.5 py-2 pr-1.5 mx-2 rounded-[7px] cursor-pointer transition-colors duration-150 text-[13.5px] font-medium ${
             isActive
               ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
               : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
@@ -140,7 +140,7 @@ export default function Sidebar({
       <div className="px-3 pb-2">
         <button
           onClick={onOpenSearch}
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[8px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150 border border-transparent hover:border-[var(--border-default)]"
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[8px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150 border border-transparent hover:border-[var(--border-default)]"
         >
           <Search size={15} className="opacity-70" />
           <span>{t.search}</span>
@@ -150,13 +150,13 @@ export default function Sidebar({
 
       {/* ═══ My Pages ═══ */}
       <div className="flex-1 min-h-0 flex flex-col">
-        <div className="flex items-center justify-between px-5 pt-2 pb-1">
+        <div className="flex items-center justify-between px-5 pt-3 pb-1.5">
           <span className="text-[10.5px] font-semibold text-[var(--fg-tertiary)] uppercase tracking-[0.08em]">
             {t.myPages}
           </span>
           <button
             onClick={() => onCreatePage()}
-            className="p-1 rounded-[5px] hover:bg-[var(--bg-hover-strong)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+            className="p-1.5 rounded-[5px] hover:bg-[var(--bg-hover-strong)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
             title={t.createFirstPage}
           >
             <Plus size={14} />
@@ -183,27 +183,27 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="px-2 py-2 border-t border-[var(--border-subtle)]">
+      <div className="px-2 py-2.5 border-t border-[var(--border-subtle)]">
         <button
           onClick={onOpenTrash}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-[7px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
         >
           <Trash2 size={15} className="opacity-70" />
           <span>{t.trash}</span>
         </button>
         <button
           onClick={onOpenTips}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-[7px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
         >
           <HelpCircle size={15} className="opacity-70" />
           <span>{t.help}</span>
         </button>
 
         {/* User menu */}
-        <div className="relative mt-1 pt-2 border-t border-[var(--border-subtle)]">
+        <div className="relative mt-1 pt-2.5 border-t border-[var(--border-subtle)]">
           <button
             onClick={openUserMenu}
-            className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-[8px] text-[13px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
           >
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--brand-500,#8b5cf6)] to-[var(--brand-700,#6d28d9)] flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 shadow-[var(--shadow-xs)]">
               {(displayName || email || '?').charAt(0).toUpperCase()}
@@ -230,22 +230,22 @@ export default function Sidebar({
                       type="text"
                       value={editDisplayName}
                       onChange={e => setEditDisplayName(e.target.value)}
-                      className="flex-1 px-2.5 py-1.5 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[13px] text-[var(--fg-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow"
+                      className="flex-1 px-3 py-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[13.5px] text-[var(--fg-primary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow"
                       placeholder={t.displayNamePlaceholder}
                     />
                     <button
                       onClick={handleSaveProfile}
                       disabled={saving}
-                      className="px-2.5 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors disabled:opacity-50 flex items-center justify-center"
+                      className="px-3 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors disabled:opacity-50 flex items-center justify-center"
                       title={t.saveChanges}
                     >
-                      <Save size={13} />
+                      <Save size={14} />
                     </button>
                   </div>
                 </div>
                 <button
                   onClick={logout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium"
+                  className="w-full flex items-center gap-2 px-4 py-3 text-[13.5px] text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium"
                 >
                   <LogOut size={14} /> {t.signOut}
                 </button>

@@ -134,13 +134,13 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
                 value={inviteUserId}
                 onChange={e => setInviteUserId(e.target.value)}
                 placeholder={t.emailPlaceholder}
-                className="flex-1 min-w-0 px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
+                className="flex-1 min-w-0 px-4 h-11 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13.5px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
                 onKeyDown={e => e.key === 'Enter' && handleInvite()}
               />
               <select
                 value={inviteRole}
                 onChange={e => setInviteRole(e.target.value)}
-                className="px-2 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none cursor-pointer focus:border-[var(--accent)]"
+                className="px-2.5 h-11 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13.5px] text-[var(--fg-primary)] outline-none cursor-pointer focus:border-[var(--accent)]"
               >
                 <option value="member">{t.member}</option>
                 <option value="admin">{t.admin}</option>
@@ -148,7 +148,7 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
               <button
                 onClick={handleInvite}
                 disabled={!inviteUserId.trim()}
-                className="px-3.5 h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-[13px] font-semibold transition-colors flex-shrink-0 shadow-[var(--shadow-sm)]"
+                className="px-4 h-11 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-[13.5px] font-semibold transition-colors flex-shrink-0 shadow-[var(--shadow-sm)]"
               >
                 {t.invite}
               </button>

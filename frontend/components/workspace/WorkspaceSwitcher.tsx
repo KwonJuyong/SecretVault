@@ -39,7 +39,7 @@ export default function WorkspaceSwitcher({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors group"
+        className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors group"
       >
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/15 to-indigo-500/15 border border-[var(--border-subtle)] flex items-center justify-center text-[15px] flex-shrink-0">
           {current?.icon || '\u{1F4BC}'}
@@ -66,7 +66,7 @@ export default function WorkspaceSwitcher({
               {workspaces.map(ws => (
                 <div
                   key={ws.id}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors group ${
+                  className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-colors group ${
                     ws.id === currentWorkspaceId
                       ? 'bg-[var(--accent-soft)]'
                       : 'hover:bg-[var(--bg-hover)]'
@@ -104,7 +104,7 @@ export default function WorkspaceSwitcher({
             <div className="p-1.5 border-t border-[var(--border-subtle)]">
               <button
                 onClick={() => { onCreateWorkspace(); setOpen(false); }}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12.5px] font-medium text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[13px] font-medium text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
               >
                 <Plus size={14} />
                 <span>{t.createWorkspace}</span>

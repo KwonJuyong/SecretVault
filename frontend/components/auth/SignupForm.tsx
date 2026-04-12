@@ -47,7 +47,7 @@ export default function SignupForm() {
   };
 
   const inputClass =
-    'w-full h-11 px-3.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[14px] placeholder-[var(--fg-tertiary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow';
+    'w-full h-12 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--fg-primary)] text-[14.5px] placeholder-[var(--fg-tertiary)] outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] transition-shadow';
 
   return (
     <div className="min-h-screen flex bg-[var(--bg-app)]">
@@ -103,15 +103,15 @@ export default function SignupForm() {
           <h1 className="text-[28px] font-bold text-[var(--fg-primary)] tracking-tight mb-1.5">{t.createAccount}</h1>
           <p className="text-[14.5px] text-[var(--fg-secondary)] mb-8">{t.setupWorkspace}</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="px-3.5 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-[13px] animate-slide-up">
+              <div className="px-4 py-3.5 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-[13.5px] animate-slide-up">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
+              <label className="block text-[13.5px] font-semibold text-[var(--fg-primary)] mb-2.5">
                 {t.email} <span className="text-red-500">*</span>
               </label>
               <input
@@ -126,7 +126,7 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
+              <label className="block text-[13.5px] font-semibold text-[var(--fg-primary)] mb-2.5">
                 {t.username} <span className="text-red-500">*</span>
               </label>
               <input
@@ -140,7 +140,7 @@ export default function SignupForm() {
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
+              <label className="block text-[13.5px] font-semibold text-[var(--fg-primary)] mb-2.5">
                 {t.password} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -155,16 +155,16 @@ export default function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
                   tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[var(--fg-primary)] mb-2">
+              <label className="block text-[13.5px] font-semibold text-[var(--fg-primary)] mb-2.5">
                 {t.confirmPassword} <span className="text-red-500">*</span>
               </label>
               <input
@@ -180,7 +180,7 @@ export default function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[14px] font-semibold transition-colors shadow-[var(--shadow-sm)] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[15px] font-semibold transition-colors shadow-[var(--shadow-sm)] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
               {loading ? (
                 <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -68,10 +68,10 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-4">
+        <div className="px-5 py-6 space-y-5">
           {/* Icon picker */}
           <div>
-            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-2">{t.icon}</label>
+            <label className="block text-[12.5px] font-medium text-[var(--fg-secondary)] mb-2.5">{t.icon}</label>
             <div className="flex gap-1.5 flex-wrap">
               {icons.map(emoji => (
                 <button
@@ -91,13 +91,13 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
 
           {/* Name */}
           <div>
-            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">{t.name}</label>
+            <label className="block text-[12.5px] font-medium text-[var(--fg-secondary)] mb-2">{t.name}</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder={t.workspaceNamePlaceholder}
-              className="w-full px-3 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
+              className="w-full px-4 h-11 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13.5px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)]"
               onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && handleCreate()}
               autoFocus
             />
@@ -105,22 +105,22 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
 
           {/* Description */}
           <div>
-            <label className="block text-[12px] font-medium text-[var(--fg-secondary)] mb-1.5">{t.descriptionOptional}</label>
+            <label className="block text-[12.5px] font-medium text-[var(--fg-secondary)] mb-2">{t.descriptionOptional}</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder={t.workspaceDescPlaceholder}
               rows={2}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)] resize-none"
+              className="w-full px-4 py-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[13.5px] text-[var(--fg-primary)] outline-none transition-shadow focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)] placeholder-[var(--fg-quaternary)] resize-none"
             />
           </div>
 
-          {error && <p className="text-[12px] text-red-500">{error}</p>}
+          {error && <p className="text-[12.5px] text-red-500">{error}</p>}
 
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full h-9 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-semibold text-[13px] transition-colors shadow-[var(--shadow-sm)]"
+            className="w-full h-11 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white font-semibold text-[13.5px] transition-colors shadow-[var(--shadow-sm)]"
           >
             {loading ? t.creating : t.createWorkspace}
           </button>

@@ -25,13 +25,13 @@ export default function Topbar({
   const toggleLang = () => setLang(lang === 'en' ? 'ko' : 'en');
 
   return (
-    <header className="h-12 flex items-center px-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] flex-shrink-0 gap-1">
+    <header className="h-14 flex items-center px-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] flex-shrink-0 gap-1">
       <button
         onClick={onToggleSidebar}
-        className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+        className="p-2 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
         title={sidebarOpen ? t.closeSidebar : t.openSidebar}
       >
-        {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+        {sidebarOpen ? <PanelLeftClose size={19} /> : <PanelLeft size={19} />}
       </button>
 
       {pageTitle && (
@@ -46,7 +46,7 @@ export default function Topbar({
       <div className="flex-1" />
 
       {/* Save status */}
-      <div className="flex items-center gap-1.5 px-2.5 text-[12px] text-[var(--fg-tertiary)] h-7">
+      <div className="flex items-center gap-1.5 px-2.5 text-[12.5px] text-[var(--fg-tertiary)] h-8">
         {saveStatus === 'idle' && (
           <>
             <Cloud size={14} className="opacity-50" />
@@ -76,10 +76,10 @@ export default function Topbar({
       {/* Language toggle */}
       <button
         onClick={toggleLang}
-        className="flex items-center gap-1.5 px-2.5 h-8 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] text-[12.5px] font-semibold transition-colors"
+        className="flex items-center gap-1.5 px-3 h-9 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] text-[13px] font-semibold transition-colors"
         title={t.language}
       >
-        <Globe size={15} />
+        <Globe size={16} />
         <span>{lang === 'en' ? 'EN' : 'KO'}</span>
       </button>
 
@@ -87,9 +87,9 @@ export default function Topbar({
       {onShare && (
         <button
           onClick={onShare}
-          className="flex items-center gap-1.5 px-3 h-8 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[12.5px] font-semibold transition-colors shadow-[var(--shadow-xs)] ml-1"
+          className="flex items-center gap-1.5 px-4 h-9 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors shadow-[var(--shadow-xs)] ml-1"
         >
-          <Share2 size={14} />
+          <Share2 size={15} />
           <span>{t.share}</span>
         </button>
       )}
@@ -98,10 +98,10 @@ export default function Topbar({
       {onToggleRightPanel && (
         <button
           onClick={onToggleRightPanel}
-          className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors ml-0.5"
+          className="p-2 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors ml-0.5"
           title={rightPanelOpen ? t.closePanel : t.openPanel}
         >
-          {rightPanelOpen ? <PanelRightClose size={18} /> : <PanelRight size={18} />}
+          {rightPanelOpen ? <PanelRightClose size={19} /> : <PanelRight size={19} />}
         </button>
       )}
     </header>

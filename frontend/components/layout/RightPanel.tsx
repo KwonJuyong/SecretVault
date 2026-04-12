@@ -54,9 +54,9 @@ export default function RightPanel({
         </span>
         <button
           onClick={onClose}
-          className="p-1 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+          className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
         >
-          <X size={13} />
+          <X size={14} />
         </button>
       </div>
 
@@ -74,7 +74,7 @@ export default function RightPanel({
               <button
                 key={h.id}
                 onClick={() => document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="w-full text-left py-[4px] px-2 rounded-md text-[12px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors truncate"
+                className="w-full text-left py-1.5 px-2 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors truncate"
                 style={{ paddingLeft: `${(h.level - 1) * 12 + 8}px` }}
                 title={h.text}
               >
@@ -101,7 +101,7 @@ export default function RightPanel({
               <button
                 key={sp.id}
                 onClick={() => onOpenSharedPage?.(sp.id)}
-                className={`w-full flex items-start gap-2 py-1.5 px-2 rounded-md text-left transition-colors ${
+                className={`w-full flex items-start gap-2 py-2 px-2.5 rounded-md text-left transition-colors ${
                   activePageId === sp.id
                     ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
                     : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
@@ -129,14 +129,14 @@ export default function RightPanel({
         </p>
         <button
           onClick={onExportMarkdown}
-          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
         >
           <FileText size={13} className="text-[var(--fg-tertiary)]" />
           <span>{t.markdownExport}</span>
         </button>
         <button
           onClick={onExportPDF}
-          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors"
         >
           <FileDown size={13} className="text-[var(--fg-tertiary)]" />
           <span>{t.pdfExport}</span>

@@ -80,7 +80,7 @@ export default function SearchModal({ pages, decryptedTitles, onSelect, onClose 
                 key={page.id}
                 onClick={() => { onSelect(page.id); onClose(); }}
                 onMouseEnter={() => setSelectedIndex(i)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${
                   i === selectedIndex
                     ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
                     : 'text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)]'
