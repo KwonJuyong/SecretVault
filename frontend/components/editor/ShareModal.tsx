@@ -69,13 +69,19 @@ export default function ShareModal({ workspaceId, pageId, pageTitle, allPages, g
 
   useEffect(() => { fetchShares(); }, []);
 
+  interface SharePayload {
+    email: string;
+    permission: string;
+    encrypted_page_key?: string;
+  }
+
   const handleShare = async () => {
     if (!email.trim() || sharing) return;
     setError('');
     setSuccess('');
     setSharing(true);
     try {
-      const sharePayload: Record<string, any> = { email: email.trim(), permission };
+      const sharePayload: SharePayload = { email: email.trim(), permission };
       let recipientPubKey: CryptoKey | null = null;
 
       // Wrap page key for recipient

@@ -288,9 +288,12 @@ export default function AppPage() {
   }, [pages, privateKey, getPageKey]);
 
   // Sub-pages of current page
-  const subPages = Object.entries(subPageTitles)
-    .filter(([id]) => pages.find(p => p.id === id && p.parent_id === activePageId))
-    .map(([id, title]) => ({ id, title: title || 'Untitled', icon: pages.find(p => p.id === id)?.icon || '' }));
+  const subPages = useMemo(
+    () => Object.entries(subPageTitles)
+      .filter(([id]) => pages.find(p => p.id === id && p.parent_id === activePageId))
+      .map(([id, title]) => ({ id, title: title || 'Untitled', icon: pages.find(p => p.id === id)?.icon || '' })),
+    [subPageTitles, pages, activePageId],
+  );
 
   // Build icon map for all pages (used to sync sub-page link icons in editor)
   const subPageIcons = useMemo(() => {

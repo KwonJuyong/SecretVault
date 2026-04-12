@@ -33,3 +33,14 @@ class SharedPageItem(BaseModel):
     shared_by_email: Optional[str] = None
     updated_at: Optional[datetime] = None
     page_key_grant: Optional[str] = None
+
+
+class KeyGrantCreate(BaseModel):
+    email: str
+    encrypted_page_key: str
+
+
+class SharedPageUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    icon: Optional[str] = None

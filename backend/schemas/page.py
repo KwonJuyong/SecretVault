@@ -55,3 +55,12 @@ class PageTreeItem(BaseModel):
 class PageMove(BaseModel):
     parent_id: Optional[str] = None
     position: Optional[float] = None
+
+
+class KeyGrantItem(BaseModel):
+    user_id: int
+    encrypted_page_key: str
+
+
+class BatchKeyGrantsRequest(BaseModel):
+    grants: List[KeyGrantItem] = []

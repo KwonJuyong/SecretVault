@@ -41,6 +41,11 @@ class UserLogin(BaseModel):
     email: str
     password_hash: str
 
+    @field_validator('email')
+    @classmethod
+    def normalise_email(cls, v: str) -> str:
+        return v.strip().lower()
+
 
 class Token(BaseModel):
     access_token: str

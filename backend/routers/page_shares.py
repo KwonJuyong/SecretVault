@@ -9,7 +9,7 @@ from models.workspace import Workspace, WorkspaceMember
 from models.page import Page
 from models.page_share import PageShare
 from models.page_key_grant import PageKeyGrant
-from schemas.page_share import PageShareCreate, PageShareUpdate, PageShareResponse, SharedPageItem
+from schemas.page_share import PageShareCreate, PageShareUpdate, PageShareResponse, SharedPageItem, KeyGrantCreate, SharedPageUpdate
 from services.auth import get_current_user
 
 router = APIRouter(tags=["page-shares"])
@@ -57,19 +57,23 @@ def list_page_shares(
         .all()
     )
 
-    result = []
-    for share, user in shares:
-        shared_by = db.query(User).filter(User.id == share.shared_by).first()
-        result.append(PageShareResponse(
+    sharer_ids = {share.shared_by for share, _ in shares if share.shared_by}
+    sharer_map = {
+        u.id: u for u in db.query(User).filter(User.id.in_(sharer_ids)).all()
+    } if sharer_ids else {}
+
+    return [
+        PageShareResponse(
             id=share.id,
             page_id=str(share.page_id),
             email=user.email,
             display_name=user.display_name,
             permission=share.permission,
-            shared_by_email=shared_by.email if shared_by else None,
+            shared_by_email=sharer_map[share.shared_by].email if share.shared_by and share.shared_by in sharer_map else None,
             created_at=share.created_at,
-        ))
-    return result
+        )
+        for share, user in shares
+    ]
 
 
 @router.post("/workspaces/{workspace_id}/pages/{page_id}/shares")
@@ -184,26 +188,39 @@ def list_shared_pages(
         .all()
     )
 
-    result = []
-    for share, page, ws in shares:
-        shared_by = db.query(User).filter(User.id == share.shared_by).first()
-        grant = (
-            db.query(PageKeyGrant)
-            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == current_user.id)
-            .first()
-        )
-        result.append(SharedPageItem(
+    if not shares:
+        return []
+
+    # Batch-load shared_by users and key grants to avoid N+1 queries
+    sharer_ids = {share.shared_by for share, _, _ in shares if share.shared_by}
+    page_ids = [page.id for _, page, _ in shares]
+
+    sharer_map = {
+        u.id: u for u in db.query(User).filter(User.id.in_(sharer_ids)).all()
+    } if sharer_ids else {}
+
+    grant_map = {
+        g.page_id: g.encrypted_page_key
+        for g in db.query(PageKeyGrant).filter(
+            PageKeyGrant.page_id.in_(page_ids),
+            PageKeyGrant.user_id == current_user.id,
+        ).all()
+    }
+
+    return [
+        SharedPageItem(
             id=str(page.id),
             title=page.title,
             icon=page.icon or "",
             workspace_id=str(page.workspace_id),
             workspace_name=ws.name,
             permission=share.permission,
-            shared_by_email=shared_by.email if shared_by else None,
+            shared_by_email=sharer_map[share.shared_by].email if share.shared_by and share.shared_by in sharer_map else None,
             updated_at=page.updated_at,
-            page_key_grant=grant.encrypted_page_key if grant else None,
-        ))
-    return result
+            page_key_grant=grant_map.get(page.id),
+        )
+        for share, page, ws in shares
+    ]
 
 
 def _find_effective_share(page_id: uuid.UUID, user_id, db: Session):
@@ -239,20 +256,16 @@ def _find_effective_share(page_id: uuid.UUID, user_id, db: Session):
 def add_key_grant(
     workspace_id: str,
     page_id: str,
-    data: dict,
+    data: KeyGrantCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Grant a user key access to a subpage (called by owner when sharing parent)."""
     ws_uuid, page = _verify_page_owner(workspace_id, page_id, current_user, db)
 
-    target_user = db.query(User).filter(User.email == data.get("email")).first()
+    target_user = db.query(User).filter(User.email == data.email).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    encrypted_key = data.get("encrypted_page_key")
-    if not encrypted_key:
-        raise HTTPException(status_code=400, detail="encrypted_page_key is required")
 
     existing = (
         db.query(PageKeyGrant)
@@ -260,9 +273,9 @@ def add_key_grant(
         .first()
     )
     if existing:
-        existing.encrypted_page_key = encrypted_key
+        existing.encrypted_page_key = data.encrypted_page_key
     else:
-        db.add(PageKeyGrant(page_id=page.id, user_id=target_user.id, encrypted_page_key=encrypted_key))
+        db.add(PageKeyGrant(page_id=page.id, user_id=target_user.id, encrypted_page_key=data.encrypted_page_key))
     db.commit()
     return {"message": "Key grant added"}
 
@@ -274,7 +287,10 @@ def get_shared_page(
     db: Session = Depends(get_db),
 ):
     """Load a page that has been shared with the current user (direct or via ancestor)."""
-    page_uuid = uuid.UUID(page_id)
+    try:
+        page_uuid = uuid.UUID(page_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="Invalid page ID")
     share = _find_effective_share(page_uuid, current_user.id, db)
     if not share:
         raise HTTPException(status_code=403, detail="This page has not been shared with you")
@@ -309,12 +325,16 @@ def get_shared_page(
 @router.put("/shared-pages/{page_id}")
 def update_shared_page(
     page_id: str,
-    data: dict,
+    data: SharedPageUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Update a page that has been shared with edit permission (direct or via ancestor)."""
-    page_uuid = uuid.UUID(page_id)
+    try:
+        page_uuid = uuid.UUID(page_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="Invalid page ID")
+
     share = _find_effective_share(page_uuid, current_user.id, db)
     if not share:
         raise HTTPException(status_code=403, detail="This page has not been shared with you")
@@ -325,12 +345,12 @@ def update_shared_page(
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
 
-    if "title" in data:
-        page.title = data["title"]
-    if "content" in data:
-        page.content = data["content"]
-    if "icon" in data:
-        page.icon = data["icon"]
+    if data.title is not None:
+        page.title = data.title
+    if data.content is not None:
+        page.content = data.content
+    if data.icon is not None:
+        page.icon = data.icon
 
     db.commit()
     db.refresh(page)

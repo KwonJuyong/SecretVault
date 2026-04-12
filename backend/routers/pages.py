@@ -10,14 +10,21 @@ from models.user import User
 from models.workspace import WorkspaceMember
 from models.page import Page
 from models.page_key_grant import PageKeyGrant
-from schemas.page import PageCreate, PageUpdate, PageResponse, PageTreeItem, PageMove
+from schemas.page import PageCreate, PageUpdate, PageResponse, PageTreeItem, PageMove, KeyGrantItem, BatchKeyGrantsRequest
 from services.auth import get_current_user
 
 router = APIRouter(tags=["pages"])
 
 
+def _parse_uuid(value: str, label: str = "ID") -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail=f"Invalid {label}")
+
+
 def verify_workspace_access(workspace_id: str, user: User, db: Session) -> uuid.UUID:
-    ws_uuid = uuid.UUID(workspace_id)
+    ws_uuid = _parse_uuid(workspace_id, "workspace ID")
     membership = (
         db.query(WorkspaceMember)
         .filter(WorkspaceMember.workspace_id == ws_uuid, WorkspaceMember.user_id == user.id)
@@ -137,9 +144,10 @@ def get_page(
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page_uuid = _parse_uuid(page_id, "page ID")
     page = (
         db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid)
+        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid)
         .first()
     )
     if not page:
@@ -163,9 +171,10 @@ def update_page(
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page_uuid = _parse_uuid(page_id, "page ID")
     page = (
         db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid, Page.is_deleted == False)
+        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid, Page.is_deleted == False)
         .first()
     )
     if not page:
@@ -218,9 +227,10 @@ def delete_page(
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page_uuid = _parse_uuid(page_id, "page ID")
     page = (
         db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid)
+        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid)
         .first()
     )
     if not page:
@@ -228,6 +238,7 @@ def delete_page(
 
     if permanent:
         _delete_page_tree(db, page.id, ws_uuid)
+        db.commit()
     else:
         page.is_deleted = True
         page.deleted_at = datetime.now(timezone.utc)
@@ -245,9 +256,10 @@ def restore_page(
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page_uuid = _parse_uuid(page_id, "page ID")
     page = (
         db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid, Page.is_deleted == True)
+        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid, Page.is_deleted == True)
         .first()
     )
     if not page:
@@ -300,16 +312,17 @@ def move_page(
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page_uuid = _parse_uuid(page_id, "page ID")
     page = (
         db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid, Page.is_deleted == False)
+        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid, Page.is_deleted == False)
         .first()
     )
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
 
     if data.parent_id is not None:
-        page.parent_id = uuid.UUID(data.parent_id) if data.parent_id else None
+        page.parent_id = _parse_uuid(data.parent_id, "parent ID") if data.parent_id else None
     if data.position is not None:
         page.position = data.position
 
@@ -322,36 +335,36 @@ def move_page(
 def batch_key_grants(
     workspace_id: str,
     page_id: str,
-    data: dict,
+    data: BatchKeyGrantsRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+    page_uuid = _parse_uuid(page_id, "page ID")
     page = (
         db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid)
+        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid)
         .first()
     )
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
 
-    grants = data.get("grants", [])
-    for g in grants:
+    for g in data.grants:
         existing = (
             db.query(PageKeyGrant)
-            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == g["user_id"])
+            .filter(PageKeyGrant.page_id == page.id, PageKeyGrant.user_id == g.user_id)
             .first()
         )
         if existing:
-            existing.encrypted_page_key = g["encrypted_page_key"]
+            existing.encrypted_page_key = g.encrypted_page_key
         else:
             db.add(PageKeyGrant(
                 page_id=page.id,
-                user_id=g["user_id"],
-                encrypted_page_key=g["encrypted_page_key"],
+                user_id=g.user_id,
+                encrypted_page_key=g.encrypted_page_key,
             ))
     db.commit()
-    return {"message": f"{len(grants)} key grants stored"}
+    return {"message": f"{len(data.grants)} key grants stored"}
 
 
 def _page_to_response(page: Page, page_key_grant: Optional[str] = None) -> PageResponse:
@@ -371,18 +384,20 @@ def _page_to_response(page: Page, page_key_grant: Optional[str] = None) -> PageR
     )
 
 
-def _soft_delete_children(db: Session, parent_id: uuid.UUID, workspace_id: uuid.UUID):
+def _soft_delete_children(db: Session, parent_id: uuid.UUID, workspace_id: uuid.UUID) -> None:
+    """Recursively mark child pages as deleted. Caller is responsible for db.commit()."""
     children = db.query(Page).filter(
         Page.parent_id == parent_id, Page.workspace_id == workspace_id
     ).all()
+    now = datetime.now(timezone.utc)
     for child in children:
         child.is_deleted = True
-        child.deleted_at = datetime.now(timezone.utc)
+        child.deleted_at = now
         _soft_delete_children(db, child.id, workspace_id)
-    db.commit()
 
 
-def _delete_page_tree(db: Session, page_id: uuid.UUID, workspace_id: uuid.UUID):
+def _delete_page_tree(db: Session, page_id: uuid.UUID, workspace_id: uuid.UUID) -> None:
+    """Recursively hard-delete a page and all its descendants. Caller is responsible for db.commit()."""
     children = db.query(Page).filter(
         Page.parent_id == page_id, Page.workspace_id == workspace_id
     ).all()
@@ -390,4 +405,3 @@ def _delete_page_tree(db: Session, page_id: uuid.UUID, workspace_id: uuid.UUID):
         _delete_page_tree(db, child.id, workspace_id)
     db.query(PageKeyGrant).filter(PageKeyGrant.page_id == page_id).delete()
     db.query(Page).filter(Page.id == page_id).delete()
-    db.commit()

@@ -1,3 +1,4 @@
+import hmac
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -23,10 +24,10 @@ def _is_bcrypt_hash(hashed: str) -> bool:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    # Check legacy plain SHA256 first (fast path, avoids expensive bcrypt)
+    # Legacy path: plain SHA256 hash stored directly (migration to bcrypt in progress)
     if not _is_bcrypt_hash(hashed):
-        return plain == hashed
-    # Bcrypt verification
+        # Use constant-time comparison to prevent timing attacks
+        return hmac.compare_digest(plain, hashed)
     try:
         return pwd_context.verify(plain, hashed)
     except Exception:
