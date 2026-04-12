@@ -76,7 +76,7 @@ export default function Topbar({
       {/* Language toggle */}
       <button
         onClick={toggleLang}
-        className="flex items-center gap-1.5 px-3 h-9 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] text-[13px] font-semibold transition-colors"
+        className="flex items-center gap-2 px-5 h-9 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] text-[13px] font-semibold transition-colors"
         title={t.language}
       >
         <Globe size={16} />
@@ -87,7 +87,7 @@ export default function Topbar({
       {onShare && (
         <button
           onClick={onShare}
-          className="flex items-center gap-1.5 px-4 h-9 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors shadow-[var(--shadow-xs)] ml-1"
+          className="flex items-center gap-2 px-5 h-9 rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold transition-colors shadow-[var(--shadow-xs)] ml-1"
         >
           <Share2 size={15} />
           <span>{t.share}</span>

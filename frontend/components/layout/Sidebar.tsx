@@ -140,11 +140,11 @@ export default function Sidebar({
       <div className="px-3 pb-2">
         <button
           onClick={onOpenSearch}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-[8px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150 border border-transparent hover:border-[var(--border-default)]"
+          className="w-full flex items-center gap-2.5 px-4 py-3 rounded-[8px] text-[14px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150 border border-transparent hover:border-[var(--border-default)]"
         >
-          <Search size={15} className="opacity-70" />
+          <Search size={16} className="opacity-70" />
           <span>{t.search}</span>
-          <kbd className="ml-auto sc-kbd !py-[1px] !px-[5px] !text-[10px]">Ctrl K</kbd>
+          <kbd className="ml-auto sc-kbd !py-[2px] !px-[6px] !text-[10.5px]">Ctrl K</kbd>
         </button>
       </div>
 
@@ -183,19 +183,19 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="px-2 py-2.5 border-t border-[var(--border-subtle)]">
+      <div className="px-2 py-3 border-t border-[var(--border-subtle)]">
         <button
           onClick={onOpenTrash}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-[7px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-[7px] text-[14px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
         >
-          <Trash2 size={15} className="opacity-70" />
+          <Trash2 size={16} className="opacity-70" />
           <span>{t.trash}</span>
         </button>
         <button
           onClick={onOpenTips}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-[7px] text-[13.5px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-[7px] text-[14px] text-[var(--fg-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)] transition-colors duration-150"
         >
-          <HelpCircle size={15} className="opacity-70" />
+          <HelpCircle size={16} className="opacity-70" />
           <span>{t.help}</span>
         </button>
 
