@@ -114,7 +114,25 @@ DB_URL="$(env_get DATABASE_URL)"
 for pair in "POSTGRES_USER:$PG_USER" "POSTGRES_PASSWORD:$PG_PASS" "POSTGRES_DB:$PG_DB" "DATABASE_URL:$DB_URL"; do
   [ -n "${pair#*:}" ] || die "${pair%%:*} 가 .env 에 없습니다."
 done
-ok "DB 환경변수 확인 ($PG_DB)"
+
+# DATABASE_URL 은 백엔드가 쓰고, POSTGRES_PASSWORD 는 Postgres 가 역할을 만들 때 쓴다.
+# 둘이 어긋나면 마이그레이션 단계에 가서야 인증 실패로 죽는다 — 이미지 빌드까지 다 하고 나서.
+URL_PASS="$(printf '%s' "$DB_URL" | sed -n 's#^[^:]*://[^:]*:\([^@]*\)@.*#\1#p')"
+if [ -n "$URL_PASS" ] && [ "$URL_PASS" != "$PG_PASS" ]; then
+  die "DATABASE_URL 안의 비밀번호가 POSTGRES_PASSWORD 와 다릅니다.
+     두 값은 반드시 같아야 합니다. .env 를 확인하세요."
+fi
+
+# URL 안에서 특별한 뜻을 갖는 문자들. '/' 가 들어가면 authority 가 거기서 끊겨
+# 호스트 파싱부터 어긋난다.
+case "$PG_PASS" in
+  */*|*@*|*:*|*'?'*|*'#'*|*'['*|*']'*|*' '*)
+    die "POSTGRES_PASSWORD 에 URL 에서 특수한 의미를 갖는 문자가 있습니다 ( / @ : ? # [ ] 공백 ).
+     DATABASE_URL 파싱이 깨집니다. 영숫자만 쓰세요:
+         openssl rand -hex 32" ;;
+esac
+
+ok "DB 환경변수 확인 ($PG_DB, DATABASE_URL 비밀번호 일치)"
 
 CORS="$(env_get CORS_ORIGINS)"
 case "$CORS" in
@@ -180,6 +198,37 @@ step "DB 상태 확인"
 $DC up -d db >/dev/null 2>&1 || die "db 컨테이너 기동 실패."
 wait_for_db || die "Postgres 가 30초 안에 준비되지 않았습니다."
 ok "Postgres 준비됨"
+
+# 백엔드가 쓸 자격증명으로 실제 접속이 되는지 확인한다.
+#
+# POSTGRES_PASSWORD 는 클러스터를 **처음 만들 때만** 적용된다. 이미 있는 볼륨 위에서
+# .env 의 비밀번호만 바꾸면, DB 안의 역할은 옛 비밀번호를 그대로 갖고 있어서 인증이
+# 실패한다. 그런데 그 실패는 이미지 빌드를 다 마치고 마이그레이션 단계에 가서야 터진다.
+# 여기서 미리 잡고, 원인을 정확히 말한다.
+#
+# -h 127.0.0.1 로 TCP 를 강제하는 것이 핵심이다. postgres 이미지는 유닉스 소켓 접속을
+# trust 로 열어두기 때문에, 소켓으로 psql 을 부르면 비밀번호가 틀려도 그냥 통과한다.
+# 백엔드는 TCP 로 붙으므로, 검사도 같은 경로로 해야 의미가 있다.
+if ! $DC exec -T -e PGPASSWORD="$PG_PASS" db \
+     psql -h 127.0.0.1 -U "$PG_USER" -d "$PG_DB" -c 'SELECT 1' >/dev/null 2>&1; then
+  die "DB 인증 실패: 역할 '$PG_USER' 가 .env 의 POSTGRES_PASSWORD 를 받지 않습니다.
+
+  POSTGRES_PASSWORD 는 Postgres 클러스터를 처음 생성할 때만 적용됩니다.
+  이미 만들어진 볼륨 위에서 .env 의 비밀번호만 바꾸면 반영되지 않습니다.
+
+  둘 중 하나를 하세요.
+
+  (a) DB 를 비우고 새 비밀번호로 다시 만든다 — 데이터는 사라집니다:
+        docker compose stop backend frontend
+        docker compose rm -f db
+        docker volume rm secret-vault_postgres_data
+        ./deploy.sh
+
+  (b) 데이터를 지키고 역할 비밀번호만 바꾼다:
+        docker compose exec db psql -U postgres -c \\
+          \"ALTER USER \\\"$PG_USER\\\" WITH PASSWORD '<.env 의 새 비밀번호>';\""
+fi
+ok "DB 인증 확인 (역할 '$PG_USER')"
 
 HAS_TABLES="$(psql_scalar "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';")"
 HAS_ALEMBIC="$(psql_scalar "SELECT to_regclass('public.alembic_version') IS NOT NULL;")"
@@ -279,7 +328,13 @@ echo "  현재: ${BEFORE_REV:-(없음 — 최초)}"
 if ! $DC run --rm --no-deps -T backend alembic upgrade head; then
   echo
   echo "${R}마이그레이션 실패. 앱을 기동하지 않았습니다.${N}" >&2
-  [ -n "$BACKUP_PATH" ] && echo "  되돌리기: ./deploy.sh --rollback-db $BACKUP_PATH" >&2
+  # 스키마가 반쯤 바뀌었을 때만 롤백이 의미가 있다. 접속·인증 실패라면 DB 는 손대지도
+  # 않았으므로 되돌릴 것이 없다 — 그 경우 백업 복구는 시간 낭비이자 오해의 소지다.
+  if [ -n "$BACKUP_PATH" ]; then
+    echo "  스키마가 부분적으로 적용됐다면 되돌리기:" >&2
+    echo "    ./deploy.sh --rollback-db $BACKUP_PATH" >&2
+    echo "  (접속/인증 실패였다면 DB 는 바뀌지 않았으므로 복구할 필요가 없습니다.)" >&2
+  fi
   exit 1
 fi
 
