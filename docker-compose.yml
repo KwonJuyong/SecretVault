@@ -1,29 +1,13 @@
-services:
-  # 이 서버에서는 기본으로 뜨지 않는다.
-  #
-  # 80/443 은 여러 사이트(ai-eval, portfolio, …)를 함께 라우팅하는 공용 게이트웨이
-  # 컨테이너가 이미 잡고 있고, 그쪽 Caddyfile 은 /home/juyong/gateway/Caddyfile 이다.
-  # 여기 있는 Caddyfile 은 juyong.store → SecretVault 만 알기 때문에, 이 서비스를
-  # 띄우면 포트가 충돌하거나(별개 컨테이너일 때) 게이트웨이 설정을 덮어써서
-  # (같은 프로젝트일 때) 다른 사이트가 죽는다.
-  #
-  # SecretVault 만 단독으로 돌리는 서버에서만:  docker compose --profile standalone up -d
-  caddy:
-    profiles: ["standalone"]
-    image: caddy:2-alpine
-    container_name: vault-caddy
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - frontend
-      - backend
+# 이 스택은 웹서버를 띄우지 않는다.
+#
+# 배포 서버의 80/443 은 여러 사이트(SecretVault, ai-eval, portfolio, …)를 함께 라우팅하는
+# 공용 Caddy 게이트웨이가 잡고 있고, 그 설정은 /home/juyong/gateway/Caddyfile 이다.
+# 저장소 루트의 Caddyfile 은 juyong.store → SecretVault 만 아는 참고용이며, 여기서
+# caddy 를 띄우면 포트가 충돌하거나 게이트웨이 설정을 덮어써서 다른 사이트가 죽는다.
+#
+# 게이트웨이는 `web_gateway` 네트워크에서 backend / frontend 를 DNS 이름으로 찾는다.
 
+services:
   db:
     image: postgres:15
     container_name: vault-db
@@ -36,6 +20,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5433:5432"
+    # DB 는 내부 네트워크에만. 게이트웨이가 닿을 이유가 없다.
+    networks:
+      - default
 
   backend:
     build: ./backend
@@ -50,6 +37,9 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "127.0.0.1:8001:8000"
+    networks:
+      - default        # db 접근
+      - web_gateway    # 게이트웨이가 backend:8000 으로 찾아온다
 
   frontend:
     build:
@@ -67,9 +57,24 @@ services:
     command: sh -c "npm install --legacy-peer-deps 2>/dev/null; rm -rf .next && npm run dev"
     ports:
       - "127.0.0.1:3001:3000"
+    networks:
+      - default
+      - web_gateway    # 게이트웨이가 frontend:3000 으로 찾아온다
+
+networks:
+  default:
+
+  # 게이트웨이가 소유한 외부 네트워크. 이 스택은 참여만 한다.
+  #
+  # 이 연결이 compose 파일에 있는 것이 중요하다. 지금까지 게이트웨이는 누군가
+  # `docker network connect` 로 secret-vault_default 에 수동으로 붙여둔 덕에 backend 를
+  # 찾고 있었는데, 그 연결은 네트워크가 재생성되는 순간(예: compose down) 사라지고
+  # 사이트가 조용히 죽는다. 서비스를 web_gateway 에 직접 붙여두면 그 의존이 사라진다.
+  web_gateway:
+    external: true
 
 volumes:
   postgres_data:
   frontend_node_modules:
-  caddy_data:
-  caddy_config:
+  # caddy_data / caddy_config 는 여기서 선언하지 않는다. 게이트웨이 컨테이너가 쓰는
+  # 볼륨이라(TLS 인증서가 들어 있다) 이 스택이 소유권을 주장하면 안 된다.

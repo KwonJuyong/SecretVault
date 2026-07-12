@@ -127,6 +127,18 @@ esac
 docker info >/dev/null 2>&1 || die "Docker 데몬에 연결할 수 없습니다."
 ok "Docker 사용 가능"
 
+# compose 가 `web_gateway` 를 external 로 참조한다. 없으면 모든 compose 명령이
+# 알아보기 어려운 에러로 실패하므로, 여기서 미리 확인하고 명확히 말한다.
+if docker network inspect web_gateway >/dev/null 2>&1; then
+  ok "web_gateway 네트워크 확인 (게이트웨이가 여기서 backend/frontend 를 찾는다)"
+else
+  die "외부 네트워크 'web_gateway' 가 없습니다.
+
+  공용 Caddy 게이트웨이가 이 네트워크에서 backend/frontend 를 DNS 이름으로 찾습니다.
+  게이트웨이를 쓰지 않는 서버라면 만들어 두세요:
+      docker network create web_gateway"
+fi
+
 # --- 롤백 (지정 시 다른 단계는 건너뛴다) --------------------------------------
 if [ -n "$ROLLBACK_FILE" ]; then
   [ -f "$ROLLBACK_FILE" ] || die "백업 파일이 없습니다: $ROLLBACK_FILE"
@@ -279,15 +291,11 @@ step "서비스 기동"
 
 # 이 스택이 소유한 서비스만 명시적으로 띄운다.
 #
-# caddy 는 건드리지 않는다. 이 서버의 80/443 은 여러 사이트를 라우팅하는 공용
-# 게이트웨이(gateway-caddy)가 잡고 있고, 그 컨테이너는 이 compose 프로젝트의 볼륨을
-# 쓴다. `--force-recreate` 를 전체에 걸면 게이트웨이가 리포지토리의 Caddyfile
-# (juyong.store → SecretVault 만 아는) 로 재생성되어 다른 사이트들의 라우팅이 사라진다.
-#
-# `--remove-orphans` 도 쓰지 않는다. compose 파일에 없지만 프로젝트 라벨이 붙은
-# 컨테이너를 지우는데, 게이트웨이가 정확히 거기에 해당한다.
+# `--remove-orphans` 는 쓰지 않는다. compose 파일에 없지만 이 프로젝트 라벨이 붙은
+# 컨테이너를 지우는데, 공용 게이트웨이 컨테이너가 정확히 거기에 해당한다.
+# 그걸 지우면 이 서버의 다른 사이트들이 전부 죽는다.
 $DC up -d --force-recreate db backend frontend || die "서비스 기동 실패."
-ok "db / backend / frontend 기동됨 (caddy 는 건드리지 않음)"
+ok "db / backend / frontend 기동됨"
 
 # --- 헬스체크 ------------------------------------------------------------------
 step "헬스체크"
