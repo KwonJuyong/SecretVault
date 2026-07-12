@@ -1,19 +1,19 @@
-import uuid
 import json
+import uuid
 from collections import defaultdict
-from typing import Dict, Set
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from jose import jwt, JWTError
 
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from jose import JWTError, jwt
+
+from config import ALGORITHM, SECRET_KEY
 from database import SessionLocal
 from models.user import User
 from models.workspace import WorkspaceMember
-from config import SECRET_KEY, ALGORITHM
 
 router = APIRouter()
 
 # workspace_id -> set of connected WebSockets
-active_connections: Dict[str, Set[WebSocket]] = defaultdict(set)
+active_connections: dict[str, set[WebSocket]] = defaultdict(set)
 
 
 def verify_ws_token(token: str) -> str | None:

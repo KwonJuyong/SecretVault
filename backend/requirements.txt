@@ -4,5 +4,6 @@ python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==4.0.1
 sqlalchemy
+alembic
 psycopg2-binary
 websockets

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { importPublicKey, wrapWorkspaceKeyForUser } from '@/lib/crypto';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import {
   X, UserPlus, Shield, ShieldCheck, Crown, UserMinus, Users,
@@ -16,7 +17,7 @@ interface WorkspaceSettingsProps {
 }
 
 export default function WorkspaceSettings({ workspace, onClose, onUpdated }: WorkspaceSettingsProps) {
-  const { email: currentEmail } = useAuth();
+  const { email: currentEmail, workspaceKey } = useAuth();
   const { t } = useLanguage();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,15 +43,32 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
   useEffect(() => { fetchMembers(); }, []);
 
   const handleInvite = async () => {
-    if (!inviteUserId.trim()) return;
+    const email = inviteUserId.trim();
+    if (!email) return;
     setInviteError('');
     setInviteSuccess('');
+
+    if (!workspaceKey) {
+      setInviteError(t.inviteNeedsWorkspaceKey);
+      return;
+    }
+
     try {
+      // The server cannot do this: it never holds the workspace key in the clear. So the
+      // inviter's browser re-wraps that one key to the invitee's public key. That single
+      // grant is what gives them every page in the workspace, now and later.
+      const { public_key } = await api.get<{ public_key: string }>(
+        `/users/${encodeURIComponent(email)}/public-key`,
+      );
+      const inviteePublicKey = await importPublicKey(public_key);
+      const wrappedForInvitee = await wrapWorkspaceKeyForUser(workspaceKey, inviteePublicKey);
+
       await api.post(`/workspaces/${workspace.id}/members`, {
-        email: inviteUserId.trim(),
+        email,
         role: inviteRole,
+        encrypted_workspace_key: wrappedForInvitee,
       });
-      setInviteSuccess(t.invitedSuccess.replace('{email}', inviteUserId));
+      setInviteSuccess(t.invitedSuccess.replace('{email}', email));
       setInviteUserId('');
       fetchMembers();
       onUpdated();

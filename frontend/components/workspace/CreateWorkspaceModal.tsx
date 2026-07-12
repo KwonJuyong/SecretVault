@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { generateWorkspaceKey, wrapWorkspaceKeyForUser } from '@/lib/crypto';
 import type { Workspace } from '@/lib/types';
 import { X, FolderPlus } from 'lucide-react';
 
@@ -13,6 +15,7 @@ interface CreateWorkspaceModalProps {
 
 export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorkspaceModalProps) {
   const { t } = useLanguage();
+  const { publicKey } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState('\u{1F4BC}');
@@ -26,13 +29,23 @@ export default function CreateWorkspaceModal({ onClose, onCreated }: CreateWorks
       setError(t.workspaceNameRequired);
       return;
     }
+    if (!publicKey) {
+      setError(t.failedToCreateWorkspace);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
+      // Mint the workspace's key here and hand the server only our wrapped copy of it.
+      // Everything created in this workspace will be encrypted under it.
+      const workspaceKey = await generateWorkspaceKey();
+      const wrappedForMe = await wrapWorkspaceKeyForUser(workspaceKey, publicKey);
+
       const data = await api.post<Workspace>('/workspaces', {
         name: name.trim(),
         description: description.trim() || null,
         icon,
+        encrypted_workspace_key: wrappedForMe,
       });
       onCreated(data);
       onClose();

@@ -6,8 +6,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
-  encrypt, decrypt,
-  generatePageKey, wrapPageKey, unwrapPageKey,
+  encrypt, decrypt, decryptOrNull,
+  generatePageKey, unwrapPageKey,
+  wrapPageKeyForWorkspace, unwrapPageKeyFromWorkspace,
 } from '@/lib/crypto';
 import type { PageTreeItem, PageData, Workspace, TocHeading } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
@@ -22,10 +23,10 @@ import TipsModal from '@/components/ui/TipsModal';
 import ShareModal from '@/components/editor/ShareModal';
 import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import PageTreeView from '@/components/dashboard/PageTreeView';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Lock } from 'lucide-react';
 
 export default function AppPage() {
-  const { isAuthenticated, isLoading, workspaceId, privateKey, publicKey, switchWorkspace } = useAuth();
+  const { isAuthenticated, isLoading, workspaceId, privateKey, workspaceKey, switchWorkspace } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -46,6 +47,9 @@ export default function AppPage() {
   const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
   const [subPageTitles, setSubPageTitles] = useState<Record<string, string>>({});
   const [tocHeadings, setTocHeadings] = useState<TocHeading[]>([]);
+  // Set when the open page's ciphertext would not decrypt. Autosave stays off while true,
+  // otherwise we would encrypt a blank editor over content we merely failed to read.
+  const [pageLocked, setPageLocked] = useState(false);
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageKeyCache = useRef<Map<string, CryptoKey>>(new Map());
@@ -100,16 +104,62 @@ export default function AppPage() {
     }
   }, [workspaceId, fetchPages]);
 
-  // Helper: get or unwrap page key
-  const getPageKey = useCallback(async (pageId: string, grant: string | null): Promise<CryptoKey | null> => {
-    if (!privateKey || !grant) return null;
-    let key = pageKeyCache.current.get(pageId);
-    if (!key) {
+  /**
+   * Recover a page's AES key. There are two ways in, and a page may offer either:
+   *
+   *  - `encryptedPageKey` — wrapped under the workspace key. This is the normal path for
+   *    workspace members, and it is the same blob for everyone, so a member who joined
+   *    yesterday can still open a page written last year.
+   *  - `grant` — wrapped directly to this user's RSA key. Only used for pages shared with
+   *    someone outside the workspace.
+   */
+  const getPageKey = useCallback(async (
+    pageId: string,
+    encryptedPageKey: string | null,
+    grant: string | null,
+  ): Promise<CryptoKey | null> => {
+    const cached = pageKeyCache.current.get(pageId);
+    if (cached) return cached;
+
+    let key: CryptoKey | null = null;
+    if (encryptedPageKey && workspaceKey) {
+      key = await unwrapPageKeyFromWorkspace(encryptedPageKey, workspaceKey);
+    } else if (grant && privateKey) {
       key = await unwrapPageKey(grant, privateKey);
-      pageKeyCache.current.set(pageId, key);
     }
+
+    if (key) pageKeyCache.current.set(pageId, key);
     return key;
-  }, [privateKey]);
+  }, [workspaceKey, privateKey]);
+
+  /**
+   * Turn a fetched page into editor state, reporting whether it actually opened.
+   *
+   * `locked` means the ciphertext is there but we could not read it — no key for this
+   * user, or the key does not fit. The caller must not let the editor save over a locked
+   * page: the plaintext exists only in the ciphertext we just failed to open.
+   */
+  const openPage = useCallback(async (
+    pageId: string,
+    data: { title: string; content: string; encrypted_page_key?: string | null; page_key_grant: string | null },
+  ): Promise<{ title: string; content: string; locked: boolean }> => {
+    const hasCiphertext = Boolean(data.title || data.content);
+    if (!hasCiphertext) return { title: '', content: '', locked: false };
+
+    try {
+      const pageKey = await getPageKey(pageId, data.encrypted_page_key ?? null, data.page_key_grant);
+      if (!pageKey) return { title: '', content: '', locked: true };
+
+      return {
+        title: data.title ? await decrypt(data.title, pageKey) : '',
+        content: data.content ? await decrypt(data.content, pageKey) : '',
+        locked: false,
+      };
+    } catch (e) {
+      console.error('Failed to decrypt page:', pageId, e);
+      return { title: '', content: '', locked: true };
+    }
+  }, [getPageKey]);
 
   // Load page
   const loadPage = useCallback(async (pageId: string) => {
@@ -118,20 +168,19 @@ export default function AppPage() {
 
     try {
       const data = await api.get<PageData>(`/workspaces/${workspaceId}/pages/${pageId}`);
-      const pageKey = await getPageKey(pageId, data.page_key_grant);
-      const decryptedTitle = pageKey && data.title ? await decrypt(data.title, pageKey) : '';
-      const decryptedContent = pageKey && data.content ? await decrypt(data.content, pageKey) : '';
+      const opened = await openPage(pageId, data);
 
       setActivePageId(pageId);
-      setEditTitle(decryptedTitle);
-      setEditContent(decryptedContent);
+      setEditTitle(opened.title);
+      setEditContent(opened.content);
       setEditIcon(data.icon || '');
+      setPageLocked(opened.locked);
       setSharedPagePermission(null);
-      setSaveStatus('idle');
+      setSaveStatus(opened.locked ? 'error' : 'idle');
       setTocHeadings([]);
       isFirstLoad.current = true;
     } catch (e) { console.error('Failed to load page:', e); }
-  }, [workspaceId, getPageKey]);
+  }, [workspaceId, openPage]);
 
   // Load shared page
   const loadSharedPage = useCallback(async (pageId: string) => {
@@ -139,23 +188,23 @@ export default function AppPage() {
 
     try {
       const data = await api.get<PageData & { permission: string; page_key_grant: string | null }>(`/shared-pages/${pageId}`);
-      const pageKey = await getPageKey(pageId, data.page_key_grant);
-      const decryptedTitle = pageKey && data.title ? await decrypt(data.title, pageKey) : '';
-      const decryptedContent = pageKey && data.content ? await decrypt(data.content, pageKey) : '';
+      const opened = await openPage(pageId, data);
 
       setActivePageId(pageId);
-      setEditTitle(decryptedTitle);
-      setEditContent(decryptedContent);
+      setEditTitle(opened.title);
+      setEditContent(opened.content);
       setEditIcon(data.icon || '');
+      setPageLocked(opened.locked);
       setSharedPagePermission(data.permission);
-      setSaveStatus('idle');
+      setSaveStatus(opened.locked ? 'error' : 'idle');
       isFirstLoad.current = true;
     } catch (e) { console.error('Failed to load shared page:', e); }
-  }, [getPageKey]);
+  }, [openPage]);
 
   // Save page
   const savePage = useCallback(async () => {
     if (!activePageId || !workspaceId) return;
+    if (pageLocked) return; // never write over a page we could not read
     setSaveStatus('saving');
     try {
       const pageKey = pageKeyCache.current.get(activePageId);
@@ -171,29 +220,31 @@ export default function AppPage() {
         wsRef.current.send(JSON.stringify({ type: 'page_updated', page_id: activePageId }));
       }
     } catch (e) { setSaveStatus('error'); console.error('Failed to save:', e); }
-  }, [activePageId, workspaceId, editTitle, editContent, editIcon, fetchPages]);
+  }, [activePageId, workspaceId, editTitle, editContent, editIcon, pageLocked, t.untitled, fetchPages]);
 
   useEffect(() => { savePageRef.current = savePage; }, [savePage]);
 
   useEffect(() => {
     if (isFirstLoad.current) { isFirstLoad.current = false; return; }
     if (!activePageId) return;
+    if (pageLocked) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(savePage, 800);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [editTitle, editContent, editIcon, savePage, activePageId]);
+  }, [editTitle, editContent, editIcon, savePage, activePageId, pageLocked]);
 
-  // Create page
+  // Create page. The page key is wrapped under the workspace key, not the creator's own
+  // public key — that is what makes it readable by every member instead of only by us.
   const createPage = useCallback(async (parentId?: string) => {
-    if (!workspaceId || !publicKey) return;
+    if (!workspaceId || !workspaceKey) return;
     try {
       const pageKey = await generatePageKey();
       const encTitle = await encrypt('', pageKey);
-      const wrappedKey = await wrapPageKey(pageKey, publicKey);
+      const wrappedKey = await wrapPageKeyForWorkspace(pageKey, workspaceKey);
 
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
         title: encTitle, content: '', parent_id: parentId || null, icon: '',
-        encryption_version: 2, encrypted_page_key: wrappedKey,
+        encryption_version: 3, encrypted_page_key: wrappedKey,
       });
       pageKeyCache.current.set(data.id, pageKey);
       await fetchPages();
@@ -203,27 +254,23 @@ export default function AppPage() {
         wsRef.current.send(JSON.stringify({ type: 'page_created', page_id: data.id }));
       }
     } catch (e) { console.error('Failed to create page:', e); }
-  }, [workspaceId, publicKey, fetchPages, loadPage]);
+  }, [workspaceId, workspaceKey, fetchPages, loadPage]);
 
-  // Decrypt a page key by fetching its grant (used by ShareModal for recursive key sharing)
+  // Used by ShareModal to re-wrap a page key for an outside recipient.
   const getDecryptedPageKey = useCallback(async (pid: string): Promise<CryptoKey | null> => {
-    if (!workspaceId || !privateKey) return null;
-    let key = pageKeyCache.current.get(pid);
-    if (!key) {
-      try {
-        const data = await api.get<{ page_key_grant: string | null }>(`/workspaces/${workspaceId}/pages/${pid}`);
-        if (data.page_key_grant) {
-          key = await unwrapPageKey(data.page_key_grant, privateKey);
-          pageKeyCache.current.set(pid, key);
-        }
-      } catch { return null; }
-    }
-    return key ?? null;
-  }, [workspaceId, privateKey]);
+    if (!workspaceId) return null;
+    const cached = pageKeyCache.current.get(pid);
+    if (cached) return cached;
+    try {
+      const data = await api.get<PageData>(`/workspaces/${workspaceId}/pages/${pid}`);
+      return await getPageKey(pid, data.encrypted_page_key, data.page_key_grant);
+    } catch { return null; }
+  }, [workspaceId, getPageKey]);
 
   // Save content explicitly
   const saveContent = useCallback(async (html: string) => {
     if (!activePageId || !workspaceId) return;
+    if (pageLocked) return; // never write over a page we could not read
     try {
       const pageKey = pageKeyCache.current.get(activePageId);
       if (!pageKey) return;
@@ -232,19 +279,19 @@ export default function AppPage() {
       await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, { title: encTitle, content: encContent, icon: editIcon });
       if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
     } catch (e) { console.error('Failed to save content:', e); }
-  }, [activePageId, workspaceId, editTitle, editIcon]);
+  }, [activePageId, workspaceId, editTitle, editIcon, pageLocked, t.untitled]);
 
   // Create sub-page
   const createSubPage = useCallback(async (): Promise<{ id: string; title: string } | undefined> => {
-    if (!activePageId || !workspaceId || !publicKey) return undefined;
+    if (!activePageId || !workspaceId || !workspaceKey) return undefined;
     try {
       const pageKey = await generatePageKey();
       const subEncTitle = await encrypt(t.untitled, pageKey);
-      const wrappedKey = await wrapPageKey(pageKey, publicKey);
+      const wrappedKey = await wrapPageKeyForWorkspace(pageKey, workspaceKey);
 
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
         title: subEncTitle, content: '', parent_id: activePageId, icon: '',
-        encryption_version: 2, encrypted_page_key: wrappedKey,
+        encryption_version: 3, encrypted_page_key: wrappedKey,
       });
       pageKeyCache.current.set(data.id, pageKey);
       await fetchPages();
@@ -254,7 +301,7 @@ export default function AppPage() {
       }
       return { id: data.id, title: t.untitled };
     } catch (e) { console.error('Failed to create sub-page:', e); return undefined; }
-  }, [activePageId, workspaceId, publicKey, fetchPages]);
+  }, [activePageId, workspaceId, workspaceKey, fetchPages, t.untitled]);
 
   // Delete page
   const deletePage = useCallback(async (pageId: string) => {
@@ -270,24 +317,23 @@ export default function AppPage() {
     } catch (e) { console.error('Failed to delete page:', e); }
   }, [workspaceId, activePageId, fetchPages]);
 
-  // Decrypt all page titles
+  // Decrypt all page titles for the sidebar/search. A page we hold no key for is shown as
+  // locked rather than "Untitled" — the old behaviour made unreadable pages indistinguishable
+  // from genuinely blank ones.
   useEffect(() => {
     const decryptTitles = async () => {
       const map: Record<string, string> = {};
       for (const p of pages) {
-        if (p.encrypted_page_key && privateKey) {
-          try {
-            const pageKey = await getPageKey(p.id, p.encrypted_page_key);
-            map[p.id] = pageKey && p.title ? await decrypt(p.title, pageKey) : t.untitled;
-          } catch { map[p.id] = t.untitled; }
-        } else {
-          map[p.id] = t.untitled;
-        }
+        if (!p.title) { map[p.id] = t.untitled; continue; }
+        try {
+          const pageKey = await getPageKey(p.id, p.encrypted_page_key, null);
+          map[p.id] = pageKey ? ((await decryptOrNull(p.title, pageKey)) ?? t.lockedPage) : t.lockedPage;
+        } catch { map[p.id] = t.lockedPage; }
       }
       setSubPageTitles(map);
     };
     decryptTitles();
-  }, [pages, privateKey, getPageKey]);
+  }, [pages, getPageKey, t.untitled, t.lockedPage]);
 
   // Sub-pages of current page
   const subPages = useMemo(
@@ -364,7 +410,15 @@ export default function AppPage() {
           onShare={activePageId ? () => setShowShare(true) : undefined}
         />
 
-        {activePageId ? (
+        {activePageId && pageLocked ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="max-w-md text-center">
+              <Lock className="w-10 h-10 mx-auto mb-4 text-[var(--fg-muted)]" />
+              <h2 className="text-lg font-medium mb-2">{t.lockedPage}</h2>
+              <p className="text-sm text-[var(--fg-muted)] leading-relaxed">{t.lockedPageNotice}</p>
+            </div>
+          </div>
+        ) : activePageId ? (
           <Editor
             title={editTitle}
             content={editContent}

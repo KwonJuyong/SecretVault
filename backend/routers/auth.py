@@ -1,14 +1,15 @@
 import uuid
-from fastapi import APIRouter, HTTPException, Depends, status
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models.user import User
-from models.workspace import Workspace, WorkspaceMember
 from models.user_keypair import UserKeyPair
-from schemas.auth import UserSignup, UserLogin, Token, UserProfile, UserProfileUpdate
-from schemas.crypto import UserKeyPairCreate, UserKeyPairResponse, UserPublicKeyResponse
-from services.auth import hash_password, verify_password, needs_rehash, create_access_token, get_current_user
+from models.workspace import Workspace, WorkspaceKeyGrant, WorkspaceMember
+from schemas.auth import Token, UserLogin, UserProfile, UserProfileUpdate, UserSignup
+from schemas.crypto import UserKeyPairCreate, UserPublicKeyResponse
+from services.auth import create_access_token, get_current_user, hash_password, needs_rehash, verify_password
 
 router = APIRouter(tags=["auth"])
 
@@ -52,6 +53,15 @@ def signup(data: UserSignup, db: Session = Depends(get_db)):
         role="owner",
     )
     db.add(member)
+
+    if data.encrypted_workspace_key:
+        db.add(WorkspaceKeyGrant(
+            workspace_id=workspace.id,
+            user_id=user.id,
+            encrypted_workspace_key=data.encrypted_workspace_key,
+            granted_by=user.id,
+        ))
+
     db.commit()
 
     return {"message": "Account created successfully"}

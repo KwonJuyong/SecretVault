@@ -5,7 +5,7 @@ import { FileDown, FileText, X, AlignLeft, Download, Users, Eye } from 'lucide-r
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { unwrapPageKey, decrypt } from '@/lib/crypto';
+import { unwrapPageKey, decryptOrNull } from '@/lib/crypto';
 import type { TocHeading, SharedPageItem } from '@/lib/types';
 
 interface RightPanelProps {
@@ -35,15 +35,15 @@ export default function RightPanel({
       if (!privateKey) return;
       const titles: Record<string, string> = {};
       await Promise.allSettled(pages.map(async (sp) => {
-        if (!sp.page_key_grant) return;
+        if (!sp.page_key_grant) { titles[sp.id] = t.lockedPage; return; }
         try {
           const pageKey = await unwrapPageKey(sp.page_key_grant, privateKey);
-          titles[sp.id] = sp.title ? await decrypt(sp.title, pageKey) : '';
-        } catch { /* leave as empty */ }
+          titles[sp.id] = sp.title ? ((await decryptOrNull(sp.title, pageKey)) ?? t.lockedPage) : '';
+        } catch { titles[sp.id] = t.lockedPage; }
       }));
       setSharedTitles(titles);
     }).catch(() => {});
-  }, [workspaceId, privateKey]);
+  }, [workspaceId, privateKey, t.lockedPage]);
 
   return (
     <aside className="w-[260px] h-full flex flex-col bg-[var(--bg-surface-2)] border-l border-[var(--border-subtle)] flex-shrink-0">

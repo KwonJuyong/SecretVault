@@ -11,9 +11,10 @@ Accounts created:
 Both are added to a shared "Research Lab" workspace.
 """
 
-import uuid
 import hashlib
-from database import engine, Base, SessionLocal
+import uuid
+
+from database import Base, SessionLocal, engine
 from models.user import User
 from models.workspace import Workspace, WorkspaceMember
 from services.auth import hash_password

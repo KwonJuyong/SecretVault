@@ -1,40 +1,44 @@
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class PageCreate(BaseModel):
-    title: Optional[str] = ""
-    content: Optional[str] = ""
-    parent_id: Optional[str] = None
-    icon: Optional[str] = ""
-    position: Optional[float] = None
-    encryption_version: Optional[int] = 1
-    encrypted_page_key: Optional[str] = None
+    title: str | None = ""
+    content: str | None = ""
+    parent_id: str | None = None
+    icon: str | None = ""
+    position: float | None = None
+    encryption_version: int | None = 1
+    encrypted_page_key: str | None = None
 
 
 class PageUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    icon: Optional[str] = None
-    position: Optional[float] = None
-    encryption_version: Optional[int] = None
-    encrypted_page_key: Optional[str] = None
+    title: str | None = None
+    content: str | None = None
+    icon: str | None = None
+    position: float | None = None
+    encryption_version: int | None = None
+    encrypted_page_key: str | None = None
 
 
 class PageResponse(BaseModel):
     id: str
     workspace_id: str
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
     title: str
     content: str
-    icon: Optional[str] = ""
+    icon: str | None = ""
     position: float
     is_deleted: bool
     encryption_version: int = 1
-    page_key_grant: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    # The page key wrapped under the workspace key — how workspace members open the page.
+    encrypted_page_key: str | None = None
+    # The page key wrapped directly to one user's RSA key — how a per-page share to
+    # someone outside the workspace works. Only one of the two is normally needed.
+    page_key_grant: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -43,18 +47,18 @@ class PageResponse(BaseModel):
 class PageTreeItem(BaseModel):
     id: str
     title: str
-    icon: Optional[str] = ""
-    parent_id: Optional[str] = None
+    icon: str | None = ""
+    parent_id: str | None = None
     position: float
     has_children: bool = False
     encryption_version: int = 1
-    encrypted_page_key: Optional[str] = None
-    updated_at: Optional[datetime] = None
+    encrypted_page_key: str | None = None
+    updated_at: datetime | None = None
 
 
 class PageMove(BaseModel):
-    parent_id: Optional[str] = None
-    position: Optional[float] = None
+    parent_id: str | None = None
+    position: float | None = None
 
 
 class KeyGrantItem(BaseModel):
@@ -63,4 +67,4 @@ class KeyGrantItem(BaseModel):
 
 
 class BatchKeyGrantsRequest(BaseModel):
-    grants: List[KeyGrantItem] = []
+    grants: list[KeyGrantItem] = []

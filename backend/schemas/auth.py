@@ -1,16 +1,20 @@
 import re
+
 from pydantic import BaseModel, field_validator
-from typing import Optional
 
 
 class UserSignup(BaseModel):
     email: str
     password_hash: str
-    username: Optional[str] = None
-    public_key: Optional[str] = None
-    encrypted_private_key: Optional[str] = None
-    private_key_iv: Optional[str] = None
-    private_key_salt: Optional[str] = None
+    username: str | None = None
+    public_key: str | None = None
+    encrypted_private_key: str | None = None
+    private_key_iv: str | None = None
+    private_key_salt: str | None = None
+    # Signup creates the user's first workspace, so the browser generates that workspace's
+    # key up front and sends it wrapped to its own public key. Without it the new user
+    # would own a workspace they cannot encrypt anything into.
+    encrypted_workspace_key: str | None = None
 
     @field_validator('email')
     @classmethod
@@ -31,7 +35,7 @@ class UserSignup(BaseModel):
 
     @field_validator('username')
     @classmethod
-    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+    def validate_username(cls, v: str | None) -> str | None:
         if v and len(v) > 100:
             raise ValueError('Display name too long')
         return v
@@ -51,22 +55,22 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     email: str
-    display_name: Optional[str] = None
+    display_name: str | None = None
     workspace_id: str
-    public_key: Optional[str] = None
-    encrypted_private_key: Optional[str] = None
-    private_key_iv: Optional[str] = None
-    private_key_salt: Optional[str] = None
+    public_key: str | None = None
+    encrypted_private_key: str | None = None
+    private_key_iv: str | None = None
+    private_key_salt: str | None = None
 
 
 class UserProfile(BaseModel):
     email: str
-    display_name: Optional[str] = None
-    created_at: Optional[str] = None
+    display_name: str | None = None
+    created_at: str | None = None
 
     class Config:
         from_attributes = True
 
 
 class UserProfileUpdate(BaseModel):
-    display_name: Optional[str] = None
+    display_name: str | None = None

@@ -1,47 +1,30 @@
 import uuid
-from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.user import User
-from models.workspace import Workspace, WorkspaceMember
 from models.page import Page
-from models.page_share import PageShare
 from models.page_key_grant import PageKeyGrant
-from schemas.page_share import PageShareCreate, PageShareUpdate, PageShareResponse, SharedPageItem, KeyGrantCreate, SharedPageUpdate
+from models.page_share import PageShare
+from models.user import User
+from models.workspace import Workspace
+from schemas.page_share import (
+    KeyGrantCreate,
+    PageShareCreate,
+    PageShareResponse,
+    PageShareUpdate,
+    SharedPageItem,
+    SharedPageUpdate,
+)
 from services.auth import get_current_user
+from services.permissions import parse_uuid
+from services.permissions import verify_page_manage as _verify_page_owner
 
 router = APIRouter(tags=["page-shares"])
 
 
-def _verify_page_owner(workspace_id: str, page_id: str, user: User, db: Session):
-    """Verify user is the page creator or a workspace owner/admin."""
-    ws_uuid = uuid.UUID(workspace_id)
-    membership = (
-        db.query(WorkspaceMember)
-        .filter(WorkspaceMember.workspace_id == ws_uuid, WorkspaceMember.user_id == user.id)
-        .first()
-    )
-    if not membership:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    page = (
-        db.query(Page)
-        .filter(Page.id == uuid.UUID(page_id), Page.workspace_id == ws_uuid, Page.is_deleted == False)
-        .first()
-    )
-    if not page:
-        raise HTTPException(status_code=404, detail="Page not found")
-
-    # Only page creator or workspace owner/admin can manage shares
-    if page.created_by != user.id and membership.role not in ("owner", "admin"):
-        raise HTTPException(status_code=403, detail="Only the page creator or workspace admin can manage shares")
-
-    return ws_uuid, page
-
-
-@router.get("/workspaces/{workspace_id}/pages/{page_id}/shares", response_model=List[PageShareResponse])
+@router.get("/workspaces/{workspace_id}/pages/{page_id}/shares", response_model=list[PageShareResponse])
 def list_page_shares(
     workspace_id: str,
     page_id: str,
@@ -174,7 +157,7 @@ def remove_page_share(
     return {"message": "Share removed"}
 
 
-@router.get("/shared-pages", response_model=List[SharedPageItem])
+@router.get("/shared-pages", response_model=list[SharedPageItem])
 def list_shared_pages(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -287,10 +270,7 @@ def get_shared_page(
     db: Session = Depends(get_db),
 ):
     """Load a page that has been shared with the current user (direct or via ancestor)."""
-    try:
-        page_uuid = uuid.UUID(page_id)
-    except (ValueError, AttributeError):
-        raise HTTPException(status_code=400, detail="Invalid page ID")
+    page_uuid = parse_uuid(page_id, "page ID")
     share = _find_effective_share(page_uuid, current_user.id, db)
     if not share:
         raise HTTPException(status_code=403, detail="This page has not been shared with you")
@@ -330,10 +310,7 @@ def update_shared_page(
     db: Session = Depends(get_db),
 ):
     """Update a page that has been shared with edit permission (direct or via ancestor)."""
-    try:
-        page_uuid = uuid.UUID(page_id)
-    except (ValueError, AttributeError):
-        raise HTTPException(status_code=400, detail="Invalid page ID")
+    page_uuid = parse_uuid(page_id, "page ID")
 
     share = _find_effective_share(page_uuid, current_user.id, db)
     if not share:

@@ -1,14 +1,15 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api } from '@/lib/api';
 import {
   deriveKeys,
   derivePasswordKey, generateSalt, generateKeyPair,
   exportPublicKey, encryptPrivateKey, decryptPrivateKey,
   exportPrivateKeyJwk, importPrivateKeyJwk, importPublicKey,
+  generateWorkspaceKey, wrapWorkspaceKeyForUser, unwrapWorkspaceKeyForUser,
 } from '@/lib/crypto';
-import type { LoginResponse } from '@/lib/types';
+import type { LoginResponse, WorkspaceKeyResponse } from '@/lib/types';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -17,6 +18,12 @@ interface AuthState {
   workspaceId: string;
   privateKey: CryptoKey | null;
   publicKey: CryptoKey | null;
+  /**
+   * The active workspace's key, unwrapped. Every page key in the workspace is wrapped
+   * under it, so this is what lets a member read pages they did not create.
+   * Null while it is still being fetched, or if this user holds no grant.
+   */
+  workspaceKey: CryptoKey | null;
   isLoading: boolean;
 }
 
@@ -37,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     workspaceId: '',
     privateKey: null,
     publicKey: null,
+    workspaceKey: null,
     isLoading: true,
   });
 
@@ -56,7 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState({
             isAuthenticated: true, email,
             displayName: displayName || email,
-            workspaceId, privateKey, publicKey, isLoading: false,
+            workspaceId, privateKey, publicKey,
+            workspaceKey: null, // fetched by the effect below
+            isLoading: false,
           });
         } catch {
           setState(prev => ({ ...prev, isLoading: false }));
@@ -67,6 +77,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     restore();
   }, []);
+
+  /**
+   * Pull down this user's wrapped copy of the active workspace's key and unwrap it.
+   * Runs on login and on every workspace switch — each workspace has its own key.
+   */
+  const loadWorkspaceKey = useCallback(async (workspaceId: string, privateKey: CryptoKey) => {
+    try {
+      const res = await api.get<WorkspaceKeyResponse>(`/workspaces/${workspaceId}/key`);
+      const workspaceKey = await unwrapWorkspaceKeyForUser(res.encrypted_workspace_key, privateKey);
+      setState(prev => (prev.workspaceId === workspaceId ? { ...prev, workspaceKey } : prev));
+    } catch {
+      // 404 means nobody has granted this user the key. Pages will render as locked
+      // rather than as deceptively blank documents.
+      setState(prev => (prev.workspaceId === workspaceId ? { ...prev, workspaceKey: null } : prev));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!state.isAuthenticated || !state.workspaceId || !state.privateKey) return;
+    if (state.workspaceKey) return;
+    loadWorkspaceKey(state.workspaceId, state.privateKey);
+  }, [state.isAuthenticated, state.workspaceId, state.privateKey, state.workspaceKey, loadWorkspaceKey]);
 
   const login = async (email: string, password: string) => {
     const { authHash } = deriveKeys(password);
@@ -94,7 +126,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: data.email,
       displayName: data.display_name || data.email,
       workspaceId: data.workspace_id,
-      privateKey, publicKey, isLoading: false,
+      privateKey, publicKey,
+      workspaceKey: null, // the effect above fetches and unwraps it
+      isLoading: false,
     });
   };
 
@@ -107,12 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { encrypted, iv } = await encryptPrivateKey(keyPair.privateKey, passwordKey);
     const saltB64 = btoa(String.fromCharCode(...salt));
 
+    // Signup also creates the user's first workspace, so its key has to exist by the time
+    // the server makes it. Generated here and wrapped to the brand-new public key.
+    const workspaceKey = await generateWorkspaceKey();
+    const wrappedWorkspaceKey = await wrapWorkspaceKeyForUser(workspaceKey, keyPair.publicKey);
+
     const data = await api.post<{ message: string }>('/signup', {
       email, password_hash: authHash, username,
       public_key: pubKeyB64,
       encrypted_private_key: encrypted,
       private_key_iv: iv,
       private_key_salt: saltB64,
+      encrypted_workspace_key: wrappedWorkspaceKey,
     });
     return data.message;
   };
@@ -121,13 +161,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.clear();
     setState({
       isAuthenticated: false, email: '', displayName: '',
-      workspaceId: '', privateKey: null, publicKey: null, isLoading: false,
+      workspaceId: '', privateKey: null, publicKey: null,
+      workspaceKey: null, isLoading: false,
     });
   };
 
   const switchWorkspace = (workspaceId: string) => {
     sessionStorage.setItem('workspace_id', workspaceId);
-    setState(prev => ({ ...prev, workspaceId }));
+    // Drop the old workspace's key: it cannot open anything in the new one, and the
+    // effect above will fetch the right one.
+    setState(prev => ({ ...prev, workspaceId, workspaceKey: null }));
   };
 
   return (

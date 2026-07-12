@@ -48,9 +48,17 @@ export interface PageData {
   position: number;
   is_deleted: boolean;
   encryption_version: number;
+  /** Page key wrapped under the workspace key — how workspace members open the page. */
+  encrypted_page_key: string | null;
+  /** Page key wrapped to one user's RSA key — how a share to an outsider works. */
   page_key_grant: string | null;
   created_at: string | null;
   updated_at: string | null;
+}
+
+export interface WorkspaceKeyResponse {
+  workspace_id: string;
+  encrypted_workspace_key: string;
 }
 
 export interface SharedPageItem {

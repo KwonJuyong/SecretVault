@@ -121,6 +121,54 @@ export async function unwrapPageKey(wrappedBase64: string, privateKey: CryptoKey
   );
 }
 
+// --- Workspace Key (AES-KW) ---
+//
+// Every workspace has one AES-KW key. It is wrapped once per member with that
+// member's RSA public key, and it in turn wraps each page key. This is what makes
+// an invite O(1): the inviter re-wraps a single workspace key for the newcomer,
+// and every page in the workspace — including ones created later — becomes readable.
+//
+// AES-KW (RFC 3394) rather than AES-GCM because this key only ever wraps other keys;
+// AES-KW takes no IV, so there is no IV to get wrong or reuse.
+
+export async function generateWorkspaceKey(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey({ name: 'AES-KW', length: 256 }, true, ['wrapKey', 'unwrapKey']);
+}
+
+/** Wrap the workspace key for one member, using their RSA public key. Called when inviting. */
+export async function wrapWorkspaceKeyForUser(workspaceKey: CryptoKey, publicKey: CryptoKey): Promise<string> {
+  const wrapped = await crypto.subtle.wrapKey('raw', workspaceKey, publicKey, { name: 'RSA-OAEP' });
+  return b64Encode(wrapped);
+}
+
+/** Recover the workspace key from this member's grant, using their RSA private key. Called on login. */
+export async function unwrapWorkspaceKeyForUser(wrappedBase64: string, privateKey: CryptoKey): Promise<CryptoKey> {
+  return crypto.subtle.unwrapKey(
+    'raw', b64Decode(wrappedBase64), privateKey,
+    { name: 'RSA-OAEP' },
+    { name: 'AES-KW', length: 256 },
+    true,
+    ['wrapKey', 'unwrapKey'],
+  );
+}
+
+/** Wrap a page key under the workspace key, so every member can open the page. */
+export async function wrapPageKeyForWorkspace(pageKey: CryptoKey, workspaceKey: CryptoKey): Promise<string> {
+  const wrapped = await crypto.subtle.wrapKey('raw', pageKey, workspaceKey, { name: 'AES-KW' });
+  return b64Encode(wrapped);
+}
+
+/** Recover a page key from its workspace-wrapped form. */
+export async function unwrapPageKeyFromWorkspace(wrappedBase64: string, workspaceKey: CryptoKey): Promise<CryptoKey> {
+  return crypto.subtle.unwrapKey(
+    'raw', b64Decode(wrappedBase64), workspaceKey,
+    { name: 'AES-KW' },
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt'],
+  );
+}
+
 // --- Content Encryption (AES-GCM) ---
 
 export async function encrypt(plaintext: string, pageKey: CryptoKey): Promise<string> {
@@ -134,6 +182,23 @@ export async function encrypt(plaintext: string, pageKey: CryptoKey): Promise<st
   return b64Encode(combined.buffer);
 }
 
+/** Thrown when ciphertext cannot be opened with the given key (wrong key, or tampered data). */
+export class DecryptError extends Error {
+  constructor(cause?: unknown) {
+    super('Failed to decrypt content');
+    this.name = 'DecryptError';
+    this.cause = cause;
+  }
+}
+
+/**
+ * Decrypt page content. Throws DecryptError if the ciphertext will not open.
+ *
+ * It must throw rather than return '': a caller that cannot tell "this page is empty"
+ * from "I could not read this page" will happily re-encrypt the empty string over the
+ * user's real content on the next autosave, and E2E means there is no server-side copy
+ * to restore from.
+ */
 export async function decrypt(data: string, pageKey: CryptoKey): Promise<string> {
   if (!data) return '';
   try {
@@ -142,7 +207,22 @@ export async function decrypt(data: string, pageKey: CryptoKey): Promise<string>
     const ciphertext = combined.slice(12);
     const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, pageKey, ciphertext);
     return new TextDecoder().decode(plainBuf);
+  } catch (e) {
+    throw new DecryptError(e);
+  }
+}
+
+/**
+ * Decrypt, or return null if the content will not open.
+ *
+ * For read-only surfaces (sidebar titles, outlines) where one unreadable page should
+ * degrade to a placeholder instead of taking down the whole list. Never use this on a
+ * value that is going to be written back.
+ */
+export async function decryptOrNull(data: string, pageKey: CryptoKey): Promise<string | null> {
+  try {
+    return await decrypt(data, pageKey);
   } catch {
-    return '';
+    return null;
   }
 }

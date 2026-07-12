@@ -1,18 +1,25 @@
 import uuid
-from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models.user import User
-from models.workspace import Workspace, WorkspaceMember
-from schemas.workspace import WorkspaceCreate, WorkspaceResponse, WorkspaceMemberResponse, InviteMember
+from models.workspace import Workspace, WorkspaceKeyGrant, WorkspaceMember
+from schemas.workspace import (
+    InviteMember,
+    WorkspaceCreate,
+    WorkspaceKeyResponse,
+    WorkspaceMemberResponse,
+    WorkspaceResponse,
+)
 from services.auth import get_current_user
+from services.permissions import parse_uuid, verify_workspace_access
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 
-@router.get("", response_model=List[WorkspaceResponse])
+@router.get("", response_model=list[WorkspaceResponse])
 def list_workspaces(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     memberships = (
         db.query(WorkspaceMember, Workspace)
@@ -56,6 +63,17 @@ def create_workspace(
         role="owner",
     )
     db.add(member)
+
+    # The creator's own copy of the workspace key. Everything in the workspace will be
+    # encrypted under it, so without this row the owner locks themselves out.
+    if data.encrypted_workspace_key:
+        db.add(WorkspaceKeyGrant(
+            workspace_id=workspace.id,
+            user_id=current_user.id,
+            encrypted_workspace_key=data.encrypted_workspace_key,
+            granted_by=current_user.id,
+        ))
+
     db.commit()
     db.refresh(workspace)
 
@@ -70,13 +88,13 @@ def create_workspace(
     )
 
 
-@router.get("/{workspace_id}/members", response_model=List[WorkspaceMemberResponse])
+@router.get("/{workspace_id}/members", response_model=list[WorkspaceMemberResponse])
 def list_members(
     workspace_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ws_uuid = uuid.UUID(workspace_id)
+    ws_uuid = parse_uuid(workspace_id, "workspace ID")
     # Verify access
     membership = (
         db.query(WorkspaceMember)
@@ -110,7 +128,7 @@ def invite_member(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ws_uuid = uuid.UUID(workspace_id)
+    ws_uuid = parse_uuid(workspace_id, "workspace ID")
     # Verify owner/admin
     membership = (
         db.query(WorkspaceMember)
@@ -136,14 +154,59 @@ def invite_member(
     if existing:
         raise HTTPException(status_code=400, detail="User is already a member")
 
+    # A member without a workspace key grant is a member who can read nothing: every page
+    # in the workspace is encrypted under a key they do not hold. Refuse the half-state
+    # rather than create an account that silently sees a list of blank pages.
+    if not data.encrypted_workspace_key:
+        raise HTTPException(
+            status_code=400,
+            detail="encrypted_workspace_key is required: the invitee cannot decrypt any page without it",
+        )
+
     member = WorkspaceMember(
         workspace_id=ws_uuid,
         user_id=target_user.id,
         role=data.role or "member",
     )
     db.add(member)
+    db.add(WorkspaceKeyGrant(
+        workspace_id=ws_uuid,
+        user_id=target_user.id,
+        encrypted_workspace_key=data.encrypted_workspace_key,
+        granted_by=current_user.id,
+    ))
     db.commit()
     return {"message": "Member invited successfully"}
+
+
+@router.get("/{workspace_id}/key", response_model=WorkspaceKeyResponse)
+def get_my_workspace_key(
+    workspace_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the caller's own wrapped copy of the workspace key.
+
+    Only ever the caller's row: handing back somebody else's blob would be useless (it is
+    wrapped to their public key) but it would still leak who holds what.
+    """
+    ws_uuid = verify_workspace_access(workspace_id, current_user, db)
+
+    grant = (
+        db.query(WorkspaceKeyGrant)
+        .filter(
+            WorkspaceKeyGrant.workspace_id == ws_uuid,
+            WorkspaceKeyGrant.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not grant:
+        raise HTTPException(status_code=404, detail="No workspace key grant for this user")
+
+    return WorkspaceKeyResponse(
+        workspace_id=str(ws_uuid),
+        encrypted_workspace_key=grant.encrypted_workspace_key,
+    )
 
 
 @router.post("/{workspace_id}/members/remove")
@@ -153,7 +216,7 @@ def remove_member(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ws_uuid = uuid.UUID(workspace_id)
+    ws_uuid = parse_uuid(workspace_id, "workspace ID")
     # Verify owner/admin
     membership = (
         db.query(WorkspaceMember)
@@ -183,6 +246,12 @@ def remove_member(
         raise HTTPException(status_code=400, detail="Cannot remove the workspace owner")
 
     db.delete(target_membership)
+    # Drop their key grant too. Leaving it behind would let a removed member keep
+    # decrypting anything they had already fetched, and re-reading it on any re-add.
+    db.query(WorkspaceKeyGrant).filter(
+        WorkspaceKeyGrant.workspace_id == ws_uuid,
+        WorkspaceKeyGrant.user_id == target_user.id,
+    ).delete()
     db.commit()
     return {"message": "Member removed successfully"}
 
@@ -194,7 +263,7 @@ def update_member_role(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ws_uuid = uuid.UUID(workspace_id)
+    ws_uuid = parse_uuid(workspace_id, "workspace ID")
     # Only owner can change roles
     membership = (
         db.query(WorkspaceMember)

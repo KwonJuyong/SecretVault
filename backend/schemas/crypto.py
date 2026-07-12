@@ -1,5 +1,5 @@
+
 from pydantic import BaseModel
-from typing import Optional, List
 
 
 class UserKeyPairCreate(BaseModel):
@@ -28,4 +28,4 @@ class PageKeyGrantCreate(BaseModel):
 
 
 class PageKeyGrantBatch(BaseModel):
-    grants: List[PageKeyGrantCreate]
+    grants: list[PageKeyGrantCreate]

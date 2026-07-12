@@ -1,12 +1,12 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class PageShareCreate(BaseModel):
     email: str
-    permission: Optional[str] = "view"
-    encrypted_page_key: Optional[str] = None
+    permission: str | None = "view"
+    encrypted_page_key: str | None = None
 
 
 class PageShareUpdate(BaseModel):
@@ -17,10 +17,10 @@ class PageShareResponse(BaseModel):
     id: int
     page_id: str
     email: str
-    display_name: Optional[str] = None
+    display_name: str | None = None
     permission: str
-    shared_by_email: Optional[str] = None
-    created_at: Optional[datetime] = None
+    shared_by_email: str | None = None
+    created_at: datetime | None = None
 
 
 class SharedPageItem(BaseModel):
@@ -30,9 +30,9 @@ class SharedPageItem(BaseModel):
     workspace_id: str
     workspace_name: str
     permission: str
-    shared_by_email: Optional[str] = None
-    updated_at: Optional[datetime] = None
-    page_key_grant: Optional[str] = None
+    shared_by_email: str | None = None
+    updated_at: datetime | None = None
+    page_key_grant: str | None = None
 
 
 class KeyGrantCreate(BaseModel):
@@ -41,6 +41,6 @@ class KeyGrantCreate(BaseModel):
 
 
 class SharedPageUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    icon: Optional[str] = None
+    title: str | None = None
+    content: str | None = None
+    icon: str | None = None

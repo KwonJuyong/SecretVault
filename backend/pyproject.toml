@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = [
+  "E501",  # long lines: the existing code has many, and wrapping them is churn
+  "E712",  # `== False` is required for SQLAlchemy column expressions
+  "B008",  # FastAPI's Depends() in defaults is the documented pattern
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+exclude = ["\\.venv", "alembic"]
+# The codebase is not typed yet; start by catching outright mistakes rather than
+# demanding annotations, so the check is useful on day one instead of a wall of noise.
+check_untyped_defs = true
