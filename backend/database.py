@@ -5,17 +5,26 @@ from sqlalchemy.pool import StaticPool
 from config import DATABASE_URL
 
 
-def _engine_kwargs(url: str) -> dict:
-    """Pooling options Postgres wants but SQLite rejects.
+def _is_memory_sqlite(url: str) -> bool:
+    """An in-memory SQLite DB lives inside its connection: open a second one and you get a
+    second, empty database."""
+    return url.startswith("sqlite") and (":memory:" in url or url in ("sqlite://", "sqlite:///:memory:"))
 
-    SQLite is only used by the test suite, where a single shared in-memory
-    connection (StaticPool) is what lets fixtures and the app see the same data.
-    """
-    if url.startswith("sqlite"):
+
+def _engine_kwargs(url: str) -> dict:
+    """Pooling options Postgres wants but SQLite rejects."""
+    if _is_memory_sqlite(url):
+        # StaticPool pins every session to one connection, which is the only way the test
+        # fixtures and the app can see the same in-memory database.
         return {
             "connect_args": {"check_same_thread": False},
             "poolclass": StaticPool,
         }
+    if url.startswith("sqlite"):
+        # File-backed SQLite (local dev without Docker). It must NOT use StaticPool: sharing
+        # one connection across concurrent requests lets their transactions tread on each
+        # other, and a commit in one session makes another's refresh fail outright.
+        return {"connect_args": {"check_same_thread": False}}
     return {
         "pool_pre_ping": True,
         "pool_size": 10,

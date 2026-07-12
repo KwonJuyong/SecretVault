@@ -11,6 +11,7 @@ import {
   wrapPageKeyForWorkspace, unwrapPageKeyFromWorkspace,
 } from '@/lib/crypto';
 import { usePageDoc } from '@/lib/usePageDoc';
+import { breadcrumbTrail } from '@/lib/tree';
 import type { CollabMessage } from '@/lib/collab';
 import type { PageTreeItem, PageData, Workspace, TocHeading } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
@@ -52,6 +53,12 @@ export default function AppPage() {
   // Set when the open page's ciphertext would not decrypt. Saving stays off while true,
   // otherwise we would encrypt a blank editor over content we merely failed to read.
   const [pageLocked, setPageLocked] = useState(false);
+
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  // Recently visited, most recent first. Deliberately per-session and client-side: it is
+  // navigation history, not content, and there is nothing here worth sending to a server
+  // that is not supposed to know what you read.
+  const [recentIds, setRecentIds] = useState<string[]>([]);
 
   // Collaboration state for the open page.
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -120,11 +127,66 @@ export default function AppPage() {
     } catch (e) { console.error('Failed to fetch pages:', e); }
   }, [workspaceId]);
 
+  const fetchFavorites = useCallback(async () => {
+    try {
+      const data = await api.get<PageTreeItem[]>('/favorites');
+      setFavoriteIds(new Set(data.map(p => p.id)));
+    } catch (e) { console.error('Failed to fetch favorites:', e); }
+  }, []);
+
   useEffect(() => {
     if (workspaceId) {
       setActivePageId(null); setEditTitle(''); setEditContent(''); setEditIcon('');
+      setRecentIds([]);
       pageKeyCache.current.clear();
       fetchPages();
+      fetchFavorites();
+    }
+  }, [workspaceId, fetchPages, fetchFavorites]);
+
+  const toggleFavorite = useCallback(async (pageId: string) => {
+    if (!workspaceId) return;
+    const wasFavorite = favoriteIds.has(pageId);
+
+    // Optimistic: starring should feel instant, and it is trivially reversible.
+    setFavoriteIds(prev => {
+      const next = new Set(prev);
+      if (wasFavorite) next.delete(pageId); else next.add(pageId);
+      return next;
+    });
+
+    try {
+      const path = `/workspaces/${workspaceId}/pages/${pageId}/favorite`;
+      if (wasFavorite) await api.delete(path);
+      else await api.post(path);
+    } catch (e) {
+      console.error('Failed to toggle favorite:', e);
+      fetchFavorites(); // put the star back where the server says it belongs
+    }
+  }, [workspaceId, favoriteIds, fetchFavorites]);
+
+  const movePage = useCallback(async (
+    pageId: string, parentId: string | null, position: number,
+  ) => {
+    if (!workspaceId) return;
+
+    // Optimistic: the sidebar re-renders from `pages`, and a drag that visibly snaps back
+    // before settling looks broken even when the write succeeds.
+    setPages(prev => prev.map(p =>
+      p.id === pageId ? { ...p, parent_id: parentId, position } : p,
+    ));
+
+    try {
+      await api.post(`/workspaces/${workspaceId}/pages/${pageId}/move`, {
+        parent_id: parentId, position,
+      });
+      await fetchPages();
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'page_updated', page_id: pageId }));
+      }
+    } catch (e) {
+      console.error('Failed to move page:', e);
+      fetchPages(); // the server rejected it — snap back to the truth
     }
   }, [workspaceId, fetchPages]);
 
@@ -210,6 +272,7 @@ export default function AppPage() {
       const opened = await openPage(pageId, data);
 
       setActivePageId(pageId);
+      setRecentIds(prev => [pageId, ...prev.filter(id => id !== pageId)].slice(0, 10));
       setEditTitle(opened.title);
       setEditContent('');
       setEditIcon(data.icon || '');
@@ -233,6 +296,7 @@ export default function AppPage() {
       const opened = await openPage(pageId, data);
 
       setActivePageId(pageId);
+      setRecentIds(prev => [pageId, ...prev.filter(id => id !== pageId)].slice(0, 10));
       setEditTitle(opened.title);
       setEditContent('');
       setEditIcon(data.icon || '');
@@ -411,6 +475,11 @@ export default function AppPage() {
   );
 
   // Build icon map for all pages (used to sync sub-page link icons in editor)
+  const breadcrumbs = useMemo(
+    () => (activePageId ? breadcrumbTrail(pages, activePageId) : []),
+    [pages, activePageId],
+  );
+
   const subPageIcons = useMemo(() => {
     const map: Record<string, string> = {};
     for (const p of pages) { map[p.id] = p.icon || ''; }
@@ -455,6 +524,10 @@ export default function AppPage() {
         onSelectPage={loadPage}
         onCreatePage={createPage}
         onDeletePage={deletePage}
+        onMovePage={movePage}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={toggleFavorite}
+        recentIds={recentIds}
         onOpenSearch={() => setShowSearch(true)}
         onOpenTrash={() => setShowTrash(true)}
         onOpenTips={() => setShowTips(true)}
@@ -472,6 +545,9 @@ export default function AppPage() {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           saveStatus={saveStatus}
           pageTitle={activePageId ? decryptedTitle : undefined}
+          breadcrumbs={breadcrumbs}
+          decryptedTitles={subPageTitles}
+          onSelectPage={loadPage}
           rightPanelOpen={rightPanelOpen}
           onToggleRightPanel={() => setRightPanelOpen(!rightPanelOpen)}
           onShare={activePageId ? () => setShowShare(true) : undefined}

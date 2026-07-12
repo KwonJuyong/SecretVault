@@ -3,9 +3,10 @@
 import {
   CheckCircle2, Loader2, AlertCircle, Cloud,
   PanelLeftClose, PanelLeft, PanelRightClose, PanelRight,
-  Share2, Globe,
+  Share2, Globe, ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { PageTreeItem } from '@/lib/types';
 
 interface TopbarProps {
   sidebarOpen: boolean;
@@ -15,14 +16,24 @@ interface TopbarProps {
   rightPanelOpen?: boolean;
   onToggleRightPanel?: () => void;
   onShare?: () => void;
+  /** Root → … → current page. The last entry is the page you are on. */
+  breadcrumbs?: PageTreeItem[];
+  decryptedTitles?: Record<string, string>;
+  onSelectPage?: (pageId: string) => void;
 }
 
 export default function Topbar({
   sidebarOpen, onToggleSidebar, saveStatus, pageTitle,
   rightPanelOpen, onToggleRightPanel, onShare,
+  breadcrumbs = [], decryptedTitles = {}, onSelectPage,
 }: TopbarProps) {
   const { lang, setLang, t } = useLanguage();
   const toggleLang = () => setLang(lang === 'en' ? 'ko' : 'en');
+
+  // Long chains get elided in the middle: the root and the last two are what orient you.
+  const trail = breadcrumbs.length > 4
+    ? [breadcrumbs[0], null, ...breadcrumbs.slice(-2)]
+    : breadcrumbs;
 
   return (
     <header className="h-14 flex items-center px-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] flex-shrink-0 gap-1">
@@ -34,14 +45,46 @@ export default function Topbar({
         {sidebarOpen ? <PanelLeftClose size={19} /> : <PanelLeft size={19} />}
       </button>
 
-      {pageTitle && (
+      {trail.length > 0 ? (
+        <>
+          <div className="mx-2 w-px h-4 bg-[var(--border-default)]" />
+          <nav className="flex items-center gap-0.5 min-w-0 text-[13px]" aria-label="Breadcrumb">
+            {trail.map((crumb, i) => {
+              const isLast = i === trail.length - 1;
+              return (
+                <span key={crumb?.id ?? `gap-${i}`} className="flex items-center gap-0.5 min-w-0">
+                  {i > 0 && (
+                    <ChevronRight size={13} className="flex-shrink-0 text-[var(--fg-quaternary)]" />
+                  )}
+                  {crumb === null ? (
+                    <span className="px-1 text-[var(--fg-quaternary)]">…</span>
+                  ) : (
+                    <button
+                      onClick={() => !isLast && onSelectPage?.(crumb.id)}
+                      disabled={isLast}
+                      className={`px-1.5 py-1 rounded-md truncate max-w-[180px] transition-colors ${
+                        isLast
+                          ? 'text-[var(--fg-primary)] font-medium cursor-default'
+                          : 'text-[var(--fg-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--fg-primary)]'
+                      }`}
+                    >
+                      {crumb.icon && <span className="mr-1">{crumb.icon}</span>}
+                      {decryptedTitles[crumb.id] || t.untitled}
+                    </button>
+                  )}
+                </span>
+              );
+            })}
+          </nav>
+        </>
+      ) : pageTitle ? (
         <>
           <div className="mx-2 w-px h-4 bg-[var(--border-default)]" />
           <span className="text-[13px] text-[var(--fg-secondary)] truncate font-medium">
             {pageTitle || t.untitled}
           </span>
         </>
-      )}
+      ) : null}
 
       <div className="flex-1" />
 

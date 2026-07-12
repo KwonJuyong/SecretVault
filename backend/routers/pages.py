@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.page import Page
+from models.page_favorite import PageFavorite
 from models.page_key_grant import PageKeyGrant
 from models.user import User
 from schemas.page import (
@@ -288,16 +289,12 @@ def move_page(
     db: Session = Depends(get_db),
 ):
     ws_uuid = verify_workspace_access(workspace_id, current_user, db)
-    page_uuid = _parse_uuid(page_id, "page ID")
-    page = (
-        db.query(Page)
-        .filter(Page.id == page_uuid, Page.workspace_id == ws_uuid, Page.is_deleted == False)
-        .first()
-    )
-    if not page:
-        raise HTTPException(status_code=404, detail="Page not found")
+    page = get_page_in_workspace(db, page_id, ws_uuid)
 
-    if data.parent_id is not None:
+    # `parent_id: null` means "move to the top level" and must be told apart from an
+    # omitted field, which means "leave the parent alone". Checking `is not None` conflates
+    # the two and made it impossible to drag a page back out to the root.
+    if "parent_id" in data.model_fields_set:
         new_parent = _resolve_parent(db, data.parent_id, ws_uuid)
         if new_parent is not None and is_self_or_descendant(db, new_parent, page.id, ws_uuid):
             raise HTTPException(
@@ -380,5 +377,6 @@ def _delete_page_tree(db: Session, page_id: uuid.UUID, workspace_id: uuid.UUID) 
     ).all()
     for child in children:
         _delete_page_tree(db, child.id, workspace_id)
+    db.query(PageFavorite).filter(PageFavorite.page_id == page_id).delete()
     db.query(PageKeyGrant).filter(PageKeyGrant.page_id == page_id).delete()
     db.query(Page).filter(Page.id == page_id).delete()

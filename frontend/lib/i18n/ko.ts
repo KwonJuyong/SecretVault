@@ -102,6 +102,10 @@ const ko: Translations = {
   // Editor
   changeIcon: '아이콘 변경',
   untitled: '제목 없음',
+  favorites: '즐겨찾기',
+  recent: '최근 항목',
+  addToFavorites: '즐겨찾기에 추가',
+  removeFromFavorites: '즐겨찾기에서 제거',
   lockedPage: '🔒 잠김 — 키 없음',
   inviteNeedsWorkspaceKey: '이 워크스페이스의 키를 가지고 있지 않아 다른 사람에게 접근 권한을 줄 수 없습니다. 워크스페이스 소유자에게 초대를 요청하세요.',
   lockedPageNotice: '이 페이지의 키가 없어 복호화할 수 없습니다. 기존 내용을 보호하기 위해 편집이 비활성화되었습니다. 페이지 소유자에게 공유를 요청하세요.',

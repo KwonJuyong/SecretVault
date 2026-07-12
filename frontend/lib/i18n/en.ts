@@ -100,6 +100,10 @@ const en = {
   // Editor
   changeIcon: 'Change icon',
   untitled: 'Untitled',
+  favorites: 'Favorites',
+  recent: 'Recent',
+  addToFavorites: 'Add to favorites',
+  removeFromFavorites: 'Remove from favorites',
   lockedPage: '🔒 Locked — no key',
   inviteNeedsWorkspaceKey: "You don't hold this workspace's key, so you can't grant access to anyone else. Ask the workspace owner to invite them.",
   lockedPageNotice: "You don't have the key for this page, so it can't be decrypted. Editing is disabled to protect the existing content. Ask the page owner to share it with you.",
