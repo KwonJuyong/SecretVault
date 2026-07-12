@@ -10,6 +10,8 @@ import {
   generatePageKey, unwrapPageKey,
   wrapPageKeyForWorkspace, unwrapPageKeyFromWorkspace,
 } from '@/lib/crypto';
+import { usePageDoc } from '@/lib/usePageDoc';
+import type { CollabMessage } from '@/lib/collab';
 import type { PageTreeItem, PageData, Workspace, TocHeading } from '@/lib/types';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -47,9 +49,15 @@ export default function AppPage() {
   const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
   const [subPageTitles, setSubPageTitles] = useState<Record<string, string>>({});
   const [tocHeadings, setTocHeadings] = useState<TocHeading[]>([]);
-  // Set when the open page's ciphertext would not decrypt. Autosave stays off while true,
+  // Set when the open page's ciphertext would not decrypt. Saving stays off while true,
   // otherwise we would encrypt a blank editor over content we merely failed to read.
   const [pageLocked, setPageLocked] = useState(false);
+
+  // Collaboration state for the open page.
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [activePageKey, setActivePageKey] = useState<CryptoKey | null>(null);
+  const [sealedSnapshot, setSealedSnapshot] = useState('');   // encrypted Yjs doc
+  const [legacyHtml, setLegacyHtml] = useState<string | null>(null); // pre-CRDT pages
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageKeyCache = useRef<Map<string, CryptoKey>>(new Map());
@@ -62,7 +70,8 @@ export default function AppPage() {
     if (!isLoading && !isAuthenticated) router.push('/login');
   }, [isLoading, isAuthenticated, router]);
 
-  // WebSocket
+  // WebSocket. Exposed as state as well as a ref, because the collaboration hook has to
+  // re-run when the socket actually opens, not just when the ref is written.
   useEffect(() => {
     if (!workspaceId || !isAuthenticated) return;
     const token = sessionStorage.getItem('access_token');
@@ -73,19 +82,34 @@ export default function AppPage() {
 
     const connectWebSocket = () => {
       const ws = new WebSocket(wsUrl);
+      ws.onopen = () => { if (wsRef.current === ws) setSocket(ws); };
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
+          // Yjs traffic is handled by the collaboration hook's own listener.
           if (['page_updated', 'page_created', 'page_deleted'].includes(msg.type)) fetchPages();
         } catch { /* ignore */ }
       };
-      ws.onclose = () => { setTimeout(() => { if (wsRef.current === ws) connectWebSocket(); }, 3000); };
+      ws.onclose = () => {
+        setSocket(prev => (prev === ws ? null : prev));
+        setTimeout(() => { if (wsRef.current === ws) connectWebSocket(); }, 3000);
+      };
       ws.onerror = () => ws.close();
       wsRef.current = ws;
     };
     connectWebSocket();
-    return () => { if (wsRef.current) { const ws = wsRef.current; wsRef.current = null; ws.close(); } };
+    return () => {
+      const ws = wsRef.current;
+      wsRef.current = null;
+      setSocket(null);
+      ws?.close();
+    };
   }, [workspaceId, isAuthenticated]);
+
+  const sendCollab = useCallback((msg: CollabMessage) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+  }, []);
 
   // Fetch pages
   const fetchPages = useCallback(async () => {
@@ -138,26 +162,41 @@ export default function AppPage() {
    * `locked` means the ciphertext is there but we could not read it — no key for this
    * user, or the key does not fit. The caller must not let the editor save over a locked
    * page: the plaintext exists only in the ciphertext we just failed to open.
+   *
+   * The body is handed on still encrypted. From v4 a page's content is a Yjs snapshot,
+   * and the collaboration hook opens it into the shared document; older pages hold HTML,
+   * which is decrypted here and seeded into a fresh document once.
    */
   const openPage = useCallback(async (
     pageId: string,
-    data: { title: string; content: string; encrypted_page_key?: string | null; page_key_grant: string | null },
-  ): Promise<{ title: string; content: string; locked: boolean }> => {
-    const hasCiphertext = Boolean(data.title || data.content);
-    if (!hasCiphertext) return { title: '', content: '', locked: false };
+    data: PageData,
+  ): Promise<{
+    title: string; locked: boolean;
+    key: CryptoKey | null; snapshot: string; legacy: string | null;
+  }> => {
+    const empty = { title: '', locked: false, key: null, snapshot: '', legacy: null };
+    if (!data.title && !data.content) {
+      const key = await getPageKey(pageId, data.encrypted_page_key, data.page_key_grant);
+      return { ...empty, key };
+    }
 
     try {
-      const pageKey = await getPageKey(pageId, data.encrypted_page_key ?? null, data.page_key_grant);
-      if (!pageKey) return { title: '', content: '', locked: true };
+      const key = await getPageKey(pageId, data.encrypted_page_key, data.page_key_grant);
+      if (!key) return { ...empty, locked: true };
+
+      const title = data.title ? await decrypt(data.title, key) : '';
+      const isCrdt = data.encryption_version >= 4;
 
       return {
-        title: data.title ? await decrypt(data.title, pageKey) : '',
-        content: data.content ? await decrypt(data.content, pageKey) : '',
+        title,
         locked: false,
+        key,
+        snapshot: isCrdt ? data.content : '',
+        legacy: !isCrdt && data.content ? await decrypt(data.content, key) : null,
       };
     } catch (e) {
       console.error('Failed to decrypt page:', pageId, e);
-      return { title: '', content: '', locked: true };
+      return { ...empty, locked: true };
     }
   }, [getPageKey]);
 
@@ -172,8 +211,11 @@ export default function AppPage() {
 
       setActivePageId(pageId);
       setEditTitle(opened.title);
-      setEditContent(opened.content);
+      setEditContent('');
       setEditIcon(data.icon || '');
+      setActivePageKey(opened.key);
+      setSealedSnapshot(opened.snapshot);
+      setLegacyHtml(opened.legacy);
       setPageLocked(opened.locked);
       setSharedPagePermission(null);
       setSaveStatus(opened.locked ? 'error' : 'idle');
@@ -187,13 +229,16 @@ export default function AppPage() {
     if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; try { await savePageRef.current(); } catch { /* */ } }
 
     try {
-      const data = await api.get<PageData & { permission: string; page_key_grant: string | null }>(`/shared-pages/${pageId}`);
+      const data = await api.get<PageData & { permission: string }>(`/shared-pages/${pageId}`);
       const opened = await openPage(pageId, data);
 
       setActivePageId(pageId);
       setEditTitle(opened.title);
-      setEditContent(opened.content);
+      setEditContent('');
       setEditIcon(data.icon || '');
+      setActivePageKey(opened.key);
+      setSealedSnapshot(opened.snapshot);
+      setLegacyHtml(opened.legacy);
       setPageLocked(opened.locked);
       setSharedPagePermission(data.permission);
       setSaveStatus(opened.locked ? 'error' : 'idle');
@@ -201,7 +246,41 @@ export default function AppPage() {
     } catch (e) { console.error('Failed to load shared page:', e); }
   }, [openPage]);
 
+  /**
+   * Persist the page body: the merged Yjs snapshot, already encrypted by the hook.
+   *
+   * A whole-document write is safe here in a way it never was before. The snapshot is a
+   * CRDT merge of everything this client has seen, including every remote edit relayed to
+   * it, so a save cannot erase a concurrent edit — it has already absorbed it.
+   */
+  const persistDoc = useCallback(async (sealed: string) => {
+    if (!activePageId || !workspaceId || pageLocked) return;
+    setSaveStatus('saving');
+    try {
+      const path = sharedPagePermission !== null
+        ? `/shared-pages/${activePageId}`
+        : `/workspaces/${workspaceId}/pages/${activePageId}`;
+      await api.put(path, { content: sealed, encryption_version: 4 });
+      setSaveStatus('saved');
+    } catch (e) {
+      setSaveStatus('error');
+      console.error('Failed to persist page:', e);
+    }
+  }, [activePageId, workspaceId, pageLocked, sharedPagePermission]);
+
+  const { doc: pageDoc, ready: docReady, seedHtml } = usePageDoc({
+    pageId: activePageId,
+    pageKey: activePageKey,
+    sealedSnapshot,
+    legacyHtml,
+    socket,
+    send: sendCollab,
+    onPersist: persistDoc,
+  });
+
   // Save page
+  // Title and icon only. The body is a CRDT now and persists through persistDoc; these two
+  // are plain fields where a last-writer-wins update is the expected behaviour anyway.
   const savePage = useCallback(async () => {
     if (!activePageId || !workspaceId) return;
     if (pageLocked) return; // never write over a page we could not read
@@ -211,8 +290,10 @@ export default function AppPage() {
       if (!pageKey) { setSaveStatus('error'); return; }
 
       const encTitle = await encrypt(editTitle || t.untitled, pageKey);
-      const encContent = await encrypt(editContent, pageKey);
-      await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, { title: encTitle, content: encContent, icon: editIcon });
+      const path = sharedPagePermission !== null
+        ? `/shared-pages/${activePageId}`
+        : `/workspaces/${workspaceId}/pages/${activePageId}`;
+      await api.put(path, { title: encTitle, icon: editIcon });
       setSaveStatus('saved');
       fetchPages();
 
@@ -220,7 +301,7 @@ export default function AppPage() {
         wsRef.current.send(JSON.stringify({ type: 'page_updated', page_id: activePageId }));
       }
     } catch (e) { setSaveStatus('error'); console.error('Failed to save:', e); }
-  }, [activePageId, workspaceId, editTitle, editContent, editIcon, pageLocked, t.untitled, fetchPages]);
+  }, [activePageId, workspaceId, editTitle, editIcon, pageLocked, sharedPagePermission, t.untitled, fetchPages]);
 
   useEffect(() => { savePageRef.current = savePage; }, [savePage]);
 
@@ -231,7 +312,7 @@ export default function AppPage() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(savePage, 800);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [editTitle, editContent, editIcon, savePage, activePageId, pageLocked]);
+  }, [editTitle, editIcon, savePage, activePageId, pageLocked]);
 
   // Create page. The page key is wrapped under the workspace key, not the creator's own
   // public key — that is what makes it readable by every member instead of only by us.
@@ -244,7 +325,7 @@ export default function AppPage() {
 
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
         title: encTitle, content: '', parent_id: parentId || null, icon: '',
-        encryption_version: 3, encrypted_page_key: wrappedKey,
+        encryption_version: 4, encrypted_page_key: wrappedKey,
       });
       pageKeyCache.current.set(data.id, pageKey);
       await fetchPages();
@@ -267,20 +348,6 @@ export default function AppPage() {
     } catch { return null; }
   }, [workspaceId, getPageKey]);
 
-  // Save content explicitly
-  const saveContent = useCallback(async (html: string) => {
-    if (!activePageId || !workspaceId) return;
-    if (pageLocked) return; // never write over a page we could not read
-    try {
-      const pageKey = pageKeyCache.current.get(activePageId);
-      if (!pageKey) return;
-      const encTitle = await encrypt(editTitle || t.untitled, pageKey);
-      const encContent = await encrypt(html, pageKey);
-      await api.put(`/workspaces/${workspaceId}/pages/${activePageId}`, { title: encTitle, content: encContent, icon: editIcon });
-      if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
-    } catch (e) { console.error('Failed to save content:', e); }
-  }, [activePageId, workspaceId, editTitle, editIcon, pageLocked, t.untitled]);
-
   // Create sub-page
   const createSubPage = useCallback(async (): Promise<{ id: string; title: string } | undefined> => {
     if (!activePageId || !workspaceId || !workspaceKey) return undefined;
@@ -291,7 +358,7 @@ export default function AppPage() {
 
       const data = await api.post<PageData>(`/workspaces/${workspaceId}/pages`, {
         title: subEncTitle, content: '', parent_id: activePageId, icon: '',
-        encryption_version: 3, encrypted_page_key: wrappedKey,
+        encryption_version: 4, encrypted_page_key: wrappedKey,
       });
       pageKeyCache.current.set(data.id, pageKey);
       await fetchPages();
@@ -418,19 +485,24 @@ export default function AppPage() {
               <p className="text-sm text-[var(--fg-muted)] leading-relaxed">{t.lockedPageNotice}</p>
             </div>
           </div>
+        ) : activePageId && !docReady ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-7 h-7 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin" />
+          </div>
         ) : activePageId ? (
           <Editor
+            key={activePageId}
             title={editTitle}
-            content={editContent}
+            content={seedHtml ?? ''}
             icon={editIcon}
             pageId={activePageId}
+            ydoc={pageDoc}
             onChangeTitle={setEditTitle}
             onChangeContent={setEditContent}
             onChangeIcon={setEditIcon}
             subPages={subPages}
             onCreateSubPage={createSubPage}
             onNavigateToPage={sharedPagePermission !== null ? loadSharedPage : loadPage}
-            onSaveContent={saveContent}
             subPageTitles={subPageTitles}
             subPageIcons={subPageIcons}
             onHeadingsChange={setTocHeadings}

@@ -219,3 +219,7 @@ build/
 .env.test.local
 .env.production.local
 *.pem
+
+# Local dev / test databases
+*.db
+_devcheck.db

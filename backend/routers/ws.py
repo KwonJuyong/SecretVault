@@ -15,6 +15,19 @@ router = APIRouter()
 # workspace_id -> set of connected WebSockets
 active_connections: dict[str, set[WebSocket]] = defaultdict(set)
 
+# Only these are relayed. The yjs_* payloads are ciphertext the server cannot read — it is
+# a dumb relay for them, which is what keeps collaborative editing end-to-end encrypted.
+RELAYABLE_TYPES = frozenset({
+    "page_created",
+    "page_updated",
+    "page_deleted",
+    "yjs_update",
+    "yjs_sync_request",
+    "yjs_sync_response",
+})
+
+MAX_MESSAGE_BYTES = 1_000_000
+
 
 def verify_ws_token(token: str) -> str | None:
     """Verify JWT token and return email."""
@@ -67,27 +80,41 @@ async def websocket_endpoint(
     try:
         while True:
             data = await websocket.receive_text()
-            # Broadcast to all other connections in the same workspace
+
+            if len(data) > MAX_MESSAGE_BYTES:
+                # A single peer must not be able to fan a huge payload out to the whole
+                # workspace. Yjs updates are small; a snapshot of a large page is the
+                # realistic upper bound, and it is well under this.
+                continue
+
             try:
                 message = json.loads(data)
-                message["email"] = email
-                broadcast_data = json.dumps(message)
             except json.JSONDecodeError:
                 continue
 
+            if not isinstance(message, dict) or message.get("type") not in RELAYABLE_TYPES:
+                continue
+
+            # The sender's identity is stamped here rather than trusted from the payload,
+            # so a client cannot broadcast under someone else's name.
+            message["email"] = email
+            broadcast_data = json.dumps(message)
+
             disconnected = set()
             for conn in active_connections[workspace_id]:
-                if conn != websocket:
-                    try:
-                        await conn.send_text(broadcast_data)
-                    except Exception:
-                        disconnected.add(conn)
+                if conn is websocket:
+                    continue
+                try:
+                    await conn.send_text(broadcast_data)
+                except Exception:
+                    disconnected.add(conn)
 
-            # Clean up disconnected
             for conn in disconnected:
                 active_connections[workspace_id].discard(conn)
 
     except WebSocketDisconnect:
+        pass
+    finally:
         active_connections[workspace_id].discard(websocket)
         if not active_connections[workspace_id]:
-            del active_connections[workspace_id]
+            active_connections.pop(workspace_id, None)

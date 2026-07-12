@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type * as Y from 'yjs';
 import TiptapEditor from './TiptapEditor';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText, Plus, ChevronRight } from 'lucide-react';
@@ -14,6 +15,7 @@ interface SubPageItem {
 
 interface EditorProps {
   title: string;
+  /** Only used to seed a pre-CRDT page into its new Yjs document; otherwise the doc wins. */
   content: string;
   icon: string;
   pageId?: string | null;
@@ -23,10 +25,10 @@ interface EditorProps {
   subPages?: SubPageItem[];
   onCreateSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
-  onSaveContent?: (html: string) => Promise<void>;
   subPageTitles?: Record<string, string>;
   subPageIcons?: Record<string, string>;
   onHeadingsChange?: (headings: TocHeading[]) => void;
+  ydoc?: Y.Doc | null;
 }
 
 const emojiCategories = [
@@ -68,9 +70,9 @@ const emojiCategories = [
 export default function Editor({
   title, content, icon, pageId,
   onChangeTitle, onChangeContent, onChangeIcon,
-  subPages = [], onCreateSubPage, onNavigateToPage, onSaveContent,
+  subPages = [], onCreateSubPage, onNavigateToPage,
   subPageTitles, subPageIcons,
-  onHeadingsChange,
+  onHeadingsChange, ydoc,
 }: EditorProps) {
   const { t } = useLanguage();
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -155,11 +157,11 @@ export default function Editor({
         onChange={handleContentChange}
         onInsertSubPage={onCreateSubPage}
         onNavigateToPage={onNavigateToPage}
-        onSaveContent={onSaveContent}
         subPageTitles={subPageTitles}
         subPageIcons={subPageIcons}
         pageId={pageId}
         onHeadingsChange={onHeadingsChange}
+        ydoc={ydoc}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}

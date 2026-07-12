@@ -27,6 +27,8 @@ import { SubPageNode } from './SubPageNode';
 import { TableOfContentsNode } from './TableOfContentsNode';
 import { DragHandle } from './DragHandle';
 import IMECompositionFix from './IMECompositionFix';
+import Collaboration from '@tiptap/extension-collaboration';
+import * as Y from 'yjs';
 import { isHtmlContent, markdownToHtml } from '@/lib/markdown';
 import type { TocHeading } from '@/lib/types';
 
@@ -37,14 +39,20 @@ interface TiptapEditorProps {
   onChange: (html: string) => void;
   onInsertSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
-  onSaveContent?: (html: string) => Promise<void>;
   subPageTitles?: Record<string, string>;
   subPageIcons?: Record<string, string>;
   pageId?: string | null;
   onHeadingsChange?: (headings: TocHeading[]) => void;
+  /**
+   * The page's shared Yjs document. When present it owns the content: edits flow through
+   * the CRDT rather than through `content`/setContent, so two people typing at once merge
+   * instead of overwriting each other.
+   */
+  ydoc?: Y.Doc | null;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, onSaveContent, subPageTitles, subPageIcons, pageId, onHeadingsChange }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, subPageTitles, subPageIcons, pageId, onHeadingsChange, ydoc }: TiptapEditorProps) {
+  const collaborative = Boolean(ydoc);
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subPageTitlesRef = useRef(subPageTitles);
@@ -74,7 +82,11 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         codeBlock: false,
+        // Yjs keeps its own undo stack and it must be the only one: ProseMirror's history
+        // would try to undo remote peers' edits as if they were yours.
+        ...(collaborative ? { history: false as const } : {}),
       }),
+      ...(ydoc ? [Collaboration.configure({ document: ydoc })] : []),
       Underline,
       Placeholder.configure({
         placeholder: 'Type / for commands...',
@@ -247,13 +259,30 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
         onHeadingsChangeRef.current?.(headings);
       });
     },
-  });
+  }, [ydoc]); // a new page means a new Y.Doc, and the editor must be rebuilt around it
 
   // Sync external content changes into editor only when navigating to a different page.
   // Gating on pageId (not content) prevents overwriting the editor during user edits,
   // which was causing subpage blocks to disappear after typing.
+  // A page written before CRDT holds HTML. Pour it into the empty shared document once;
+  // from then on the document is the source of truth and this never runs again.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !collaborative) return;
+    if (seededRef.current || !content) return;
+    if (editor.state.doc.content.size > 2) return; // doc already has content — do not seed
+    seededRef.current = true;
+
+    const html = isHtmlContent(content) ? content : markdownToHtml(content);
+    editor.commands.setContent(html);
+  }, [editor, collaborative, content]);
+
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
+    // Under Yjs the document *is* the content. Calling setContent here would replace the
+    // shared doc's state wholesale and propagate that to every other peer — exactly the
+    // clobbering the CRDT exists to prevent.
+    if (collaborative) return;
     // If same page, this is a round-trip from onChange → parent state → prop. Skip.
     if (pageId === prevPageIdRef.current) return;
     prevPageIdRef.current = pageId;
@@ -498,15 +527,15 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
             type: 'subPageLink',
             attrs: { pageId: created.id, title: created.title || 'Untitled' },
           }).run();
-          const updatedHtml = editor.getHTML();
-          onChange(updatedHtml);
-          if (onSaveContent) await onSaveContent(updatedHtml);
+          // No explicit save here any more: the insert is a Yjs update, and the collab
+          // hook flushes a pending snapshot when this page unmounts on navigation.
+          onChange(editor.getHTML());
           onNavigateToPage?.(created.id);
         }
         break;
       }
     }
-  }, [editor, onInsertSubPage, onChange, onSaveContent]);
+  }, [editor, onInsertSubPage, onChange, onNavigateToPage]);
 
   const handleSlashClose = useCallback(() => {
     setSlashOpen(false);
