@@ -204,13 +204,16 @@ ok "Postgres 준비됨"
 # POSTGRES_PASSWORD 는 클러스터를 **처음 만들 때만** 적용된다. 이미 있는 볼륨 위에서
 # .env 의 비밀번호만 바꾸면, DB 안의 역할은 옛 비밀번호를 그대로 갖고 있어서 인증이
 # 실패한다. 그런데 그 실패는 이미지 빌드를 다 마치고 마이그레이션 단계에 가서야 터진다.
-# 여기서 미리 잡고, 원인을 정확히 말한다.
 #
-# -h 127.0.0.1 로 TCP 를 강제하는 것이 핵심이다. postgres 이미지는 유닉스 소켓 접속을
-# trust 로 열어두기 때문에, 소켓으로 psql 을 부르면 비밀번호가 틀려도 그냥 통과한다.
-# 백엔드는 TCP 로 붙으므로, 검사도 같은 경로로 해야 의미가 있다.
-if ! $DC exec -T -e PGPASSWORD="$PG_PASS" db \
-     psql -h 127.0.0.1 -U "$PG_USER" -d "$PG_DB" -c 'SELECT 1' >/dev/null 2>&1; then
+# 반드시 **다른 컨테이너에서 호스트명 `db` 로** 붙어야 한다. postgres 이미지의 pg_hba 는
+# 유닉스 소켓뿐 아니라 127.0.0.1 도 trust 로 열어두기 때문에, db 컨테이너 안에서
+# 자기 자신에게 붙는 검사는 비밀번호가 틀려도 통과한다. 비밀번호 인증(scram) 규칙에
+# 걸리는 건 다른 호스트에서 오는 접속뿐이고, 백엔드가 바로 그 경로다.
+#
+# `run --rm db` 는 db 서비스의 이미지(postgres:15)로 임시 컨테이너를 compose 네트워크에
+# 띄운다. 새 서버를 시작하는 게 아니라 그 안의 psql 클라이언트만 빌려 쓴다.
+if ! $DC run --rm --no-deps -T -e PGPASSWORD="$PG_PASS" db \
+     psql -h db -U "$PG_USER" -d "$PG_DB" -c 'SELECT 1' >/dev/null 2>&1; then
   die "DB 인증 실패: 역할 '$PG_USER' 가 .env 의 POSTGRES_PASSWORD 를 받지 않습니다.
 
   POSTGRES_PASSWORD 는 Postgres 클러스터를 처음 생성할 때만 적용됩니다.
@@ -220,15 +223,14 @@ if ! $DC exec -T -e PGPASSWORD="$PG_PASS" db \
 
   (a) DB 를 비우고 새 비밀번호로 다시 만든다 — 데이터는 사라집니다:
         docker compose stop backend frontend
-        docker compose rm -f db
+        docker compose rm -sf db          # -s: 실행 중이면 먼저 정지. 없으면 볼륨이 안 풀린다
         docker volume rm secret-vault_postgres_data
         ./deploy.sh
 
   (b) 데이터를 지키고 역할 비밀번호만 바꾼다:
-        docker compose exec db psql -U postgres -c \\
-          \"ALTER USER \\\"$PG_USER\\\" WITH PASSWORD '<.env 의 새 비밀번호>';\""
+        docker compose exec db psql -U postgres -c \"ALTER USER \\\"$PG_USER\\\" WITH PASSWORD '<새 비밀번호>';\""
 fi
-ok "DB 인증 확인 (역할 '$PG_USER')"
+ok "DB 인증 확인 (다른 컨테이너 → db, 비밀번호 인증)"
 
 HAS_TABLES="$(psql_scalar "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';")"
 HAS_ALEMBIC="$(psql_scalar "SELECT to_regclass('public.alembic_version') IS NOT NULL;")"
