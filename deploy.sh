@@ -63,9 +63,16 @@ fi
 
 # .env 를 source 하지 않는다. compose 의 env 파일은 셸 문법이 아니라서,
 # 값에 공백이나 #, 따옴표가 들어가면 sourcing 이 조용히 어긋나거나 코드를 실행한다.
+#
+# 반드시 0 으로 끝나야 한다. 키가 없으면 grep 이 1 을 내는데, pipefail + set -e 조합에서는
+# 그것만으로 스크립트가 아무 메시지 없이 죽는다. "설정되지 않음" 은 정상적인 상태이므로
+# 빈 문자열을 돌려주고 정상 종료한다.
 env_get() {
   [ -f .env ] || return 0
-  grep -E "^[[:space:]]*$1=" .env | tail -1 | cut -d= -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+  local line=""
+  line="$(grep -E "^[[:space:]]*$1=" .env | tail -1)" || return 0
+  printf '%s' "$line" | cut -d= -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+  return 0
 }
 
 BACKUP_DIR="./backups"
@@ -81,9 +88,10 @@ wait_for_db() {
   return 1
 }
 
-# psql 한 줄 질의. 결과는 공백 제거된 문자열.
+# psql 한 줄 질의. env_get 과 같은 이유로 실패해도 0 으로 끝나고 빈 문자열을 돌려준다.
 psql_scalar() {
-  $DC exec -T db psql -U "$PG_USER" -d "$PG_DB" -tAc "$1" 2>/dev/null | tr -d '[:space:]'
+  $DC exec -T db psql -U "$PG_USER" -d "$PG_DB" -tAc "$1" 2>/dev/null | tr -d '[:space:]' || true
+  return 0
 }
 
 # --- 사전 점검 ----------------------------------------------------------------
@@ -124,7 +132,11 @@ if [ -n "$ROLLBACK_FILE" ]; then
   [ -f "$ROLLBACK_FILE" ] || die "백업 파일이 없습니다: $ROLLBACK_FILE"
   step "DB 롤백: $ROLLBACK_FILE"
   echo "  ${R}현재 DB 내용을 이 백업으로 덮어씁니다.${N}"
-  read -r -p "  계속하려면 'yes' 입력: " confirm
+  confirm=""
+  # 비대화형(CI/SSH)에서는 read 가 EOF 로 실패한다. set -e 아래에서 그대로 두면
+  # 아무 메시지 없이 죽으므로, 확인을 못 받았다는 사실을 분명히 말하고 멈춘다.
+  [ -t 0 ] || die "파괴적인 작업이라 대화형 확인이 필요합니다. 터미널에서 직접 실행하세요."
+  read -r -p "  계속하려면 'yes' 입력: " confirm || true
   [ "$confirm" = "yes" ] || die "취소됨."
 
   $DC up -d db >/dev/null 2>&1
@@ -197,8 +209,9 @@ if [ "$DO_BACKUP" -eq 1 ] && [ "$HAS_TABLES" != "0" ]; then
     die "pg_dump 실패. 백업 없이 진행하지 않습니다 (--no-backup 으로 강제 가능)."
   fi
 
-  # 최근 10개만 남긴다.
-  ls -1t "$BACKUP_DIR"/secretvault-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f
+  # 최근 10개만 남긴다. 매칭되는 파일이 없으면 ls 가 실패하는데, pipefail 아래에서는
+  # 그것만으로 스크립트가 죽으므로 삼킨다.
+  ls -1t "$BACKUP_DIR"/secretvault-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f || true
 elif [ "$DO_BACKUP" -ne 1 ]; then
   warn "백업 건너뜀 (--no-backup)"
 fi
@@ -208,7 +221,9 @@ if [ "$RESET_DB" -eq 1 ]; then
   step "DB 초기화"
   echo "  ${R}'$PG_DB' 의 모든 데이터를 삭제합니다.${N}"
   [ -n "$BACKUP_PATH" ] && echo "  백업: $BACKUP_PATH"
-  read -r -p "  계속하려면 'reset' 입력: " confirm
+  confirm=""
+  [ -t 0 ] || die "파괴적인 작업이라 대화형 확인이 필요합니다. 터미널에서 직접 실행하세요."
+  read -r -p "  계속하려면 'reset' 입력: " confirm || true
   [ "$confirm" = "reset" ] || die "취소됨."
 
   $DC stop backend frontend >/dev/null 2>&1 || true
