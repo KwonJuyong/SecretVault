@@ -2,6 +2,7 @@ from models.page import Page
 from models.page_favorite import PageFavorite
 from models.page_key_grant import PageKeyGrant
 from models.page_share import PageShare
+from models.page_version import PageVersion
 from models.user import User
 from models.user_keypair import UserKeyPair
 from models.workspace import Workspace, WorkspaceKeyGrant, WorkspaceMember
@@ -12,6 +13,7 @@ __all__ = [
     "PageFavorite",
     "PageKeyGrant",
     "PageShare",
+    "PageVersion",
     "User",
     "UserKeyPair",
     "Workspace",

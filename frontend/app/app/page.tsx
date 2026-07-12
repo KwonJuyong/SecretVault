@@ -24,6 +24,7 @@ import WorkspaceSettings from '@/components/workspace/WorkspaceSettings';
 import CreateWorkspaceModal from '@/components/workspace/CreateWorkspaceModal';
 import TipsModal from '@/components/ui/TipsModal';
 import ShareModal from '@/components/editor/ShareModal';
+import HistoryPanel from '@/components/editor/HistoryPanel';
 import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import PageTreeView from '@/components/dashboard/PageTreeView';
 import { Lock } from 'lucide-react';
@@ -47,6 +48,9 @@ export default function AppPage() {
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  // A version waiting to be applied. Handed to the editor, which turns it into a CRDT edit.
+  const [restoreJson, setRestoreJson] = useState<unknown | null>(null);
   const [sharedPagePermission, setSharedPagePermission] = useState<string | null>(null);
   const [subPageTitles, setSubPageTitles] = useState<Record<string, string>>({});
   const [tocHeadings, setTocHeadings] = useState<TocHeading[]>([]);
@@ -345,6 +349,15 @@ export default function AppPage() {
     }
   }, [activePageId, workspaceId, pageLocked, sharedPagePermission]);
 
+  const saveVersion = useCallback(async (sealed: string) => {
+    if (!activePageId || !workspaceId || pageLocked) return;
+    try {
+      await api.post(`/workspaces/${workspaceId}/pages/${activePageId}/versions`, {
+        encrypted_snapshot: sealed,
+      });
+    } catch (e) { console.error('Failed to save version:', e); }
+  }, [activePageId, workspaceId, pageLocked]);
+
   const { doc: pageDoc, ready: docReady, seedHtml } = usePageDoc({
     pageId: activePageId,
     pageKey: activePageKey,
@@ -353,6 +366,7 @@ export default function AppPage() {
     socket,
     send: sendCollab,
     onPersist: persistDoc,
+    onSaveVersion: saveVersion,
   });
 
   // Save page
@@ -555,6 +569,7 @@ export default function AppPage() {
           rightPanelOpen={rightPanelOpen}
           onToggleRightPanel={() => setRightPanelOpen(!rightPanelOpen)}
           onShare={activePageId ? () => setShowShare(true) : undefined}
+          onOpenHistory={activePageId ? () => setShowHistory(true) : undefined}
         />
 
         {activePageId && pageLocked ? (
@@ -585,6 +600,8 @@ export default function AppPage() {
             subPageTitles={subPageTitles}
             subPageIcons={subPageIcons}
             onHeadingsChange={setTocHeadings}
+            restoreJson={restoreJson}
+            onRestored={() => setRestoreJson(null)}
           />
         ) : (
           <PageTreeView
@@ -606,6 +623,15 @@ export default function AppPage() {
       {settingsWorkspace && <WorkspaceSettings workspace={settingsWorkspace} onClose={() => setSettingsWorkspace(null)} onUpdated={fetchPages} />}
       {showCreateWorkspace && <CreateWorkspaceModal onClose={() => setShowCreateWorkspace(false)} onCreated={handleWorkspaceCreated} />}
       {showTips && <TipsModal onClose={() => setShowTips(false)} />}
+      {showHistory && activePageId && (
+        <HistoryPanel
+          workspaceId={workspaceId}
+          pageId={activePageId}
+          pageKey={activePageKey}
+          onRestore={setRestoreJson}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
       {showShare && activePageId && (
         <ShareModal workspaceId={workspaceId} pageId={activePageId} pageTitle={editTitle || t.untitled} allPages={pages} getDecryptedPageKey={getDecryptedPageKey} onClose={() => setShowShare(false)} />
       )}

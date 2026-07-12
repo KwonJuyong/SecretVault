@@ -22,6 +22,8 @@ interface EditorProps {
   subPageIcons?: Record<string, string>;
   onHeadingsChange?: (headings: TocHeading[]) => void;
   ydoc?: Y.Doc | null;
+  restoreJson?: unknown | null;
+  onRestored?: () => void;
 }
 
 const emojiCategories = [
@@ -65,7 +67,7 @@ export default function Editor({
   onChangeTitle, onChangeContent, onChangeIcon,
   onCreateSubPage, onNavigateToPage,
   subPageTitles, subPageIcons,
-  onHeadingsChange, ydoc,
+  onHeadingsChange, ydoc, restoreJson, onRestored,
 }: EditorProps) {
   const { t } = useLanguage();
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -155,6 +157,8 @@ export default function Editor({
         pageId={pageId}
         onHeadingsChange={onHeadingsChange}
         ydoc={ydoc}
+        restoreJson={restoreJson}
+        onRestored={onRestored}
       />
 
       {/* Sub-pages are shown inline in editor via SubPageNode */}

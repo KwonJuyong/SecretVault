@@ -49,9 +49,17 @@ interface TiptapEditorProps {
    * instead of overwriting each other.
    */
   ydoc?: Y.Doc | null;
+  /**
+   * A version to restore, as ProseMirror JSON. Applied as an ordinary editor command, so
+   * under Yjs it becomes a normal CRDT edit: it reaches every other peer and can be undone.
+   * Replacing the shared document instead would leave those peers stranded on the old
+   * content with nothing to tell them otherwise.
+   */
+  restoreJson?: unknown | null;
+  onRestored?: () => void;
 }
 
-export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, subPageTitles, subPageIcons, pageId, onHeadingsChange, ydoc }: TiptapEditorProps) {
+export default function TiptapEditor({ content, onChange, onInsertSubPage, onNavigateToPage, subPageTitles, subPageIcons, pageId, onHeadingsChange, ydoc, restoreJson, onRestored }: TiptapEditorProps) {
   const collaborative = Boolean(ydoc);
   const suppressUpdate = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -264,6 +272,16 @@ export default function TiptapEditor({ content, onChange, onInsertSubPage, onNav
   // Sync external content changes into editor only when navigating to a different page.
   // Gating on pageId (not content) prevents overwriting the editor during user edits,
   // which was causing subpage blocks to disappear after typing.
+  // Apply a restored version. setContent goes through the editor, which under Yjs turns it
+  // into a normal CRDT edit — so it reaches every peer and lands on the undo stack.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !restoreJson) return;
+    // emitUpdate=true so the change flows out as a Yjs update rather than being applied
+    // silently — otherwise peers would never hear about the restore.
+    editor.commands.setContent(restoreJson as never, true);
+    onRestored?.();
+  }, [editor, restoreJson, onRestored]);
+
   // A page written before CRDT holds HTML. Pour it into the empty shared document once;
   // from then on the document is the source of truth and this never runs again.
   const seededRef = useRef(false);

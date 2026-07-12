@@ -102,6 +102,13 @@ const ko: Translations = {
   // Editor
   changeIcon: '아이콘 변경',
   untitled: '제목 없음',
+  // Page history
+  pageHistory: '페이지 기록',
+  noHistoryYet: '아직 이전 버전이 없습니다. 이 페이지를 처음 편집할 때 하나가 저장되고, 이후 주기적으로 저장됩니다.',
+  emptyVersion: '(이 버전은 비어 있었습니다)',
+  restoreThisVersion: '이 버전으로 복원',
+  restoreNotice: '복원은 일반적인 편집으로 처리됩니다. 함께 편집 중인 사람에게도 반영되며, 실행 취소할 수 있습니다.',
+
   // Invite links
   inviteLinkCreated: '초대 링크가 생성되었습니다',
   inviteLinkNotice: '해당 주소로 가입된 계정이 없어, 가입까지 함께 진행할 수 있는 링크를 만들었습니다. 상대방에게 직접 전달하세요 — 이 링크를 가진 사람은 누구나 이 워크스페이스에 참여할 수 있으며, 7일 후 만료됩니다. 이 링크는 다시 보여드릴 수 없습니다.',

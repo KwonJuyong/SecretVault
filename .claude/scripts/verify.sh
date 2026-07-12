@@ -18,6 +18,20 @@ else
 fi
 
 echo
+echo "=== frontend: next build ==="
+# tsc/eslint/vitest all pass on code that fails to build — prerender errors (a client hook
+# with no Suspense boundary, for instance) only show up here.
+if [ -f "$ROOT/frontend/next.config.ts" ]; then
+  if out=$(cd "$ROOT/frontend" && npx --no-install next build 2>&1); then
+    echo "PASS"
+  else
+    echo "FAIL"; echo "$out" | grep -vE "baseline-browser-mapping" | tail -20; fail=1
+  fi
+else
+  echo "SKIP  next.config.ts 없음"
+fi
+
+echo
 echo "=== frontend: eslint (errors) ==="
 if [ -f "$ROOT/frontend/eslint.config.mjs" ]; then
   if out=$(cd "$ROOT/frontend" && npx --no-install eslint app lib components contexts --max-warnings=-1 2>&1); then

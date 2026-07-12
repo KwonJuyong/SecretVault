@@ -9,6 +9,7 @@ from database import get_db
 from models.page import Page
 from models.page_favorite import PageFavorite
 from models.page_key_grant import PageKeyGrant
+from models.page_version import PageVersion
 from models.user import User
 from schemas.page import (
     BatchKeyGrantsRequest,
@@ -377,6 +378,7 @@ def _delete_page_tree(db: Session, page_id: uuid.UUID, workspace_id: uuid.UUID) 
     ).all()
     for child in children:
         _delete_page_tree(db, child.id, workspace_id)
+    db.query(PageVersion).filter(PageVersion.page_id == page_id).delete()
     db.query(PageFavorite).filter(PageFavorite.page_id == page_id).delete()
     db.query(PageKeyGrant).filter(PageKeyGrant.page_id == page_id).delete()
     db.query(Page).filter(Page.id == page_id).delete()

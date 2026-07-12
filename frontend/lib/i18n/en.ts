@@ -100,6 +100,13 @@ const en = {
   // Editor
   changeIcon: 'Change icon',
   untitled: 'Untitled',
+  // Page history
+  pageHistory: 'Page history',
+  noHistoryYet: 'No earlier versions yet. One is saved the first time you edit this page, and periodically after that.',
+  emptyVersion: '(this version was empty)',
+  restoreThisVersion: 'Restore this version',
+  restoreNotice: 'Restoring is a normal edit: everyone else editing this page sees it, and you can undo it.',
+
   // Invite links
   inviteLinkCreated: 'Invite link created',
   inviteLinkNotice: "That address has no account yet, so here is a link they can sign up through. Send it to them directly — anyone holding it can join this workspace, and it expires in 7 days. We can't show it again.",

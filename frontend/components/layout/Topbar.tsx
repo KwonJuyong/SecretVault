@@ -3,7 +3,7 @@
 import {
   CheckCircle2, Loader2, AlertCircle, Cloud,
   PanelLeftClose, PanelLeft, PanelRightClose, PanelRight,
-  Share2, Globe, ChevronRight,
+  Share2, Globe, ChevronRight, History,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { PageTreeItem } from '@/lib/types';
@@ -16,6 +16,7 @@ interface TopbarProps {
   rightPanelOpen?: boolean;
   onToggleRightPanel?: () => void;
   onShare?: () => void;
+  onOpenHistory?: () => void;
   /** Root → … → current page. The last entry is the page you are on. */
   breadcrumbs?: PageTreeItem[];
   decryptedTitles?: Record<string, string>;
@@ -24,7 +25,7 @@ interface TopbarProps {
 
 export default function Topbar({
   sidebarOpen, onToggleSidebar, saveStatus, pageTitle,
-  rightPanelOpen, onToggleRightPanel, onShare,
+  rightPanelOpen, onToggleRightPanel, onShare, onOpenHistory,
   breadcrumbs = [], decryptedTitles = {}, onSelectPage,
 }: TopbarProps) {
   const { lang, setLang, t } = useLanguage();
@@ -125,6 +126,17 @@ export default function Topbar({
         <Globe size={16} />
         <span>{lang === 'en' ? 'EN' : 'KO'}</span>
       </button>
+
+      {/* History */}
+      {onOpenHistory && (
+        <button
+          onClick={onOpenHistory}
+          className="p-2 rounded-md hover:bg-[var(--bg-hover)] text-[var(--fg-tertiary)] hover:text-[var(--fg-primary)] transition-colors"
+          title={t.pageHistory}
+        >
+          <History size={17} />
+        </button>
+      )}
 
       {/* Share button */}
       {onShare && (
