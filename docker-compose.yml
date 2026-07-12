@@ -1,5 +1,15 @@
 services:
+  # 이 서버에서는 기본으로 뜨지 않는다.
+  #
+  # 80/443 은 여러 사이트(ai-eval, portfolio, …)를 함께 라우팅하는 공용 게이트웨이
+  # 컨테이너가 이미 잡고 있고, 그쪽 Caddyfile 은 /home/juyong/gateway/Caddyfile 이다.
+  # 여기 있는 Caddyfile 은 juyong.store → SecretVault 만 알기 때문에, 이 서비스를
+  # 띄우면 포트가 충돌하거나(별개 컨테이너일 때) 게이트웨이 설정을 덮어써서
+  # (같은 프로젝트일 때) 다른 사이트가 죽는다.
+  #
+  # SecretVault 만 단독으로 돌리는 서버에서만:  docker compose --profile standalone up -d
   caddy:
+    profiles: ["standalone"]
     image: caddy:2-alpine
     container_name: vault-caddy
     restart: always

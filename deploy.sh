@@ -276,8 +276,18 @@ ok "리비전: ${AFTER_REV:-head}"
 
 # --- 기동 ---------------------------------------------------------------------
 step "서비스 기동"
-$DC up -d --force-recreate --remove-orphans || die "서비스 기동 실패."
-ok "컨테이너 기동됨"
+
+# 이 스택이 소유한 서비스만 명시적으로 띄운다.
+#
+# caddy 는 건드리지 않는다. 이 서버의 80/443 은 여러 사이트를 라우팅하는 공용
+# 게이트웨이(gateway-caddy)가 잡고 있고, 그 컨테이너는 이 compose 프로젝트의 볼륨을
+# 쓴다. `--force-recreate` 를 전체에 걸면 게이트웨이가 리포지토리의 Caddyfile
+# (juyong.store → SecretVault 만 아는) 로 재생성되어 다른 사이트들의 라우팅이 사라진다.
+#
+# `--remove-orphans` 도 쓰지 않는다. compose 파일에 없지만 프로젝트 라벨이 붙은
+# 컨테이너를 지우는데, 게이트웨이가 정확히 거기에 해당한다.
+$DC up -d --force-recreate db backend frontend || die "서비스 기동 실패."
+ok "db / backend / frontend 기동됨 (caddy 는 건드리지 않음)"
 
 # --- 헬스체크 ------------------------------------------------------------------
 step "헬스체크"
