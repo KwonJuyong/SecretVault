@@ -223,3 +223,6 @@ build/
 # Local dev / test databases
 *.db
 _devcheck.db
+
+# 배포 스크립트가 만드는 DB 덤프. 저장소에 들어갈 이유가 없다.
+backups/

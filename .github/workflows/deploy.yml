@@ -1,8 +1,9 @@
-name: Deploy Cloud Vault (On-Premise)
+name: Deploy SecretVault (On-Premise)
 
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -15,9 +16,12 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          # deploy.sh 가 pull, 백업, 마이그레이션, 기동, 헬스체크, 정리를 모두 한다.
+          # 어느 단계든 실패하면 0 이 아닌 코드로 죽으므로 이 스텝도 함께 실패한다 —
+          # 예전처럼 마이그레이션이 조용히 깨진 채 배포가 "성공"으로 끝나지 않는다.
           script: |
+            set -e
             cd /home/labchain/secret-vault
-            git pull origin main
-            sudo docker compose down
-            sudo docker compose up -d --build --force-recreate -V
-            sudo docker image prune -f
+            # git 은 배포 계정 권한으로, docker 는 sudo 로 — 기존 배포와 같은 분리.
+            git pull --ff-only origin main
+            sudo ./deploy.sh --no-pull
