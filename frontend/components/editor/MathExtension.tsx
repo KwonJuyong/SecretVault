@@ -1,19 +1,24 @@
 'use client';
 
 import { Node, mergeAttributes, InputRule } from '@tiptap/core';
-import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import katex from 'katex';
 
 // ========== Inline Math ($e^2$ style) ==========
-function MathInlineView({ node, updateAttributes, selected, editor, getPos }: any) {
+function MathInlineView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
   const [editing, setEditing] = useState(!node.attrs.latex);
   const [latex, setLatex] = useState(node.attrs.latex || '');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  // Follow the node's attribute when it changes underneath us — a remote peer editing this
+  // formula, or an undo. Adjusted during render: an effect would show the stale formula for
+  // a frame, and the draft the user is typing would flicker back.
+  const [lastLatex, setLastLatex] = useState<string>(node.attrs.latex || '');
+  if (lastLatex !== (node.attrs.latex || '')) {
+    setLastLatex(node.attrs.latex || '');
     setLatex(node.attrs.latex || '');
-  }, [node.attrs.latex]);
+  }
 
   useEffect(() => {
     if (editing && inputRef.current) inputRef.current.focus();
@@ -106,14 +111,17 @@ export const MathInline = Node.create({
 });
 
 // ========== Block Math ($$...$$ style) ==========
-function MathBlockView({ node, updateAttributes, selected, editor, getPos }: any) {
+function MathBlockView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
   const [editing, setEditing] = useState(!node.attrs.latex);
   const [latex, setLatex] = useState(node.attrs.latex || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
+  // See MathInlineView: follow the node attribute during render, not in an effect.
+  const [lastLatex, setLastLatex] = useState<string>(node.attrs.latex || '');
+  if (lastLatex !== (node.attrs.latex || '')) {
+    setLastLatex(node.attrs.latex || '');
     setLatex(node.attrs.latex || '');
-  }, [node.attrs.latex]);
+  }
 
   useEffect(() => {
     if (editing && textareaRef.current) textareaRef.current.focus();

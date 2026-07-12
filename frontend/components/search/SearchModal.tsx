@@ -27,8 +27,15 @@ export default function SearchModal({ pages, decryptedTitles, onSelect, onClose 
     ? decryptedPages.filter(p => p.decryptedTitle.toLowerCase().includes(query.toLowerCase()))
     : decryptedPages;
 
+  // Reset the highlight when the query changes, adjusted during render rather than in an
+  // effect: an effect would paint one frame with the old index still highlighted.
+  const [lastQuery, setLastQuery] = useState(query);
+  if (lastQuery !== query) {
+    setLastQuery(query);
+    setSelectedIndex(0);
+  }
+
   useEffect(() => { inputRef.current?.focus(); }, []);
-  useEffect(() => { setSelectedIndex(0); }, [query]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.nativeEvent.isComposing) return;

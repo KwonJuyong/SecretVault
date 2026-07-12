@@ -26,7 +26,7 @@ import TipsModal from '@/components/ui/TipsModal';
 import ShareModal from '@/components/editor/ShareModal';
 import { htmlToMarkdown, downloadFile, exportPDF } from '@/lib/export';
 import PageTreeView from '@/components/dashboard/PageTreeView';
-import { FileText, Plus, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 export default function AppPage() {
   const { isAuthenticated, isLoading, workspaceId, privateKey, workspaceKey, switchWorkspace } = useAuth();
@@ -77,6 +77,15 @@ export default function AppPage() {
     if (!isLoading && !isAuthenticated) router.push('/login');
   }, [isLoading, isAuthenticated, router]);
 
+  // Declared before the WebSocket effect below, which calls it on every page_* broadcast.
+  const fetchPages = useCallback(async () => {
+    if (!workspaceId) return;
+    try {
+      const data = await api.get<PageTreeItem[]>(`/workspaces/${workspaceId}/pages`);
+      setPages(data);
+    } catch (e) { console.error('Failed to fetch pages:', e); }
+  }, [workspaceId]);
+
   // WebSocket. Exposed as state as well as a ref, because the collaboration hook has to
   // re-run when the socket actually opens, not just when the ref is written.
   useEffect(() => {
@@ -111,21 +120,12 @@ export default function AppPage() {
       setSocket(null);
       ws?.close();
     };
-  }, [workspaceId, isAuthenticated]);
+  }, [workspaceId, isAuthenticated, fetchPages]);
 
   const sendCollab = useCallback((msg: CollabMessage) => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
   }, []);
-
-  // Fetch pages
-  const fetchPages = useCallback(async () => {
-    if (!workspaceId) return;
-    try {
-      const data = await api.get<PageTreeItem[]>(`/workspaces/${workspaceId}/pages`);
-      setPages(data);
-    } catch (e) { console.error('Failed to fetch pages:', e); }
-  }, [workspaceId]);
 
   const fetchFavorites = useCallback(async () => {
     try {
@@ -134,14 +134,27 @@ export default function AppPage() {
     } catch (e) { console.error('Failed to fetch favorites:', e); }
   }, []);
 
+  // Switching workspace clears the open page. Adjusted during render rather than in an
+  // effect, so the editor never paints one frame still showing the previous workspace's
+  // page — whose key we have already dropped.
+  const [lastWorkspaceId, setLastWorkspaceId] = useState(workspaceId);
+  if (lastWorkspaceId !== workspaceId) {
+    setLastWorkspaceId(workspaceId);
+    setActivePageId(null);
+    setEditTitle(''); setEditContent(''); setEditIcon('');
+    setPageLocked(false);
+    setActivePageKey(null);
+    setSealedSnapshot(''); setLegacyHtml(null);
+    setRecentIds([]);
+    setPages([]);
+  }
+
   useEffect(() => {
-    if (workspaceId) {
-      setActivePageId(null); setEditTitle(''); setEditContent(''); setEditIcon('');
-      setRecentIds([]);
-      pageKeyCache.current.clear();
-      fetchPages();
-      fetchFavorites();
-    }
+    if (!workspaceId) return;
+    // Page keys are workspace-scoped: a cached key from the old workspace can never open
+    // anything here, and keeping it around only risks it being handed to the wrong page.
+    pageKeyCache.current.clear();
+    void (async () => { await Promise.all([fetchPages(), fetchFavorites()]); })();
   }, [workspaceId, fetchPages, fetchFavorites]);
 
   const toggleFavorite = useCallback(async (pageId: string) => {
@@ -466,15 +479,6 @@ export default function AppPage() {
     decryptTitles();
   }, [pages, getPageKey, t.untitled, t.lockedPage]);
 
-  // Sub-pages of current page
-  const subPages = useMemo(
-    () => Object.entries(subPageTitles)
-      .filter(([id]) => pages.find(p => p.id === id && p.parent_id === activePageId))
-      .map(([id, title]) => ({ id, title: title || t.untitled, icon: pages.find(p => p.id === id)?.icon || '' })),
-    [subPageTitles, pages, activePageId],
-  );
-
-  // Build icon map for all pages (used to sync sub-page link icons in editor)
   const breadcrumbs = useMemo(
     () => (activePageId ? breadcrumbTrail(pages, activePageId) : []),
     [pages, activePageId],
@@ -494,7 +498,7 @@ export default function AppPage() {
   const handleExportMarkdown = useCallback(() => {
     const md = htmlToMarkdown(editContent);
     downloadFile(`# ${editTitle || t.untitled}\n\n${md}`, `${editTitle || t.untitled}.md`, 'text/markdown;charset=utf-8');
-  }, [editTitle, editContent]);
+  }, [editTitle, editContent, t.untitled]);
   const handleExportPDF = useCallback(() => { exportPDF(editTitle || t.untitled, editContent); }, [editTitle, editContent, t.untitled]);
 
   // Keyboard shortcuts
@@ -576,7 +580,6 @@ export default function AppPage() {
             onChangeTitle={setEditTitle}
             onChangeContent={setEditContent}
             onChangeIcon={setEditIcon}
-            subPages={subPages}
             onCreateSubPage={createSubPage}
             onNavigateToPage={sharedPagePermission !== null ? loadSharedPage : loadPage}
             subPageTitles={subPageTitles}

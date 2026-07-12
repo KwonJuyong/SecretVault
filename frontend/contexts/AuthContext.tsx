@@ -79,26 +79,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Pull down this user's wrapped copy of the active workspace's key and unwrap it.
+   * Fetch this user's wrapped copy of the active workspace's key and unwrap it.
    * Runs on login and on every workspace switch — each workspace has its own key.
+   *
+   * Returns the key rather than setting state itself, so the caller owns the decision of
+   * whether the result is still relevant by the time it arrives.
    */
-  const loadWorkspaceKey = useCallback(async (workspaceId: string, privateKey: CryptoKey) => {
+  const loadWorkspaceKey = useCallback(async (
+    workspaceId: string, privateKey: CryptoKey,
+  ): Promise<CryptoKey | null> => {
     try {
       const res = await api.get<WorkspaceKeyResponse>(`/workspaces/${workspaceId}/key`);
-      const workspaceKey = await unwrapWorkspaceKeyForUser(res.encrypted_workspace_key, privateKey);
-      setState(prev => (prev.workspaceId === workspaceId ? { ...prev, workspaceKey } : prev));
+      return await unwrapWorkspaceKeyForUser(res.encrypted_workspace_key, privateKey);
     } catch {
-      // 404 means nobody has granted this user the key. Pages will render as locked
+      // A 404 means nobody has granted this user the key. Pages then render as locked
       // rather than as deceptively blank documents.
-      setState(prev => (prev.workspaceId === workspaceId ? { ...prev, workspaceKey: null } : prev));
+      return null;
     }
   }, []);
 
   useEffect(() => {
-    if (!state.isAuthenticated || !state.workspaceId || !state.privateKey) return;
-    if (state.workspaceKey) return;
-    loadWorkspaceKey(state.workspaceId, state.privateKey);
-  }, [state.isAuthenticated, state.workspaceId, state.privateKey, state.workspaceKey, loadWorkspaceKey]);
+    const { isAuthenticated, workspaceId, privateKey, workspaceKey } = state;
+    if (!isAuthenticated || !workspaceId || !privateKey || workspaceKey) return;
+
+    let cancelled = false;
+    (async () => {
+      const key = await loadWorkspaceKey(workspaceId, privateKey);
+      if (cancelled) return;
+      setState(prev => (prev.workspaceId === workspaceId ? { ...prev, workspaceKey: key } : prev));
+    })();
+    return () => { cancelled = true; };
+  }, [state, loadWorkspaceKey]);
 
   const login = async (email: string, password: string) => {
     const { authHash } = deriveKeys(password);

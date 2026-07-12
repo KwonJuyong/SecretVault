@@ -1,10 +1,10 @@
 'use client';
 
 import { Node, mergeAttributes } from '@tiptap/core';
-import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { useState, useRef, useCallback } from 'react';
 
-function ImageView({ node, updateAttributes, selected }: any) {
+function ImageView({ node, updateAttributes, selected }: NodeViewProps) {
   const [resizing, setResizing] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const startX = useRef(0);

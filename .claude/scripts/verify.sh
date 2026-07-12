@@ -18,6 +18,18 @@ else
 fi
 
 echo
+echo "=== frontend: eslint (errors) ==="
+if [ -f "$ROOT/frontend/eslint.config.mjs" ]; then
+  if out=$(cd "$ROOT/frontend" && npx --no-install eslint app lib components contexts --max-warnings=-1 2>&1); then
+    echo "PASS  (0 errors)"
+  else
+    echo "FAIL"; echo "$out" | tail -25; fail=1
+  fi
+else
+  echo "SKIP  eslint.config.mjs 없음"
+fi
+
+echo
 echo "=== frontend: vitest ==="
 if [ -f "$ROOT/frontend/vitest.config.ts" ]; then
   if out=$(cd "$ROOT/frontend" && npx --no-install vitest run 2>&1); then

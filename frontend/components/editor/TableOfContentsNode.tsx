@@ -1,7 +1,7 @@
 'use client';
 
 import { Node, mergeAttributes } from '@tiptap/core';
-import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { useState, useEffect } from 'react';
 import { AlignLeft, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,15 +12,15 @@ interface TocEntry {
   text: string;
 }
 
-function TableOfContentsView({ editor, deleteNode }: any) {
+function TableOfContentsView({ editor, deleteNode }: NodeViewProps) {
   const [headings, setHeadings] = useState<TocEntry[]>([]);
   const { t } = useLanguage();
 
   useEffect(() => {
     const syncHeadings = () => {
-      const els = editor.view.dom.querySelectorAll('h1, h2, h3');
+      const els = editor.view.dom.querySelectorAll<HTMLElement>('h1, h2, h3');
       const hs: TocEntry[] = [];
-      els.forEach((el: HTMLElement, idx: number) => {
+      els.forEach((el, idx) => {
         const text = el.textContent?.trim() || '';
         if (text) {
           const id = el.id || `toc-${idx}`;
@@ -32,7 +32,9 @@ function TableOfContentsView({ editor, deleteNode }: any) {
 
     syncHeadings();
     editor.on('update', syncHeadings);
-    return () => editor.off('update', syncHeadings);
+    // Braces matter: editor.off() returns the Editor, and returning it from an effect
+    // would make React treat the editor itself as the cleanup function.
+    return () => { editor.off('update', syncHeadings); };
   }, [editor]);
 
   return (

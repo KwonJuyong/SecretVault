@@ -1,10 +1,10 @@
 'use client';
 
 import { Node, mergeAttributes } from '@tiptap/core';
-import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react';
 import { FileText } from 'lucide-react';
 
-function SubPageView({ node }: any) {
+function SubPageView({ node }: NodeViewProps) {
   const title = node.attrs.title || 'Untitled';
   const icon = node.attrs.icon;
 

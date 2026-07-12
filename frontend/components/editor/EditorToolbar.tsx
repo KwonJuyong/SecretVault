@@ -7,7 +7,7 @@ import {
   Heading1, Heading2, Heading3,
   List, ListOrdered, CheckSquare,
   Quote, CodeSquare, Minus,
-  Table, Image, Undo2, Redo2,
+  Table, Image as ImageIcon, Undo2, Redo2,
 } from 'lucide-react';
 
 interface EditorToolbarProps {
@@ -15,14 +15,13 @@ interface EditorToolbarProps {
   onInsertImage: () => void;
 }
 
-export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
-  const { t } = useLanguage();
-
-  if (!editor) return null;
-
-  const Btn = ({ active, onClick, children, title }: {
-    active?: boolean; onClick: () => void; children: React.ReactNode; title?: string;
-  }) => (
+// Defined at module scope, not inside the component. A component declared in a render body
+// is a brand-new type on every render, so React unmounts and remounts every button each
+// time the toolbar re-renders — which it does on every keystroke, to update `isActive`.
+function Btn({ active, onClick, children, title }: {
+  active?: boolean; onClick: () => void; children: React.ReactNode; title?: string;
+}) {
+  return (
     <button
       type="button"
       onClick={onClick}
@@ -36,8 +35,16 @@ export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarPr
       {children}
     </button>
   );
+}
 
-  const Sep = () => <div className="w-px h-5 bg-[var(--border-subtle)] mx-1" />;
+function Sep() {
+  return <div className="w-px h-5 bg-[var(--border-subtle)] mx-1" />;
+}
+
+export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
+  const { t } = useLanguage();
+
+  if (!editor) return null;
 
   return (
     <div className="flex items-center gap-0.5 px-6 h-11 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] flex-wrap flex-shrink-0">
@@ -63,7 +70,7 @@ export default function EditorToolbar({ editor, onInsertImage }: EditorToolbarPr
       <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()} title={t.divider}><Minus size={15} /></Btn>
       <Sep />
       <Btn onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title={t.insertTable}><Table size={15} /></Btn>
-      <Btn onClick={onInsertImage} title={t.insertImage}><Image size={15} /></Btn>
+      <Btn onClick={onInsertImage} title={t.insertImage}><ImageIcon size={15} /></Btn>
     </div>
   );
 }

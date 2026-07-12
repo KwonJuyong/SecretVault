@@ -4,6 +4,7 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey, NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import { Node as PMNode } from '@tiptap/pm/model';
+import type { EditorView } from '@tiptap/pm/view';
 
 export const DragHandle = Extension.create({
   name: 'dragHandle',
@@ -18,8 +19,11 @@ export const DragHandle = Extension.create({
     let dropLineEl: HTMLDivElement | null = null;
     let scrollEl: HTMLElement | null = null;
 
-    // Drop gap stored on the indicator element for the drop handler to read
     type DropGap = { targetIdx: number; after: boolean; targetPos: number; lineY: number };
+
+    // Where the drop line currently sits, for the drop handler to read. Held here rather
+    // than stashed on the indicator DOM node, which was untyped and invisible to callers.
+    let currentGap: DropGap | null = null;
 
     const findScrollParent = (el: HTMLElement | null): HTMLElement => {
       while (el) {
@@ -31,7 +35,7 @@ export const DragHandle = Extension.create({
     };
 
     // Collect all top-level blocks with their DOM refs and positions
-    const getTopLevelBlocks = (view: any) => {
+    const getTopLevelBlocks = (view: EditorView) => {
       const blocks: { pos: number; dom: HTMLElement; size: number }[] = [];
       view.state.doc.forEach((node: PMNode, offset: number) => {
         try {
@@ -45,7 +49,7 @@ export const DragHandle = Extension.create({
     };
 
     // Find which inter-block gap is nearest to clientY (edge-based, not center-based)
-    const findDropGap = (view: any, clientY: number): DropGap | null => {
+    const findDropGap = (view: EditorView, clientY: number): DropGap | null => {
       const blocks = getTopLevelBlocks(view);
       if (blocks.length === 0) return null;
 
@@ -77,7 +81,7 @@ export const DragHandle = Extension.create({
       };
     };
 
-    const showDropLine = (view: any, clientY: number) => {
+    const showDropLine = (view: EditorView, clientY: number) => {
       if (!dropLineEl || !scrollEl) return;
       const gap = findDropGap(view, clientY);
       if (!gap) { hideDropLine(); return; }
@@ -91,17 +95,17 @@ export const DragHandle = Extension.create({
       dropLineEl.style.top = `${lineY}px`;
       dropLineEl.style.left = `${editorRect.left - scrollRect.left}px`;
       dropLineEl.style.width = `${editorRect.width}px`;
-      (dropLineEl as any)._gap = gap;
+      currentGap = gap;
     };
 
     const hideDropLine = () => {
       if (dropLineEl) {
         dropLineEl.style.display = 'none';
-        (dropLineEl as any)._gap = null;
+        currentGap = null;
       }
     };
 
-    const resetDragState = (view?: any) => {
+    const resetDragState = (view?: EditorView) => {
       isDragging = false;
       dragNodeIndex = -1;
       hideDropLine();
@@ -234,7 +238,7 @@ export const DragHandle = Extension.create({
             e.preventDefault();
             e.stopPropagation();
 
-            const gap: DropGap | null = (dropLineEl as any)?._gap ?? null;
+            const gap = currentGap;
             if (!gap) { resetDragState(editorView); return; }
 
             try {

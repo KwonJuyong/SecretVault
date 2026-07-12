@@ -20,17 +20,17 @@ export default function WorkspaceSwitcher({
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [open, setOpen] = useState(false);
 
-  const fetchWorkspaces = async () => {
-    try {
-      const data = await api.get<Workspace[]>('/workspaces');
-      setWorkspaces(data);
-    } catch (e) {
-      console.error('Failed to fetch workspaces:', e);
-    }
-  };
-
   useEffect(() => {
-    fetchWorkspaces();
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.get<Workspace[]>('/workspaces');
+        if (!cancelled) setWorkspaces(data);
+      } catch (e) {
+        console.error('Failed to fetch workspaces:', e);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [currentWorkspaceId]);
 
   const current = workspaces.find(w => w.id === currentWorkspaceId);

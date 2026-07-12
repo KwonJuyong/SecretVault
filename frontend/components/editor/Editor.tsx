@@ -4,14 +4,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type * as Y from 'yjs';
 import TiptapEditor from './TiptapEditor';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { FileText, Plus, ChevronRight } from 'lucide-react';
 import type { TocHeading } from '@/lib/types';
 
-interface SubPageItem {
-  id: string;
-  title: string;
-  icon: string;
-}
 
 interface EditorProps {
   title: string;
@@ -22,7 +16,6 @@ interface EditorProps {
   onChangeTitle: (title: string) => void;
   onChangeContent: (content: string) => void;
   onChangeIcon: (icon: string) => void;
-  subPages?: SubPageItem[];
   onCreateSubPage?: () => Promise<{ id: string; title: string } | undefined>;
   onNavigateToPage?: (pageId: string) => void;
   subPageTitles?: Record<string, string>;
@@ -70,7 +63,7 @@ const emojiCategories = [
 export default function Editor({
   title, content, icon, pageId,
   onChangeTitle, onChangeContent, onChangeIcon,
-  subPages = [], onCreateSubPage, onNavigateToPage,
+  onCreateSubPage, onNavigateToPage,
   subPageTitles, subPageIcons,
   onHeadingsChange, ydoc,
 }: EditorProps) {
