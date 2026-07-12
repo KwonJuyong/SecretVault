@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { safeNextPath } from '@/lib/redirect';
 import { BookLock, ArrowRight, Eye, EyeOff, Globe, Lock } from 'lucide-react';
 
 export default function LoginForm() {
@@ -15,8 +16,13 @@ export default function LoginForm() {
   const { login } = useAuth();
   const { lang, setLang, t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [redirecting, setRedirecting] = useState(false);
+
+  // Where to go after signing in. An invite link sends people here with ?next=/invite#...,
+  // so they land back on the invite once they have an account to accept it with.
+  const next = safeNextPath(searchParams.get('next'));
 
   const toggleLang = () => setLang(lang === 'en' ? 'ko' : 'en');
 
@@ -31,7 +37,7 @@ export default function LoginForm() {
     try {
       await login(email, password);
       setRedirecting(true);
-      router.push('/app');
+      router.push(next);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t.loginFailed;
       setError(message === 'Unauthorized' ? t.invalidCredentials : message);
@@ -169,7 +175,7 @@ export default function LoginForm() {
           <p className="mt-9 text-center text-[13.5px] text-[var(--fg-secondary)]">
             {t.noAccount}{' '}
             <button
-              onClick={() => router.push('/signup')}
+              onClick={() => router.push(`/signup?next=${encodeURIComponent(next)}`)}
               className="text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold transition-colors"
             >
               {t.createOne}

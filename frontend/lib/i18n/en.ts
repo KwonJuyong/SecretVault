@@ -100,6 +100,19 @@ const en = {
   // Editor
   changeIcon: 'Change icon',
   untitled: 'Untitled',
+  // Invite links
+  inviteLinkCreated: 'Invite link created',
+  inviteLinkNotice: "That address has no account yet, so here is a link they can sign up through. Send it to them directly — anyone holding it can join this workspace, and it expires in 7 days. We can't show it again.",
+  copyLink: 'Copy link',
+  inviteLinkInvalid: 'This invite link is not valid.',
+  inviteLinkExpired: 'This invite link has expired or has already been used.',
+  inviteJoinTitle: 'Join {workspace}',
+  inviteInvitedBy: 'Invited by {email}',
+  inviteSignInFirst: 'Sign in or create an account to accept this invite.',
+  inviteKeyNotice: 'Accepting unlocks this workspace in your browser. The server never sees the key.',
+  inviteAccept: 'Accept invite',
+  inviteWrongAccount: 'This invite was issued for {email}. Sign in with that account to accept it.',
+
   favorites: 'Favorites',
   recent: 'Recent',
   addToFavorites: 'Add to favorites',

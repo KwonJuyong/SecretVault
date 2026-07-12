@@ -5,9 +5,13 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { importPublicKey, wrapWorkspaceKeyForUser } from '@/lib/crypto';
+import {
+  createInviteSecret, deriveInviteKeys, wrapWorkspaceKeyForInvite, buildInviteLink,
+} from '@/lib/invite';
+import { sha256Hex } from '@/lib/hash';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import {
-  X, UserPlus, Shield, ShieldCheck, Crown, UserMinus, Users,
+  X, UserPlus, Shield, ShieldCheck, Crown, UserMinus, Users, Link2, Copy, Check,
 } from 'lucide-react';
 
 interface WorkspaceSettingsProps {
@@ -25,6 +29,10 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
   const [inviteRole, setInviteRole] = useState<string>('member');
   const [inviteError, setInviteError] = useState('');
   const [inviteSuccess, setInviteSuccess] = useState('');
+  // Shown when the invitee has no account and we minted a link instead. Held only in
+  // memory: the secret in it is the one thing that must not be persisted anywhere.
+  const [inviteLink, setInviteLink] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const isOwner = workspace.role === 'owner';
   const isAdmin = workspace.role === 'admin' || isOwner;
@@ -42,11 +50,38 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
 
   useEffect(() => { fetchMembers(); }, []);
 
+  /**
+   * Mint an invite link for someone who has no account yet.
+   *
+   * We cannot wrap the workspace key for a public key that does not exist, so it is
+   * wrapped under a key derived from a random secret that lives only in the link's URL
+   * fragment — which browsers never send to a server. The server stores the wrapped key
+   * and a hash of a *separate* token derived from the same secret, so it can check that a
+   * caller holds the link without being able to open what it is holding.
+   */
+  const createInviteLink = async (email: string) => {
+    if (!workspaceKey) throw new Error(t.inviteNeedsWorkspaceKey);
+
+    const secret = createInviteSecret();
+    const { authToken, wrapKey } = await deriveInviteKeys(secret);
+
+    const { id } = await api.post<{ id: string }>(`/workspaces/${workspace.id}/invites`, {
+      auth_token_hash: await sha256Hex(authToken),
+      encrypted_workspace_key: await wrapWorkspaceKeyForInvite(workspaceKey, wrapKey),
+      role: inviteRole,
+      email: email || null,
+      expires_in_days: 7,
+    });
+
+    return buildInviteLink(window.location.origin, id, secret);
+  };
+
   const handleInvite = async () => {
     const email = inviteUserId.trim();
     if (!email) return;
     setInviteError('');
     setInviteSuccess('');
+    setInviteLink('');
 
     if (!workspaceKey) {
       setInviteError(t.inviteNeedsWorkspaceKey);
@@ -73,6 +108,19 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
       fetchMembers();
       onUpdated();
     } catch (e: unknown) {
+      // No account, so no public key to wrap for. Fall back to a link they can sign up
+      // through, rather than making the inviter care about the difference.
+      const notRegistered = e instanceof Error && /404|not found|no encryption keys/i.test(e.message);
+      if (notRegistered) {
+        try {
+          setInviteLink(await createInviteLink(email));
+          setInviteUserId('');
+          return;
+        } catch (linkErr: unknown) {
+          setInviteError(linkErr instanceof Error ? linkErr.message : t.failedToInvite);
+          return;
+        }
+      }
       setInviteError(e instanceof Error ? e.message : t.failedToInvite);
     }
   };
@@ -173,6 +221,36 @@ export default function WorkspaceSettings({ workspace, onClose, onUpdated }: Wor
             </div>
             {inviteError && <p className="text-[12px] text-red-500 mt-2">{inviteError}</p>}
             {inviteSuccess && <p className="text-[12px] text-emerald-600 dark:text-emerald-400 mt-2">{inviteSuccess}</p>}
+
+            {inviteLink && (
+              <div className="mt-3 p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-2)]">
+                <p className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--fg-primary)] mb-1">
+                  <Link2 size={13} /> {t.inviteLinkCreated}
+                </p>
+                <p className="text-[11.5px] text-[var(--fg-tertiary)] leading-relaxed mb-2">
+                  {t.inviteLinkNotice}
+                </p>
+                <div className="flex gap-1.5">
+                  <input
+                    readOnly
+                    value={inviteLink}
+                    onFocus={e => e.currentTarget.select()}
+                    className="flex-1 min-w-0 px-2.5 h-9 rounded-md border border-[var(--border-default)] bg-[var(--bg-surface)] text-[11.5px] font-mono text-[var(--fg-secondary)] outline-none"
+                  />
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(inviteLink);
+                      setLinkCopied(true);
+                      setTimeout(() => setLinkCopied(false), 2000);
+                    }}
+                    className="px-3 h-9 rounded-md border border-[var(--border-default)] hover:bg-[var(--bg-hover)] text-[var(--fg-secondary)] transition-colors flex items-center gap-1 flex-shrink-0"
+                    title={t.copyLink}
+                  >
+                    {linkCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

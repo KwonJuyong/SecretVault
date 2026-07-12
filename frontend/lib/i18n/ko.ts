@@ -102,6 +102,19 @@ const ko: Translations = {
   // Editor
   changeIcon: '아이콘 변경',
   untitled: '제목 없음',
+  // Invite links
+  inviteLinkCreated: '초대 링크가 생성되었습니다',
+  inviteLinkNotice: '해당 주소로 가입된 계정이 없어, 가입까지 함께 진행할 수 있는 링크를 만들었습니다. 상대방에게 직접 전달하세요 — 이 링크를 가진 사람은 누구나 이 워크스페이스에 참여할 수 있으며, 7일 후 만료됩니다. 이 링크는 다시 보여드릴 수 없습니다.',
+  copyLink: '링크 복사',
+  inviteLinkInvalid: '유효하지 않은 초대 링크입니다.',
+  inviteLinkExpired: '만료되었거나 이미 사용된 초대 링크입니다.',
+  inviteJoinTitle: '{workspace} 참여',
+  inviteInvitedBy: '{email} 님이 초대했습니다',
+  inviteSignInFirst: '초대를 수락하려면 로그인하거나 계정을 만드세요.',
+  inviteKeyNotice: '수락하면 브라우저에서 이 워크스페이스가 열립니다. 서버는 키를 볼 수 없습니다.',
+  inviteAccept: '초대 수락',
+  inviteWrongAccount: '이 초대는 {email} 주소로 발급되었습니다. 해당 계정으로 로그인해 주세요.',
+
   favorites: '즐겨찾기',
   recent: '최근 항목',
   addToFavorites: '즐겨찾기에 추가',

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { safeNextPath } from '@/lib/redirect';
 import { BookLock, UserPlus, ArrowLeft, Eye, EyeOff, Globe, Lock } from 'lucide-react';
 
 export default function SignupForm() {
@@ -17,6 +18,9 @@ export default function SignupForm() {
   const { signup } = useAuth();
   const { lang, setLang, t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Carried through signup so an invite link survives the trip via the login page.
+  const next = safeNextPath(searchParams.get('next'));
 
   const toggleLang = () => setLang(lang === 'en' ? 'ko' : 'en');
 
@@ -38,7 +42,7 @@ export default function SignupForm() {
     setLoading(true);
     try {
       await signup(email, password, username);
-      router.push('/login');
+      router.push(`/login?next=${encodeURIComponent(next)}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t.signupFailed);
     } finally {
@@ -196,7 +200,7 @@ export default function SignupForm() {
           <p className="mt-8 text-center text-[13.5px] text-[var(--fg-secondary)]">
             {t.haveAccount}{' '}
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push(`/login?next=${encodeURIComponent(next)}`)}
               className="text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold inline-flex items-center gap-1 transition-colors"
             >
               <ArrowLeft size={13} />

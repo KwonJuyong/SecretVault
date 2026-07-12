@@ -10,7 +10,7 @@ from sqlalchemy import text
 from alembic import command
 from config import CORS_ORIGINS, DATABASE_URL
 from database import engine
-from routers import auth, favorites, page_shares, pages, workspaces, ws
+from routers import auth, favorites, invites, page_shares, pages, workspaces, ws
 
 
 def wait_for_db(max_retries=10, delay=2):
@@ -70,6 +70,7 @@ app.include_router(workspaces.router)
 app.include_router(pages.router)
 app.include_router(page_shares.router)
 app.include_router(favorites.router)
+app.include_router(invites.router)
 app.include_router(ws.router)
 
 
